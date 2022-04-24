@@ -11,3 +11,6 @@ type Pod struct {
 	Namespace  string
 	Containers []*container.Container
 }
+
+type PodManager interface {
+}

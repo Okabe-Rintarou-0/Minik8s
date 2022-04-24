@@ -37,6 +37,7 @@ type ContainerManager interface {
 	RemoveContainer(ID ContainerID, config *ContainerRemoveConfig) error
 	StartContainer(ID ContainerID, config *ContainerStartConfig) error
 	StopContainer(ID ContainerID, config *ContainerStopConfig) error
+	InspectContainer(ID ContainerID) (ContainerInspectInfo, error)
 }
 
 func NewContainerManager() ContainerManager {
@@ -98,5 +99,9 @@ func (cm *containerManager) StartContainer(ID ContainerID, config *ContainerStar
 }
 
 func (cm *containerManager) StopContainer(ID ContainerID, config *ContainerStopConfig) error {
-	return docker.Client.ContainerStop(docker.Ctx, ID, config.timeout)
+	return docker.Client.ContainerStop(docker.Ctx, ID, &config.timeout)
+}
+
+func (cm *containerManager) InspectContainer(ID ContainerID) (ContainerInspectInfo, error) {
+	return docker.Client.ContainerInspect(docker.Ctx, ID)
 }

@@ -1,25 +1,30 @@
 package image
 
 import (
+	"bufio"
+	"fmt"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
-	"io/ioutil"
+	"io"
 	"testDocker/src/runtime/docker"
 )
 
 type ImageSummary = types.ImageSummary
 
 type ImageService interface {
-	PullImage(name string, config *ImagePullConfig) (response string, err error)
+	PullImage(name string, config *ImagePullConfig) error
+	ExistsImage(name string) (bool, error)
 	ListImages(config *ImageListConfig) ([]ImageSummary, error)
 	ListImagesByName(name string, config *ImageListConfig) ([]ImageSummary, error)
+	RemoveImage(ID string, config *ImageRemoveConfig) (ImageRemoveResponse, error)
 }
 
 type imageService struct {
 }
 
-func NewImageService() ImageService {
-	return &imageService{}
+func (is *imageService) ExistsImage(name string) (bool, error) {
+	images, err := is.ListImagesByName(name, &ImageListConfig{All: true})
+	return len(images) > 0, err
 }
 
 func (is *imageService) ListImages(config *ImageListConfig) ([]ImageSummary, error) {
@@ -38,13 +43,34 @@ func (is *imageService) ListImagesByName(name string, config *ImageListConfig) (
 	})
 }
 
-func (is *imageService) PullImage(name string, config *ImagePullConfig) (response string, err error) {
+func (is *imageService) PullImage(name string, config *ImagePullConfig) error {
 	resp, err := docker.Client.ImagePull(docker.Ctx, name, types.ImagePullOptions{
 		All: config.All,
 	})
 	if err != nil {
-		return "", err
+		return err
 	}
-	body, err := ioutil.ReadAll(resp)
-	return string(body), err
+	r := bufio.NewReader(resp)
+	if config.Verbose {
+		for {
+			row, err := r.ReadString('\n')
+			if err != nil {
+				if err == io.EOF {
+					return nil
+				}
+				return err
+			}
+			fmt.Print(row)
+		}
+	}
+	return nil
+}
+
+func (is *imageService) RemoveImage(ID string, config *ImageRemoveConfig) (ImageRemoveResponse, error) {
+	resp, err := docker.Client.ImageRemove(docker.Ctx, ID, *config)
+	return ImageRemoveResponse{resp}, err
+}
+
+func NewImageService() ImageService {
+	return &imageService{}
 }

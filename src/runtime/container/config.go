@@ -27,6 +27,8 @@ type ContainerListConfig = types.ContainerListOptions
 
 type ContainerStartConfig = types.ContainerStartOptions
 
+type ContainerInspectInfo = types.ContainerJSON
+
 type ContainerStopConfig struct {
-	timeout *time.Duration
+	timeout time.Duration
 }
