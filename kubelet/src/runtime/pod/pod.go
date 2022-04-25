@@ -1,8 +1,8 @@
 package pod
 
 import (
-	"testDocker/src/runtime/container"
-	"testDocker/src/types"
+	"testDocker/kubelet/src/runtime/container"
+	"testDocker/kubelet/src/types"
 )
 
 type Pod struct {

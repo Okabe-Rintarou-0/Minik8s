@@ -3,7 +3,7 @@ package container
 import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
-	"testDocker/src/runtime/image"
+	image2 "testDocker/kubelet/src/runtime/image"
 	"testing"
 	"time"
 )
@@ -21,11 +21,11 @@ func TestListContainer(t *testing.T) {
 
 func TestCreateStartAndRemoveContainer(t *testing.T) {
 	cm := NewContainerManager()
-	is := image.NewImageService()
+	is := image2.NewImageService()
 	testImage := "nginx:latest"
 	if exists, err := is.ExistsImage(testImage); !exists && err == nil {
 		fmt.Printf("Image %s does not exist, so try to pull it\n", testImage)
-		assert.Nil(t, is.PullImage(testImage, &image.ImagePullConfig{
+		assert.Nil(t, is.PullImage(testImage, &image2.ImagePullConfig{
 			Verbose: true,
 			All:     false,
 		}))
