@@ -12,14 +12,25 @@ type ContainerCreateConfig struct {
 	Cmd          ContainerCmdLine    // Command to run when starting the container
 	Env          []string            // List of environment variable to set in the container
 	Volumes      map[string]struct{} // List of volumes (mounts) used for the container
+	Labels       map[string]string   // List of labels set to this container
+	IpcMode      IpcMode             // IPC namespace to use for the container
+	PidMode      PidMode             // PID namespace to use for the container
 	ExposedPorts nat.PortSet         `json:",omitempty"` // List of exposed ports
 	Tty          bool                // Attach standard streams to a tty, including stdin if it is not closed.
 	Links        []string            // List of links (in the name:alias form)
-	NetworkMode  string              // Network mode to use for the container, e.g., --network=container:nginx
+	NetworkMode  NetworkMode         // Network mode to use for the container, e.g., --network=container:nginx
 	Binds        []string            // List of volume bindings for this container
-	PortBindings nat.PortMap         // Port mapping between the exposed port (container) and the host
+	PortBindings PortBindings        // Port mapping between the exposed port (container) and the host
 	VolumesFrom  []string            // List of volumes to take from other container
 }
+
+type IpcMode string
+
+type PidMode string
+
+type NetworkMode string
+
+type PortBindings = nat.PortMap
 
 type ContainerRemoveConfig = types.ContainerRemoveOptions
 

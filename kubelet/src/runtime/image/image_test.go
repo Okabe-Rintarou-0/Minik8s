@@ -7,8 +7,8 @@ import (
 )
 
 func TestImageService_ListImages(t *testing.T) {
-	is := NewImageService()
-	images, err := is.ListImages(&ImageListConfig{All: true})
+	im := NewImageManager()
+	images, err := im.ListImages(&ImageListConfig{All: true})
 	if err != nil {
 		fmt.Println(err.Error())
 	}
@@ -20,8 +20,8 @@ func TestImageService_ListImages(t *testing.T) {
 }
 
 func TestImageService_ListImagesByName(t *testing.T) {
-	is := NewImageService()
-	images, err := is.ListImagesByName("nginx:latest", &ImageListConfig{All: true})
+	im := NewImageManager()
+	images, err := im.ListImagesByName("nginx:latest", &ImageListConfig{All: true})
 	if err != nil {
 		fmt.Println(err.Error())
 	}
@@ -33,21 +33,21 @@ func TestImageService_ListImagesByName(t *testing.T) {
 }
 
 func TestImageService_PullAndRemoveImage(t *testing.T) {
-	is := NewImageService()
-	err := is.PullImage("nginx:latest", &ImagePullConfig{All: false, Verbose: true})
+	im := NewImageManager()
+	err := im.PullImage("nginx:latest", &ImagePullConfig{All: false, Verbose: true})
 	if err != nil {
 		fmt.Println(err.Error())
 	}
 	assert.Nil(t, err)
 
-	images, err := is.ListImagesByName("nginx:latest", &ImageListConfig{All: true})
+	images, err := im.ListImagesByName("nginx:latest", &ImageListConfig{All: true})
 	if err != nil {
 		fmt.Println(err.Error())
 	}
 	assert.Nil(t, err)
 	fmt.Println("Now remove image with ID", images[0].ID)
 
-	resp, err := is.RemoveImage(images[0].ID, &ImageRemoveConfig{
+	resp, err := im.RemoveImage(images[0].ID, &ImageRemoveConfig{
 		Force:         false,
 		PruneChildren: false,
 	})

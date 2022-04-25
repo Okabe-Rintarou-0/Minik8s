@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/docker/docker/api/types/container"
 	"testDocker/kubelet/src/runtime/docker"
+	"time"
 )
 
 type ContainerState string
@@ -19,6 +20,38 @@ const (
 	ContainerStateUnknown ContainerState = "unknown"
 )
 
+// Status represents the status of a container.
+type ContainerStatus struct {
+	// ID of the container.
+	ID ContainerID
+	// Name of the container.
+	Name string
+	// Status of the container.
+	State ContainerState
+	// Creation time of the container.
+	CreatedAt time.Time
+	// Start time of the container.
+	StartedAt time.Time
+	// Finish time of the container.
+	FinishedAt time.Time
+	// Exit code of the container.
+	ExitCode int
+	// Name of the image, this also includes the tag of the image,
+	// the expected form is "NAME:TAG".
+	Image string
+	// ID of the image.
+	ImageID string
+	// Hash of the container, used for comparison.
+	Hash uint64
+	// Number of times that the container has been restarted.
+	RestartCount int
+	// A string explains why container is in such a status.
+	Reason string
+	// Message written by the container before exiting (stored in
+	// TerminationMessagePath).
+	Message string
+}
+
 type ContainerID = string
 
 type ContainerCmdLine = []string
@@ -32,7 +65,7 @@ type Container struct {
 }
 
 type ContainerManager interface {
-	ListContainer(config *ContainerListConfig) ([]*Container, error)
+	ListContainers(config *ContainerListConfig) ([]*Container, error)
 	CreateContainer(name string, config *ContainerCreateConfig) (string, error)
 	RemoveContainer(ID ContainerID, config *ContainerRemoveConfig) error
 	StartContainer(ID ContainerID, config *ContainerStartConfig) error
@@ -47,7 +80,7 @@ func NewContainerManager() ContainerManager {
 type containerManager struct {
 }
 
-func (cm *containerManager) ListContainer(config *ContainerListConfig) ([]*Container, error) {
+func (cm *containerManager) ListContainers(config *ContainerListConfig) ([]*Container, error) {
 	containers, err := docker.Client.ContainerList(docker.Ctx, *config)
 	if err != nil {
 		return nil, err

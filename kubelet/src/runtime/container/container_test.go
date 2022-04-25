@@ -3,14 +3,14 @@ package container
 import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
-	image2 "testDocker/kubelet/src/runtime/image"
+	"testDocker/kubelet/src/runtime/image"
 	"testing"
 	"time"
 )
 
 func TestListContainer(t *testing.T) {
 	cm := NewContainerManager()
-	containers, err := cm.ListContainer(&ContainerListConfig{
+	containers, err := cm.ListContainers(&ContainerListConfig{
 		All: true,
 	})
 	assert.Nil(t, err)
@@ -21,11 +21,11 @@ func TestListContainer(t *testing.T) {
 
 func TestCreateStartAndRemoveContainer(t *testing.T) {
 	cm := NewContainerManager()
-	is := image2.NewImageService()
+	im := image.NewImageManager()
 	testImage := "nginx:latest"
-	if exists, err := is.ExistsImage(testImage); !exists && err == nil {
+	if exists, err := im.ExistsImage(testImage); !exists && err == nil {
 		fmt.Printf("Image %s does not exist, so try to pull it\n", testImage)
-		assert.Nil(t, is.PullImage(testImage, &image2.ImagePullConfig{
+		assert.Nil(t, im.PullImage(testImage, &image.ImagePullConfig{
 			Verbose: true,
 			All:     false,
 		}))
@@ -56,7 +56,7 @@ func TestCreateStartAndRemoveContainer(t *testing.T) {
 
 	fmt.Printf("Now inspect the container with ID %s\n", ID)
 	inspection, err := cm.InspectContainer(ID)
-	fmt.Println("Got inspection", inspection.Name, inspection.ID, inspection.Image)
+	fmt.Println("Got inspection", inspection.Name, inspection.ID, inspection.Image, inspection.Created)
 	assert.Nil(t, err)
 
 	fmt.Printf("Now start the container with ID %s\n", ID)

@@ -11,7 +11,7 @@ import (
 
 type ImageSummary = types.ImageSummary
 
-type ImageService interface {
+type ImageManager interface {
 	PullImage(name string, config *ImagePullConfig) error
 	ExistsImage(name string) (bool, error)
 	ListImages(config *ImageListConfig) ([]ImageSummary, error)
@@ -19,21 +19,21 @@ type ImageService interface {
 	RemoveImage(ID string, config *ImageRemoveConfig) (ImageRemoveResponse, error)
 }
 
-type imageService struct {
+type imageManager struct {
 }
 
-func (is *imageService) ExistsImage(name string) (bool, error) {
+func (is *imageManager) ExistsImage(name string) (bool, error) {
 	images, err := is.ListImagesByName(name, &ImageListConfig{All: true})
 	return len(images) > 0, err
 }
 
-func (is *imageService) ListImages(config *ImageListConfig) ([]ImageSummary, error) {
+func (is *imageManager) ListImages(config *ImageListConfig) ([]ImageSummary, error) {
 	return docker.Client.ImageList(docker.Ctx, types.ImageListOptions{
 		All: config.All,
 	})
 }
 
-func (is *imageService) ListImagesByName(name string, config *ImageListConfig) ([]ImageSummary, error) {
+func (is *imageManager) ListImagesByName(name string, config *ImageListConfig) ([]ImageSummary, error) {
 	filter := filters.NewArgs()
 	filter.Add("dangling", "false")
 	filter.Add("reference", name)
@@ -43,7 +43,7 @@ func (is *imageService) ListImagesByName(name string, config *ImageListConfig) (
 	})
 }
 
-func (is *imageService) PullImage(name string, config *ImagePullConfig) error {
+func (is *imageManager) PullImage(name string, config *ImagePullConfig) error {
 	resp, err := docker.Client.ImagePull(docker.Ctx, name, types.ImagePullOptions{
 		All: config.All,
 	})
@@ -66,11 +66,11 @@ func (is *imageService) PullImage(name string, config *ImagePullConfig) error {
 	return nil
 }
 
-func (is *imageService) RemoveImage(ID string, config *ImageRemoveConfig) (ImageRemoveResponse, error) {
+func (is *imageManager) RemoveImage(ID string, config *ImageRemoveConfig) (ImageRemoveResponse, error) {
 	resp, err := docker.Client.ImageRemove(docker.Ctx, ID, *config)
 	return ImageRemoveResponse{resp}, err
 }
 
-func NewImageService() ImageService {
-	return &imageService{}
+func NewImageManager() ImageManager {
+	return &imageManager{}
 }

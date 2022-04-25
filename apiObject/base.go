@@ -3,7 +3,7 @@ package apiObject
 type MetadataConfigBase struct {
 	Name        string      `yaml:"name"`
 	Namespace   string      `yaml:"namespace"`
-	Uid         string      `yaml:"uid"`
+	UID         string      `yaml:"uid"`
 	Labels      Labels      `yaml:"labels"`
 	Annotations Annotations `yaml:"annotations"`
 }
