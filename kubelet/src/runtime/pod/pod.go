@@ -17,13 +17,6 @@ type Pod struct {
 	Containers []*container.Container
 }
 
-type ContainerType = byte
-
-const (
-	PauseContainer ContainerType = iota
-	CommonContainer
-)
-
 // PodStatus represents the status of the pod and its containers.
 type PodStatus struct {
 	// ID of the pod.
@@ -92,23 +85,36 @@ type podManager struct {
 	im image.ImageManager
 }
 
+// CreatePod create a pod according to the given api object
 func (pm *podManager) CreatePod(pod *apiObject.Pod) error {
+	// Step 1: Start pause container
+	err := pm.startPauseContainer(pod)
+	if err != nil {
+		return err
+	}
+
+	// Step 2: Start init containers
+	/// TODO implement it
+
+	// Step 3: Start common containers
+	for _, c := range pod.Spec.Containers {
+		err = pm.startCommonContainer(pod, &c)
+		if err != nil {
+			return err
+		}
+	}
+
+	fmt.Printf("Pod with UID %s created!", pod.UID())
 	return nil
 }
 
 // needPullImage judges whether we need pull the image of given container spec
-func (pm *podManager) needPullImage(container *apiObject.Container, containerType ContainerType) (bool, string, error) {
-	var imageName string
-	if containerType == PauseContainer {
-		imageName = pauseImage
-	} else {
-		imageName = container.Image
+func (pm *podManager) needPullImage(container *apiObject.Container) (bool, error) {
+	if container.ImagePullPolicy == apiObject.PullPolicyAlways {
+		return true, nil
 	}
-	if container != nil && container.ImagePullPolicy == apiObject.PullPolicyAlways {
-		return true, imageName, nil
-	}
-	exist, err := pm.im.ExistsImage(imageName)
-	return !exist, imageName, err
+	exist, err := pm.im.ExistsImage(container.Image)
+	return !exist, err
 }
 
 // toFormattedEnv changes containerEnv to adapted form, like "FOO=bar"
@@ -122,12 +128,9 @@ func (pm *podManager) toFormattedEnv(containerEnv []apiObject.EnvVar) []string {
 }
 
 // toVolumeBinds returns the binds of volumes
-func (pm *podManager) toVolumeBinds(containerEnv []apiObject.EnvVar) []string {
-	var env []string
-	for _, ev := range containerEnv {
-		env = append(env, ev.Name+"="+ev.Value)
-	}
-	return env
+func (pm *podManager) toVolumeBinds() []string {
+	/// TODO implement it
+	return nil
 }
 
 func (pm *podManager) containerFullName(containerName, podFullName string, podUID string, restartCount int) string {
@@ -146,79 +149,93 @@ func (pm *podManager) toPauseContainerReference(podFullName string, podUID types
 	return pm.toContainerReference(pm.pauseContainerFullName(podFullName, podUID))
 }
 
-func (pm *podManager) toPortBindings(ports []apiObject.ContainerPort) container.PortBindings {
-	portBindings := container.PortBindings{}
+func (pm *podManager) addPortBindings(portBindings container.PortBindings, ports []apiObject.ContainerPort) error {
 	for _, port := range ports {
 		if port.Protocol == "" {
-			port.Protocol = "TCP"
+			port.Protocol = "tcp"
 		}
 		containerPort, err := nat.NewPort(port.Protocol, port.ContainerPort)
 		if err != nil {
-			return nil
+			return err
+		}
+		if port.HostIP == "" {
+			port.HostIP = "127.0.0.1"
 		}
 		portBindings[containerPort] = []nat.PortBinding{{
 			HostIP:   port.HostIP,
 			HostPort: port.HostPort,
 		}}
 	}
-	return portBindings
+	return nil
 }
 
-func (pm *podManager) startCommonContainer(pod *apiObject.Pod, c *apiObject.Container) error {
-	return pm.startContainer(c, pod, CommonContainer)
+func (pm *podManager) addPortSet(portSet container.PortSet, ports []apiObject.ContainerPort) {
+	for _, port := range ports {
+		portSet[container.Port(port.ContainerPort+"/tcp")] = struct{}{}
+	}
 }
 
-func (pm *podManager) startPauseContainer(pod *apiObject.Pod) error {
-	return pm.startContainer(nil, pod, PauseContainer)
-}
-
-func (pm *podManager) getContainerCreateConfig(c *apiObject.Container, pod *apiObject.Pod, containerType ContainerType) *container.ContainerCreateConfig {
-	// the label of given podUID
+func (pm *podManager) getPauseContainerCreateConfig(pod *apiObject.Pod) (*container.ContainerCreateConfig, error) {
 	labels := map[string]string{
 		KubernetesPodUIDLabel: pod.UID(),
 	}
-	pauseContainerFullName := pm.pauseContainerFullName(pod.FullName(), pod.UID())
-	pauseContainerRef := pm.toPauseContainerReference(pod.FullName(), pod.UID())
 
-	switch containerType {
-	case CommonContainer:
-		return &container.ContainerCreateConfig{
-			Image:       c.Image,
-			Entrypoint:  c.Command,
-			Cmd:         c.Args,
-			Env:         pm.toFormattedEnv(c.Env),
-			Volumes:     nil,
-			Labels:      labels,
-			Tty:         c.TTY,
-			NetworkMode: container.NetworkMode(pauseContainerRef),
-			IpcMode:     container.IpcMode(pauseContainerRef),
-			PidMode:     container.PidMode(pauseContainerRef),
-			Binds:       nil,
-			VolumesFrom: []string{pauseContainerFullName},
+	portBindings := container.PortBindings{}
+	portSet := container.PortSet{}
+	for _, c := range pod.Spec.Containers {
+		err := pm.addPortBindings(portBindings, c.Ports)
+		if err != nil {
+			return nil, err
 		}
-	case PauseContainer:
-		return &container.ContainerCreateConfig{
-			Image:   pauseImage,
-			Volumes: nil,
-			Labels:  labels,
-			Binds:   nil,
-		}
+		pm.addPortSet(portSet, c.Ports)
 	}
-	panic("invalid container type")
+
+	return &container.ContainerCreateConfig{
+		Image:        pauseImage,
+		Volumes:      nil,
+		Labels:       labels,
+		Binds:        nil,
+		IpcMode:      "shareable",
+		ExposedPorts: portSet,
+		PortBindings: portBindings,
+	}, nil
 }
 
-// startContainer starts a container according to the given spec
-func (pm *podManager) startContainer(c *apiObject.Container, pod *apiObject.Pod, containerType ContainerType) error {
+func (pm *podManager) getCommonContainerCreateConfig(c *apiObject.Container, podFullName string, podUID types.UID) *container.ContainerCreateConfig {
+	// the label of given podUID
+	labels := map[string]string{
+		KubernetesPodUIDLabel: podUID,
+	}
+	pauseContainerFullName := pm.pauseContainerFullName(podFullName, podUID)
+	pauseContainerRef := pm.toPauseContainerReference(podFullName, podUID)
+	return &container.ContainerCreateConfig{
+		Image:       c.Image,
+		Entrypoint:  c.Command,
+		Cmd:         c.Args,
+		Env:         pm.toFormattedEnv(c.Env),
+		Volumes:     nil,
+		Labels:      labels,
+		Tty:         c.TTY,
+		NetworkMode: container.NetworkMode(pauseContainerRef),
+		IpcMode:     container.IpcMode(pauseContainerRef),
+		PidMode:     container.PidMode(pauseContainerRef),
+		Binds:       nil,
+		VolumesFrom: []string{pauseContainerFullName},
+	}
+}
+
+// startPauseContainer starts the pause container that other common containers need
+func (pm *podManager) startPauseContainer(pod *apiObject.Pod) error {
 	// Step 1: Do we need pull the image?
-	needPull, imageName, err := pm.needPullImage(c, containerType)
+	exists, err := pm.im.ExistsImage(pauseImage)
 	if err != nil {
 		return err
 	}
 
 	// Step 2: If needed, pull the image for the given container
-	if needPull {
-		fmt.Println("Need to pull image", imageName)
-		err = pm.im.PullImage(imageName, &image.ImagePullConfig{
+	if !exists {
+		fmt.Println("Need to pull image", pauseImage)
+		err = pm.im.PullImage(pauseImage, &image.ImagePullConfig{
 			Verbose: true,
 			All:     false,
 		})
@@ -226,22 +243,71 @@ func (pm *podManager) startContainer(c *apiObject.Container, pod *apiObject.Pod,
 			return err
 		}
 	} else {
-		fmt.Printf("No need to pull image %s, continue\n", imageName)
+		fmt.Printf("No need to pull image %s, continue\n", pauseImage)
 	}
+
+	// Prepare
+	podFullName := pod.FullName()
+	podUID := pod.UID()
 
 	// Step 3: Create a container
 	fmt.Println("Now create the container")
-	var ID container.ContainerID
-	var containerFullName string
-	switch containerType {
-	case CommonContainer:
-		containerFullName = pm.containerFullName(c.Name, pod.FullName(), pod.UID(), 0)
-	case PauseContainer:
-		containerFullName = pm.pauseContainerFullName(pod.FullName(), pod.UID())
-	default:
-		panic("invalid container type")
+
+	containerFullName := pm.pauseContainerFullName(podFullName, podUID)
+
+	// get the container create config of pause
+	var createConfig *container.ContainerCreateConfig
+	createConfig, err = pm.getPauseContainerCreateConfig(pod)
+	if err != nil {
+		return err
 	}
-	ID, err = pm.cm.CreateContainer(containerFullName, pm.getContainerCreateConfig(c, pod, containerType))
+
+	var ID container.ContainerID
+	ID, err = pm.cm.CreateContainer(containerFullName, createConfig)
+	if err != nil {
+		return err
+	}
+	fmt.Println("Create the container successfully, got ID", ID)
+
+	// Step 4: Start this container
+	fmt.Println("Now start the container with ID", ID)
+	err = pm.cm.StartContainer(ID, &container.ContainerStartConfig{})
+	return err
+}
+
+// startCommonContainer starts a common container according to the given spec
+func (pm *podManager) startCommonContainer(pod *apiObject.Pod, c *apiObject.Container) error {
+	// Step 1: Do we need pull the image?
+	needPull, err := pm.needPullImage(c)
+	if err != nil {
+		return err
+	}
+
+	// Step 2: If needed, pull the image for the given container
+	if needPull {
+		fmt.Println("Need to pull image", c.Image)
+		err = pm.im.PullImage(c.Image, &image.ImagePullConfig{
+			Verbose: true,
+			All:     false,
+		})
+		if err != nil {
+			return err
+		}
+	} else {
+		fmt.Printf("No need to pull image %s, continue\n", c.Image)
+	}
+
+	// Prepare
+	podFullName := pod.FullName()
+	podUID := pod.UID()
+
+	// Step 3: Create a container
+	fmt.Println("Now create the container")
+
+	containerFullName := pm.containerFullName(c.Name, podFullName, podUID, 0)
+
+	var ID container.ContainerID
+	ID, err = pm.cm.CreateContainer(containerFullName, pm.getCommonContainerCreateConfig(c, podFullName, podUID))
 	if err != nil {
 		return err
 	}

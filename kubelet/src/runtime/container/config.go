@@ -2,6 +2,7 @@ package container
 
 import (
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
 	"github.com/docker/go-connections/nat"
 	"time"
 )
@@ -24,17 +25,32 @@ type ContainerCreateConfig struct {
 	VolumesFrom  []string            // List of volumes to take from other container
 }
 
-type IpcMode string
+type IpcMode = container.IpcMode
 
-type PidMode string
+type PidMode = container.PidMode
 
-type NetworkMode string
+type NetworkMode = container.NetworkMode
+
+type Port = nat.Port
+
+type PortSet = nat.PortSet
 
 type PortBindings = nat.PortMap
 
 type ContainerRemoveConfig = types.ContainerRemoveOptions
 
-type ContainerListConfig = types.ContainerListOptions
+type LabelSelector = map[string]string
+
+type ContainerListConfig struct {
+	Quiet         bool
+	Size          bool
+	All           bool
+	Latest        bool
+	Since         string
+	Before        string
+	Limit         int
+	LabelSelector LabelSelector
+}
 
 type ContainerStartConfig = types.ContainerStartOptions
 

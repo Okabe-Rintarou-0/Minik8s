@@ -2,7 +2,9 @@ package container
 
 import (
 	"fmt"
+	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/filters"
 	"testDocker/kubelet/src/runtime/docker"
 	"time"
 )
@@ -81,7 +83,21 @@ type containerManager struct {
 }
 
 func (cm *containerManager) ListContainers(config *ContainerListConfig) ([]*Container, error) {
-	containers, err := docker.Client.ContainerList(docker.Ctx, *config)
+	filter := filters.NewArgs()
+	for name, value := range config.LabelSelector {
+		filter.Add("label", name+"="+value)
+	}
+
+	containers, err := docker.Client.ContainerList(docker.Ctx, types.ContainerListOptions{
+		Quiet:   config.Quiet,
+		Size:    config.Size,
+		All:     config.All,
+		Latest:  config.Latest,
+		Since:   config.Since,
+		Before:  config.Before,
+		Limit:   config.Limit,
+		Filters: filter,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -108,14 +124,16 @@ func (cm *containerManager) CreateContainer(name string, config *ContainerCreate
 		Image:        config.Image,
 		Volumes:      config.Volumes,
 		Entrypoint:   config.Entrypoint,
+		Labels:       config.Labels,
 	}, &container.HostConfig{
 		Binds:        config.Binds,
 		PortBindings: config.PortBindings,
-		NetworkMode:  container.NetworkMode(config.NetworkMode),
+		NetworkMode:  config.NetworkMode,
+		PidMode:      config.PidMode,
+		IpcMode:      config.IpcMode,
 		VolumesFrom:  config.VolumesFrom,
 		Links:        config.Links,
 	}, nil, nil, name)
-
 	for _, warning := range res.Warnings {
 		fmt.Println(warning)
 	}
