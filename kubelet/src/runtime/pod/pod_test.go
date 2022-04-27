@@ -6,9 +6,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
-	"testDocker/apiObject"
-	"testDocker/kubelet/src/runtime/container"
-	"testDocker/kubelet/src/runtime/image"
+	"minik8s/apiObject"
+	"minik8s/kubelet/src/runtime/container"
+	"minik8s/kubelet/src/runtime/image"
 	"testing"
 )
 

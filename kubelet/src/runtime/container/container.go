@@ -5,7 +5,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
-	"testDocker/kubelet/src/runtime/docker"
+	"minik8s/kubelet/src/runtime/docker"
 	"time"
 )
 

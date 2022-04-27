@@ -3,11 +3,11 @@ package pod
 import (
 	"fmt"
 	"github.com/docker/go-connections/nat"
+	"minik8s/apiObject"
+	"minik8s/kubelet/src/runtime/container"
+	"minik8s/kubelet/src/runtime/image"
+	"minik8s/kubelet/src/types"
 	"strconv"
-	"testDocker/apiObject"
-	"testDocker/kubelet/src/runtime/container"
-	"testDocker/kubelet/src/runtime/image"
-	"testDocker/kubelet/src/types"
 	"time"
 )
 
