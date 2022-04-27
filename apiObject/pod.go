@@ -108,3 +108,11 @@ func (pod *Pod) FullName() string {
 func (pod *Pod) UID() string {
 	return pod.Metadata.UID
 }
+
+func (pod *Pod) Name() string {
+	return pod.Metadata.Name
+}
+
+func (pod *Pod) Namespace() string {
+	return pod.Metadata.Namespace
+}

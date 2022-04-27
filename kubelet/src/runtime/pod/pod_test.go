@@ -23,12 +23,22 @@ func TestCreatePod(t *testing.T) {
 	var err error
 	pod := readPod()
 
+	u1 := uuid.NewV4()
+	fmt.Printf("UUID for test: %s\n", u1)
+	pod.Metadata.UID = u1.String()
+
 	pm := NewPodManager()
 	err = pm.CreatePod(pod)
 	if err != nil {
 		fmt.Println(err.Error())
 	}
 	assert.Nil(t, err)
+
+	podStatus, err := pm.GetPodStatus(pod)
+	assert.Nil(t, err)
+	for _, cs := range podStatus.ContainerStatuses {
+		fmt.Println(cs.Name, cs.Name, cs.State, cs.CreatedAt.String())
+	}
 }
 
 func TestStartContainer(t *testing.T) {

@@ -22,7 +22,7 @@ const (
 	ContainerStateUnknown ContainerState = "unknown"
 )
 
-// Status represents the status of a container.
+// ContainerStatus represents the status of a container.
 type ContainerStatus struct {
 	// ID of the container.
 	ID ContainerID
@@ -38,20 +38,12 @@ type ContainerStatus struct {
 	FinishedAt time.Time
 	// Exit code of the container.
 	ExitCode int
-	// Name of the image, this also includes the tag of the image,
-	// the expected form is "NAME:TAG".
-	Image string
 	// ID of the image.
 	ImageID string
-	// Hash of the container, used for comparison.
-	Hash uint64
 	// Number of times that the container has been restarted.
 	RestartCount int
-	// A string explains why container is in such a status.
-	Reason string
-	// Message written by the container before exiting (stored in
-	// TerminationMessagePath).
-	Message string
+	// A string stands for the error
+	Error string
 }
 
 type ContainerID = string

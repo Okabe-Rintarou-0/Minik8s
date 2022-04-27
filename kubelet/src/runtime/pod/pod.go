@@ -8,6 +8,7 @@ import (
 	"testDocker/kubelet/src/runtime/container"
 	"testDocker/kubelet/src/runtime/image"
 	"testDocker/kubelet/src/types"
+	"time"
 )
 
 type Pod struct {
@@ -78,34 +79,12 @@ func (pods Pods) GetPodByFullName(fullName string) *Pod {
 
 type PodManager interface {
 	CreatePod(pod *apiObject.Pod) error
+	GetPodStatus(pod *apiObject.Pod) (*PodStatus, error)
 }
 
 type podManager struct {
 	cm container.ContainerManager
 	im image.ImageManager
-}
-
-// CreatePod create a pod according to the given api object
-func (pm *podManager) CreatePod(pod *apiObject.Pod) error {
-	// Step 1: Start pause container
-	err := pm.startPauseContainer(pod)
-	if err != nil {
-		return err
-	}
-
-	// Step 2: Start init containers
-	/// TODO implement it
-
-	// Step 3: Start common containers
-	for _, c := range pod.Spec.Containers {
-		err = pm.startCommonContainer(pod, &c)
-		if err != nil {
-			return err
-		}
-	}
-
-	fmt.Printf("Pod with UID %s created!", pod.UID())
-	return nil
 }
 
 // needPullImage judges whether we need pull the image of given container spec
@@ -224,6 +203,71 @@ func (pm *podManager) getCommonContainerCreateConfig(c *apiObject.Container, pod
 	}
 }
 
+func (pm *podManager) inspectionToContainerStatus(inspection *container.ContainerInspectInfo) (*container.ContainerStatus, error) {
+	state := container.ContainerStateUnknown
+	switch inspection.State.Status {
+	case "running":
+		state = container.ContainerStateRunning
+	case "created":
+		state = container.ContainerStateCreated
+	case "exited":
+		state = container.ContainerStateExited
+	}
+
+	createdAt, err := time.Parse(time.RFC3339Nano, inspection.Created)
+	if err != nil {
+		return nil, err
+	}
+
+	startedAt, err := time.Parse(time.RFC3339Nano, inspection.State.StartedAt)
+	if err != nil {
+		return nil, err
+	}
+
+	finishedAt, err := time.Parse(time.RFC3339Nano, inspection.State.FinishedAt)
+	if err != nil {
+		return nil, err
+	}
+
+	return &container.ContainerStatus{
+		ID:           inspection.ID,
+		Name:         inspection.Name,
+		State:        state,
+		CreatedAt:    createdAt,
+		StartedAt:    startedAt,
+		FinishedAt:   finishedAt,
+		ExitCode:     inspection.State.ExitCode,
+		ImageID:      inspection.Image,
+		RestartCount: inspection.RestartCount,
+		Error:        inspection.State.Error,
+	}, nil
+}
+
+func (pm *podManager) getPodContainerStatuses(pod *apiObject.Pod) ([]*container.ContainerStatus, error) {
+	containers, err := pm.cm.ListContainers(&container.ContainerListConfig{
+		All: true,
+		LabelSelector: container.LabelSelector{
+			KubernetesPodUIDLabel: pod.UID(),
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	containerStatuses := make([]*container.ContainerStatus, len(containers))
+	for i, c := range containers {
+		inspection, err := pm.cm.InspectContainer(c.ID)
+		if err != nil {
+			return nil, err
+		}
+		containerStatuses[i], err = pm.inspectionToContainerStatus(&inspection)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return containerStatuses, nil
+}
+
 // startPauseContainer starts the pause container that other common containers need
 func (pm *podManager) startPauseContainer(pod *apiObject.Pod) error {
 	// Step 1: Do we need pull the image?
@@ -324,4 +368,41 @@ func NewPodManager() PodManager {
 		cm: container.NewContainerManager(),
 		im: image.NewImageManager(),
 	}
+}
+
+// CreatePod create a pod according to the given api object
+func (pm *podManager) CreatePod(pod *apiObject.Pod) error {
+	// Step 1: Start pause container
+	err := pm.startPauseContainer(pod)
+	if err != nil {
+		return err
+	}
+
+	// Step 2: Start init containers
+	/// TODO implement it
+
+	// Step 3: Start common containers
+	for _, c := range pod.Spec.Containers {
+		err = pm.startCommonContainer(pod, &c)
+		if err != nil {
+			return err
+		}
+	}
+
+	fmt.Printf("Pod with UID %s created!\n", pod.UID())
+	return nil
+}
+
+func (pm *podManager) GetPodStatus(pod *apiObject.Pod) (*PodStatus, error) {
+	containerStatuses, err := pm.getPodContainerStatuses(pod)
+	if err != nil {
+		return nil, err
+	}
+	return &PodStatus{
+		ID:                pod.UID(),
+		Name:              pod.Name(),
+		Namespace:         pod.Namespace(),
+		IPs:               nil,
+		ContainerStatuses: containerStatuses,
+	}, nil
 }
