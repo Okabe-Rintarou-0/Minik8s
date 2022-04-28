@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
-	"testDocker/apiObject"
+	"minik8s/apiObject"
 )
 
 func main() {

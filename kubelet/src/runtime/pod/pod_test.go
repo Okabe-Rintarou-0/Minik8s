@@ -12,16 +12,49 @@ import (
 	"testing"
 )
 
-func readPod() *apiObject.Pod {
-	content, _ := ioutil.ReadFile("./testPod.yaml")
+func readPod(podPath string) *apiObject.Pod {
+	content, _ := ioutil.ReadFile(podPath)
 	pod := apiObject.Pod{}
 	_ = yaml.Unmarshal(content, &pod)
 	return &pod
 }
 
+func TestGetPodStatuses(t *testing.T) {
+	var err error
+	pod := readPod("./testPod.yaml")
+
+	u1 := uuid.NewV4()
+	fmt.Printf("UUID for test: %s\n", u1)
+	pod.Metadata.UID = u1.String()
+
+	pm := NewPodManager()
+	err = pm.CreatePod(pod)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	assert.Nil(t, err)
+
+	pod = readPod("./testPod2.yaml")
+	u2 := uuid.NewV4()
+	fmt.Printf("UUID for test: %s\n", u2)
+	pod.Metadata.UID = u2.String()
+
+	err = pm.CreatePod(pod)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	assert.Nil(t, err)
+
+	podStatuses, err := pm.GetPodStatuses()
+	assert.Nil(t, err)
+	for _, ps := range podStatuses {
+		fmt.Println(ps.ID)
+	}
+}
+
 func TestCreatePod(t *testing.T) {
 	var err error
-	pod := readPod()
+	pod := readPod("./testPod.yaml")
 
 	u1 := uuid.NewV4()
 	fmt.Printf("UUID for test: %s\n", u1)
@@ -43,7 +76,7 @@ func TestCreatePod(t *testing.T) {
 
 func TestStartContainer(t *testing.T) {
 	var err error
-	pod := readPod()
+	pod := readPod("./testPod.yaml")
 
 	u1 := uuid.NewV4()
 	fmt.Printf("UUID for test: %s\n", u1)

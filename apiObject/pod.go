@@ -15,6 +15,37 @@ type ContainerPort struct {
 	HostIP        string `yaml:"hostIP"`
 }
 
+type ProbeHandler struct {
+}
+
+// Probe describes a health check to be performed against a container to determine whether it is
+// alive or ready to receive traffic.
+type Probe struct {
+	// The action taken to determine the health of a container
+	ProbeHandler `yaml:",inline"`
+	// Number of seconds after the container has started before liveness probes are initiated.
+	// More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
+	// +optional
+	InitialDelaySeconds int32 `yaml:"initial_delay_seconds"`
+	// Number of seconds after which the probe times out.
+	// Defaults to 1 second. Minimum value is 1.
+	// More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
+	// +optional
+	TimeoutSeconds int32 `yaml:"timeout_seconds"`
+	// How often (in seconds) to perform the probe.
+	// Default to 10 seconds. Minimum value is 1.
+	// +optional
+	PeriodSeconds int32 `yaml:"period_seconds"`
+	// Minimum consecutive successes for the probe to be considered successful after having failed.
+	// Defaults to 1. Must be 1 for liveness and startup. Minimum value is 1.
+	// +optional
+	SuccessThreshold int32 `yaml:"success_threshold"`
+	// Minimum consecutive failures for the probe to be considered failed after having succeeded.
+	// Defaults to 3. Minimum value is 1.
+	// +optional
+	FailureThreshold int32 `yaml:"failure_threshold"`
+}
+
 type EnvVar struct {
 	Name  string `yaml:"name"`
 	Value string `yaml:"value"`
@@ -115,4 +146,17 @@ func (pod *Pod) Name() string {
 
 func (pod *Pod) Namespace() string {
 	return pod.Metadata.Namespace
+}
+
+func (pod *Pod) Containers() []Container {
+	return pod.Spec.Containers
+}
+
+func (pod *Pod) GetContainerByName(name string) *Container {
+	for _, container := range pod.Spec.Containers {
+		if container.Name == name {
+			return &container
+		}
+	}
+	return nil
 }

@@ -58,7 +58,7 @@ type Container struct {
 	State   ContainerState
 }
 
-type ContainerManager interface {
+type Manager interface {
 	ListContainers(config *ContainerListConfig) ([]*Container, error)
 	CreateContainer(name string, config *ContainerCreateConfig) (string, error)
 	RemoveContainer(ID ContainerID, config *ContainerRemoveConfig) error
@@ -67,7 +67,7 @@ type ContainerManager interface {
 	InspectContainer(ID ContainerID) (ContainerInspectInfo, error)
 }
 
-func NewContainerManager() ContainerManager {
+func NewContainerManager() Manager {
 	return &containerManager{}
 }
 
@@ -77,7 +77,14 @@ type containerManager struct {
 func (cm *containerManager) ListContainers(config *ContainerListConfig) ([]*Container, error) {
 	filter := filters.NewArgs()
 	for name, value := range config.LabelSelector {
-		filter.Add("label", name+"="+value)
+		if len(name) == 0 {
+			continue
+		}
+		if len(value) > 0 {
+			filter.Add("label", name+"="+value)
+		} else { // filter just by name
+			filter.Add("label", name)
+		}
 	}
 
 	containers, err := docker.Client.ContainerList(docker.Ctx, types.ContainerListOptions{

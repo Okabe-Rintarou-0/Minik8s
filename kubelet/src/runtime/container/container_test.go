@@ -3,7 +3,7 @@ package container
 import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
-	"testDocker/kubelet/src/runtime/image"
+	"minik8s/kubelet/src/runtime/image"
 	"testing"
 	"time"
 )

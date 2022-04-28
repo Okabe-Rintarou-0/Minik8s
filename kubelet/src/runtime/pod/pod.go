@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"github.com/docker/go-connections/nat"
 	"minik8s/apiObject"
+	"minik8s/kubelet/src/podutil"
 	"minik8s/kubelet/src/runtime/container"
 	"minik8s/kubelet/src/runtime/image"
 	"minik8s/kubelet/src/types"
-	"strconv"
 	"time"
 )
 
@@ -32,7 +32,18 @@ type PodStatus struct {
 	ContainerStatuses []*container.ContainerStatus
 }
 
+func (podStatus *PodStatus) GetContainerStatusByName(name string) *container.ContainerStatus {
+	for _, cs := range podStatus.ContainerStatuses {
+		if cs.Name == name {
+			return cs
+		}
+	}
+	return nil
+}
+
 type Pods []Pod
+
+type PodStatuses = map[types.UID]*PodStatus
 
 // FullName is the full name of the pod
 func (pod *Pod) FullName() string {
@@ -77,13 +88,14 @@ func (pods Pods) GetPodByFullName(fullName string) *Pod {
 	return nil
 }
 
-type PodManager interface {
+type Manager interface {
 	CreatePod(pod *apiObject.Pod) error
 	GetPodStatus(pod *apiObject.Pod) (*PodStatus, error)
+	GetPodStatuses() (PodStatuses, error)
 }
 
 type podManager struct {
-	cm container.ContainerManager
+	cm container.Manager
 	im image.ImageManager
 }
 
@@ -112,20 +124,12 @@ func (pm *podManager) toVolumeBinds() []string {
 	return nil
 }
 
-func (pm *podManager) containerFullName(containerName, podFullName string, podUID string, restartCount int) string {
-	return "k8s_" + containerName + "_" + podFullName + "_" + podUID + "_" + strconv.Itoa(restartCount)
-}
-
 func (pm *podManager) pauseContainerFullName(podFullName string, podUID types.UID) string {
-	return pm.containerFullName(pauseContainerName, podFullName, podUID, 0)
-}
-
-func (pm *podManager) toContainerReference(containerFullName string) string {
-	return "container:" + containerFullName
+	return podutil.ContainerFullName(pauseContainerName, podFullName, podUID, 0)
 }
 
 func (pm *podManager) toPauseContainerReference(podFullName string, podUID types.UID) string {
-	return pm.toContainerReference(pm.pauseContainerFullName(podFullName, podUID))
+	return podutil.ToContainerReference(pm.pauseContainerFullName(podFullName, podUID))
 }
 
 func (pm *podManager) addPortBindings(portBindings container.PortBindings, ports []apiObject.ContainerPort) error {
@@ -348,7 +352,7 @@ func (pm *podManager) startCommonContainer(pod *apiObject.Pod, c *apiObject.Cont
 	// Step 3: Create a container
 	fmt.Println("Now create the container")
 
-	containerFullName := pm.containerFullName(c.Name, podFullName, podUID, 0)
+	containerFullName := podutil.ContainerFullName(c.Name, podFullName, podUID, 0)
 
 	var ID container.ContainerID
 	ID, err = pm.cm.CreateContainer(containerFullName, pm.getCommonContainerCreateConfig(c, podFullName, podUID))
@@ -363,7 +367,7 @@ func (pm *podManager) startCommonContainer(pod *apiObject.Pod, c *apiObject.Cont
 	return err
 }
 
-func NewPodManager() PodManager {
+func NewPodManager() Manager {
 	return &podManager{
 		cm: container.NewContainerManager(),
 		im: image.NewImageManager(),
@@ -405,4 +409,50 @@ func (pm *podManager) GetPodStatus(pod *apiObject.Pod) (*PodStatus, error) {
 		IPs:               nil,
 		ContainerStatuses: containerStatuses,
 	}, nil
+}
+
+func (pm *podManager) getAllPodContainers() (map[types.UID][]*container.ContainerStatus, error) {
+	containers, err := pm.cm.ListContainers(&container.ContainerListConfig{
+		All: true,
+		LabelSelector: container.LabelSelector{
+			KubernetesPodUIDLabel: "",
+		}})
+	if err != nil {
+		return nil, err
+	}
+
+	containerStatuses := make(map[types.UID][]*container.ContainerStatus)
+	for _, c := range containers {
+		inspection, err := pm.cm.InspectContainer(c.ID)
+		if err != nil {
+			return nil, err
+		}
+		var cs *container.ContainerStatus
+		if podUID, exists := inspection.Config.Labels[KubernetesPodUIDLabel]; exists {
+			cs, err = pm.inspectionToContainerStatus(&inspection)
+			if err != nil {
+				return nil, err
+			}
+			fmt.Printf("Container %s belongs to pod %s\n", cs.Name, podUID)
+			containerStatuses[podUID] = append(containerStatuses[podUID], cs)
+		} else {
+			panic("It's impossible!")
+		}
+	}
+	return containerStatuses, nil
+}
+
+func (pm *podManager) GetPodStatuses() (PodStatuses, error) {
+	allContainerStatuses, err := pm.getAllPodContainers()
+	if err != nil {
+		return nil, err
+	}
+	podStatuses := make(PodStatuses)
+	for podUID, cs := range allContainerStatuses {
+		podStatuses[podUID] = &PodStatus{
+			ID:                podUID,
+			ContainerStatuses: cs,
+		}
+	}
+	return podStatuses, nil
 }
