@@ -4,22 +4,29 @@ import (
 	"fmt"
 	"minik8s/apiObject"
 	"minik8s/kubelet/src/runtime/pleg"
-	"minik8s/kubelet/src/runtime/pod"
+	"minik8s/kubelet/src/runtime/podworker"
+	"minik8s/kubelet/src/runtime/runtime"
 	"minik8s/kubelet/src/status"
 )
 
 type Kubelet struct {
-	statusManager status.Manager
-	podManager    pod.Manager
-	plegManager   pleg.Manager
+	statusManager    status.Manager
+	runtimeManager   runtime.Manager
+	plegManager      pleg.Manager
+	podWorkerManager podworker.Manager
 }
 
 func NewKubelet() *Kubelet {
 	kl := &Kubelet{
-		statusManager: status.NewStatusManager(),
-		podManager:    pod.NewPodManager(),
+		statusManager:  status.NewStatusManager(),
+		runtimeManager: runtime.NewPodManager(),
 	}
-	kl.plegManager = pleg.NewPlegManager(kl.statusManager, kl.podManager)
+	kl.plegManager = pleg.NewPlegManager(kl.statusManager, kl.runtimeManager)
+	kl.podWorkerManager = podworker.NewPodWorkerManager(kl.runtimeManager.CreatePod,
+		kl.runtimeManager.PodCreateAndStartContainer,
+		kl.runtimeManager.PodStartContainer,
+		kl.runtimeManager.PodRemoveContainer,
+		kl.runtimeManager.PodRestartContainer)
 	return kl
 }
 
@@ -38,14 +45,17 @@ func (kl *Kubelet) syncLoopIteration(updates <-chan *apiObject.Pod) bool {
 	select {
 	case podUpdate := <-updates:
 		fmt.Printf("podUpdate: %v\n", podUpdate)
-		kl.statusManager.UpdatePod(podUpdate.UID(), podUpdate)
-		err := kl.podManager.CreatePod(podUpdate)
-		if err != nil {
-			return false
+		podUID := podUpdate.UID()
+
+		// If pod is newly created
+		if kl.statusManager.GetPod(podUID) == nil {
+			kl.statusManager.UpdatePod(podUpdate.UID(), podUpdate)
+			kl.podWorkerManager.AddPod(podUpdate)
 		}
-	case lifecycleEvent := <-kl.plegManager.Updates():
-		fmt.Printf("Receive ple: %v, data = %v\n", lifecycleEvent, lifecycleEvent.Data)
-	default:
+
+	case event := <-kl.plegManager.Updates():
+		fmt.Printf("Receive ple: %v, data = %v\n", event, event.Data)
+		kl.podWorkerManager.UpdatePod(event)
 	}
 	return true
 }

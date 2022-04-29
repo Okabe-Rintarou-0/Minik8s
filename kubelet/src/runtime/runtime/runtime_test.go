@@ -1,4 +1,4 @@
-package pod
+package runtime
 
 import (
 	"fmt"
@@ -14,38 +14,38 @@ import (
 
 func readPod(podPath string) *apiObject.Pod {
 	content, _ := ioutil.ReadFile(podPath)
-	pod := apiObject.Pod{}
-	_ = yaml.Unmarshal(content, &pod)
-	return &pod
+	testPod := apiObject.Pod{}
+	_ = yaml.Unmarshal(content, &testPod)
+	return &testPod
 }
 
 func TestGetPodStatuses(t *testing.T) {
 	var err error
-	pod := readPod("./testPod.yaml")
+	testPod := readPod("./testPod.yaml")
 
 	u1 := uuid.NewV4()
 	fmt.Printf("UUID for test: %s\n", u1)
-	pod.Metadata.UID = u1.String()
+	testPod.Metadata.UID = u1.String()
 
-	pm := NewPodManager()
-	err = pm.CreatePod(pod)
+	rm := NewPodManager()
+	err = rm.CreatePod(testPod)
 	if err != nil {
 		fmt.Println(err.Error())
 	}
 	assert.Nil(t, err)
 
-	pod = readPod("./testPod2.yaml")
+	testPod = readPod("./testPod2.yaml")
 	u2 := uuid.NewV4()
 	fmt.Printf("UUID for test: %s\n", u2)
-	pod.Metadata.UID = u2.String()
+	testPod.Metadata.UID = u2.String()
 
-	err = pm.CreatePod(pod)
+	err = rm.CreatePod(testPod)
 	if err != nil {
 		fmt.Println(err.Error())
 	}
 	assert.Nil(t, err)
 
-	podStatuses, err := pm.GetPodStatuses()
+	podStatuses, err := rm.GetPodStatuses()
 	assert.Nil(t, err)
 	for _, ps := range podStatuses {
 		fmt.Println(ps.ID)
@@ -54,20 +54,20 @@ func TestGetPodStatuses(t *testing.T) {
 
 func TestCreatePod(t *testing.T) {
 	var err error
-	pod := readPod("./testPod.yaml")
+	testPod := readPod("./testPod.yaml")
 
 	u1 := uuid.NewV4()
 	fmt.Printf("UUID for test: %s\n", u1)
-	pod.Metadata.UID = u1.String()
+	testPod.Metadata.UID = u1.String()
 
-	pm := NewPodManager()
-	err = pm.CreatePod(pod)
+	rm := NewPodManager()
+	err = rm.CreatePod(testPod)
 	if err != nil {
 		fmt.Println(err.Error())
 	}
 	assert.Nil(t, err)
 
-	podStatus, err := pm.GetPodStatus(pod)
+	podStatus, err := rm.GetPodStatus(testPod)
 	assert.Nil(t, err)
 	for _, cs := range podStatus.ContainerStatuses {
 		fmt.Println(cs.Name, cs.Name, cs.State, cs.CreatedAt.String())
@@ -76,28 +76,28 @@ func TestCreatePod(t *testing.T) {
 
 func TestStartContainer(t *testing.T) {
 	var err error
-	pod := readPod("./testPod.yaml")
+	testPod := readPod("./testPod.yaml")
 
 	u1 := uuid.NewV4()
 	fmt.Printf("UUID for test: %s\n", u1)
-	pod.Metadata.UID = u1.String()
+	testPod.Metadata.UID = u1.String()
 
-	pm := &podManager{
+	rm := &runtimeManager{
 		cm: container.NewContainerManager(),
 		im: image.NewImageManager(),
 	}
-	err = pm.startPauseContainer(pod)
+	err = rm.startPauseContainer(testPod)
 	if err != nil {
 		fmt.Println(err.Error())
 	}
 
-	err = pm.startCommonContainer(pod, &pod.Spec.Containers[0])
+	err = rm.startCommonContainer(testPod, &testPod.Spec.Containers[0])
 	if err != nil {
 		fmt.Println(err.Error())
 	}
 	assert.Nil(t, err)
 
-	containers, err := pm.cm.ListContainers(&container.ContainerListConfig{
+	containers, err := rm.cm.ListContainers(&container.ContainerListConfig{
 		Quiet:  false,
 		Size:   false,
 		All:    true,
@@ -106,7 +106,7 @@ func TestStartContainer(t *testing.T) {
 		Before: "",
 		Limit:  5,
 		LabelSelector: container.LabelSelector{
-			KubernetesPodUIDLabel: pod.UID(),
+			KubernetesPodUIDLabel: testPod.UID(),
 		},
 	})
 	if err != nil {
