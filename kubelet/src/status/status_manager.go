@@ -26,12 +26,22 @@ func (pc *podCache) getInternal(podUID types.UID) *apiObject.Pod {
 	return nil
 }
 
+func (pc *podCache) deleteInternal(podUID types.UID) {
+	pc.cacheLock.Lock()
+	defer pc.cacheLock.Unlock()
+	delete(pc.cache, podUID)
+}
+
 func (pc *podCache) GetPod(podUID types.UID) *apiObject.Pod {
 	return pc.getInternal(podUID)
 }
 
 func (pc *podCache) UpdatePod(podUID types.UID, newPod *apiObject.Pod) {
 	pc.updateInternal(podUID, newPod)
+}
+
+func (pc *podCache) DeletePod(podUID types.UID) {
+	pc.deleteInternal(podUID)
 }
 
 func newPodCache() *podCache {
@@ -44,6 +54,7 @@ func newPodCache() *podCache {
 type Manager interface {
 	GetPod(podUID types.UID) *apiObject.Pod
 	UpdatePod(podUID types.UID, newPod *apiObject.Pod)
+	DeletePod(podUID types.UID)
 }
 
 type manager struct {
@@ -56,6 +67,10 @@ func (m *manager) GetPod(podUID types.UID) *apiObject.Pod {
 
 func (m *manager) UpdatePod(podUID types.UID, newPod *apiObject.Pod) {
 	m.cache.UpdatePod(podUID, newPod)
+}
+
+func (m *manager) DeletePod(podUID types.UID) {
+	m.cache.DeletePod(podUID)
 }
 
 func NewStatusManager() Manager {

@@ -235,6 +235,53 @@ func (rm *runtimeManager) startPauseContainer(pod *apiObject.Pod) error {
 	return err
 }
 
+// startPauseContainer starts the pause container that other common containers need
+func (rm *runtimeManager) removePauseContainer(pod *apiObject.Pod) error {
+	// Prepare
+	podFullName := pod.FullName()
+	podUID := pod.UID()
+
+	containerFullName := rm.pauseContainerFullName(podFullName, podUID)
+	err := rm.cm.StopContainer(containerFullName, &container.ContainerStopConfig{})
+	if err != nil {
+		return err
+	}
+	return rm.cm.RemoveContainer(containerFullName, &container.ContainerRemoveConfig{})
+}
+
+func (rm *runtimeManager) removePodCommonContainers(pod *apiObject.Pod) error {
+	// Prepare
+	containers, err := rm.cm.ListContainers(&container.ContainerListConfig{
+		All: true,
+		LabelSelector: container.LabelSelector{
+			KubernetesPodUIDLabel: pod.UID(),
+		}},
+	)
+
+	if err != nil {
+		return err
+	}
+
+	pauseContainerFullName := "/" + rm.pauseContainerFullName(pod.FullName(), pod.UID())
+
+	for _, c := range containers {
+		// Not include pause container
+		if c.Name == pauseContainerFullName {
+			continue
+		}
+		err = rm.cm.StopContainer(c.ID, &container.ContainerStopConfig{})
+		if err != nil {
+			return err
+		}
+
+		err = rm.cm.RemoveContainer(c.ID, &container.ContainerRemoveConfig{})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // startCommonContainer starts a common container according to the given spec
 func (rm *runtimeManager) startCommonContainer(pod *apiObject.Pod, c *apiObject.Container) error {
 	// Step 1: Do we need pull the image?

@@ -15,12 +15,14 @@ type workChanMap map[types.UID]chan podWork
 
 type Manager interface {
 	AddPod(pod *apiObject.Pod)
+	DeletePod(pod *apiObject.Pod)
 	UpdatePod(event *pleg.PodLifecycleEvent)
 }
 
 type manager struct {
 	workChanMap                  workChanMap
 	podCreateFn                  PodCreateFn
+	podDeleteFn                  PodDeleteFn
 	podContainerCreateAndStartFn PodContainerCreateAndStartFn
 	podContainerStartFn          PodContainerStartFn
 	podContainerRemoveFn         PodContainerRemoveFn
@@ -30,6 +32,7 @@ type manager struct {
 func (m *manager) newWorker() *podWorker {
 	return &podWorker{
 		PodCreateFn:                  m.podCreateFn,
+		PodDeleteFn:                  m.podDeleteFn,
 		PodContainerStartFn:          m.podContainerStartFn,
 		PodContainerCreateAndStartFn: m.podContainerCreateAndStartFn,
 		PodContainerRemoveFn:         m.podContainerRemoveFn,
@@ -62,11 +65,19 @@ func (m *manager) AddPod(pod *apiObject.Pod) {
 	go worker.Run(workCh)
 }
 
-func NewPodWorkerManager(podCreateFn PodCreateFn, podContainerCreateAndStartFn PodContainerCreateAndStartFn,
+func (m *manager) DeletePod(pod *apiObject.Pod) {
+	podUID := pod.UID()
+	workCh := m.workChanMap[podUID]
+	workCh <- newPodDeleteWork(pod)
+	delete(m.workChanMap, podUID)
+}
+
+func NewPodWorkerManager(podCreateFn PodCreateFn, podDeleteFn PodDeleteFn, podContainerCreateAndStartFn PodContainerCreateAndStartFn,
 	podContainerStartFn PodContainerStartFn, podContainerRemoveFn PodContainerRemoveFn, podContainerRestartFn PodContainerRestartFn) Manager {
 	return &manager{
 		workChanMap:                  make(workChanMap),
 		podCreateFn:                  podCreateFn,
+		podDeleteFn:                  podDeleteFn,
 		podContainerCreateAndStartFn: podContainerCreateAndStartFn,
 		podContainerStartFn:          podContainerStartFn,
 		podContainerRemoveFn:         podContainerRemoveFn,

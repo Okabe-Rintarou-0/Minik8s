@@ -168,10 +168,9 @@ func (m *manager) compareAndProduceLifecycleEvents(apiPod *apiObject.Pod, runtim
 	record := m.podStatusRecords.GetRecord(podUID)
 	oldStatus, currentStatus := record.OldStatus, record.CurrentStatus
 
-	// apiPod == nil means the pod is no longer existent, remove all the containers
-	if apiPod == nil && oldStatus != nil {
-		m.removeAllContainers(runtimePodStatus)
-		m.podStatusRecords.RemoveRecord(podUID)
+	// apiPod == nil means the pod is no longer existent, skip this
+	if apiPod == nil {
+		return
 	}
 
 	notIncludedContainerNameMap := make(map[string]struct{})

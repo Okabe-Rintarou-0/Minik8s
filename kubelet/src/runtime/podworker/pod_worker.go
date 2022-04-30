@@ -11,6 +11,7 @@ type podWorkType byte
 
 const (
 	podCreate podWorkType = iota
+	podDelete
 	podContainerStart
 	podContainerCreateAndStart
 	podContainerRemove
@@ -24,11 +25,17 @@ const (
 //PodRestartContainer(pod *apiObject.Pod, containerID container.ContainerID, fullName string) error
 
 type PodCreateFn func(pod *apiObject.Pod) error
+type PodDeleteFn func(pod *apiObject.Pod) error
 type PodContainerStartFn func(podUID types.UID, ID container.ContainerID) error
 type PodContainerCreateAndStartFn func(pod *apiObject.Pod, target *apiObject.Container) error
 type PodContainerRemoveFn func(podUID types.UID, ID container.ContainerID) error
 type PodContainerRestartFn func(pod *apiObject.Pod, containerID container.ContainerID, fullName string) error
+
 type podCreateFnArg struct {
+	pod *apiObject.Pod
+}
+
+type podDeleteFnArg struct {
 	pod *apiObject.Pod
 }
 
@@ -62,6 +69,7 @@ type podWork struct {
 
 type podWorker struct {
 	PodCreateFn                  PodCreateFn
+	PodDeleteFn                  PodDeleteFn
 	PodContainerStartFn          PodContainerStartFn
 	PodContainerRestartFn        PodContainerRestartFn
 	PodContainerCreateAndStartFn PodContainerCreateAndStartFn
@@ -72,6 +80,13 @@ func newPodCreateWork(pod *apiObject.Pod) podWork {
 	return podWork{
 		WorkType: podCreate,
 		Arg:      podCreateFnArg{pod},
+	}
+}
+
+func newPodDeleteWork(pod *apiObject.Pod) podWork {
+	return podWork{
+		WorkType: podDelete,
+		Arg:      podDeleteFnArg{pod},
 	}
 }
 
@@ -109,6 +124,9 @@ func (w *podWorker) doWork(work podWork) {
 	case podCreate:
 		arg := work.Arg.(podCreateFnArg)
 		err = w.PodCreateFn(arg.pod)
+	case podDelete:
+		arg := work.Arg.(podDeleteFnArg)
+		err = w.PodDeleteFn(arg.pod)
 	case podContainerCreateAndStart:
 		arg := work.Arg.(podContainerCreateAndStartFnArg)
 		err = w.PodContainerCreateAndStartFn(arg.pod, arg.target)

@@ -9,6 +9,19 @@ import (
 	"minik8s/kubelet/src/status"
 )
 
+const (
+	CreateAction PodUpdateAction = iota
+	DeleteAction
+	UpdateAction
+)
+
+type PodUpdateAction byte
+
+type PodUpdate struct {
+	Action PodUpdateAction
+	Target *apiObject.Pod
+}
+
 type Kubelet struct {
 	statusManager    status.Manager
 	runtimeManager   runtime.Manager
@@ -22,35 +35,44 @@ func NewKubelet() *Kubelet {
 		runtimeManager: runtime.NewPodManager(),
 	}
 	kl.plegManager = pleg.NewPlegManager(kl.statusManager, kl.runtimeManager)
-	kl.podWorkerManager = podworker.NewPodWorkerManager(kl.runtimeManager.CreatePod,
+	kl.podWorkerManager = podworker.NewPodWorkerManager(
+		kl.runtimeManager.CreatePod,
+		kl.runtimeManager.DeletePod,
 		kl.runtimeManager.PodCreateAndStartContainer,
 		kl.runtimeManager.PodStartContainer,
 		kl.runtimeManager.PodRemoveContainer,
-		kl.runtimeManager.PodRestartContainer)
+		kl.runtimeManager.PodRestartContainer,
+	)
 	return kl
 }
 
-func (kl *Kubelet) Run(updates <-chan *apiObject.Pod) {
+func (kl *Kubelet) Run(updates <-chan PodUpdate) {
 	go kl.plegManager.Start()
 	kl.syncLoop(updates)
 }
 
-func (kl *Kubelet) syncLoop(updates <-chan *apiObject.Pod) {
+func (kl *Kubelet) syncLoop(updates <-chan PodUpdate) {
 	for kl.syncLoopIteration(updates) {
 
 	}
 }
 
-func (kl *Kubelet) syncLoopIteration(updates <-chan *apiObject.Pod) bool {
+func (kl *Kubelet) syncLoopIteration(updates <-chan PodUpdate) bool {
 	select {
 	case podUpdate := <-updates:
-		fmt.Printf("podUpdate: %v\n", podUpdate)
-		podUID := podUpdate.UID()
-
-		// If pod is newly created
-		if kl.statusManager.GetPod(podUID) == nil {
-			kl.statusManager.UpdatePod(podUpdate.UID(), podUpdate)
-			kl.podWorkerManager.AddPod(podUpdate)
+		fmt.Printf("Received podUpdate %v: %v\n", podUpdate.Action, podUpdate.Target)
+		pod := podUpdate.Target
+		podUID := pod.UID()
+		switch podUpdate.Action {
+		case CreateAction:
+			// If pod is newly created
+			if kl.statusManager.GetPod(podUID) == nil {
+				kl.statusManager.UpdatePod(podUID, pod)
+				kl.podWorkerManager.AddPod(pod)
+			}
+		case DeleteAction:
+			kl.statusManager.DeletePod(podUID)
+			kl.podWorkerManager.DeletePod(pod)
 		}
 
 	case event := <-kl.plegManager.Updates():

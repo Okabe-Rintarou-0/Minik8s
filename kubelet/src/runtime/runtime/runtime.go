@@ -89,6 +89,7 @@ func (pods Pods) GetPodByFullName(fullName string) *Pod {
 
 type Manager interface {
 	CreatePod(pod *apiObject.Pod) error
+	DeletePod(pod *apiObject.Pod) error
 	GetPodStatus(pod *apiObject.Pod) (*PodStatus, error)
 	GetPodStatuses() (PodStatuses, error)
 	PodRemoveContainer(podUID types.UID, ID container.ContainerID) error
@@ -127,6 +128,28 @@ func (rm *runtimeManager) PodRestartContainer(pod *apiObject.Pod, containerID co
 
 func (rm *runtimeManager) PodRemoveContainer(podUID types.UID, ID container.ContainerID) error {
 	return rm.cm.RemoveContainer(ID, &container.ContainerRemoveConfig{})
+}
+
+// DeletePod deletes a pod according to the given api object
+func (rm *runtimeManager) DeletePod(pod *apiObject.Pod) error {
+	// Step 1: Remove common container
+	err := rm.removePodCommonContainers(pod)
+
+	if err != nil {
+		return err
+	}
+
+	// Step 2: Remove init containers
+	/// TODO implement it
+
+	// Step 3: Remove pause containers
+	err = rm.removePauseContainer(pod)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Pod with UID %s has been removed!\n", pod.UID())
+	return nil
 }
 
 // CreatePod create a pod according to the given api object
