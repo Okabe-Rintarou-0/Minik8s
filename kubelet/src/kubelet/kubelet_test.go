@@ -21,7 +21,7 @@ func readPod(podPath string) *apiObject.Pod {
 }
 
 func TestKubelet(t *testing.T) {
-	pod := readPod("./testPod.yaml")
+	pod := readPod("../../test/testPod.yaml")
 	pod.Metadata.UID = uuid.NewV4().String()
 	createAct := PodUpdate{
 		Action: CreateAction,
@@ -41,7 +41,7 @@ func TestKubelet(t *testing.T) {
 		fmt.Println(err.Error())
 	}
 
-	pod2 := readPod("./testPod2.yaml")
+	pod2 := readPod("../../test/testPod2.yaml")
 	pod2.Metadata.UID = pod.UID()
 	fmt.Println(pod2)
 	updateAct := PodUpdate{
@@ -86,7 +86,7 @@ func TestParse(t *testing.T) {
 }
 
 func TestCreatePodWithoutSpecifiedPort(t *testing.T) {
-	pod := readPod("./testPodWithoutSpecifiedPort.yaml")
+	pod := readPod("../../test/testPodWithoutSpecifiedPort.yaml")
 	pod.Metadata.UID = uuid.NewV4().String()
 	createAct := PodUpdate{
 		Action: CreateAction,
