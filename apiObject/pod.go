@@ -115,6 +115,15 @@ type VolumeSource struct {
 	EmptyDir *EmptyDirVolumeSource `yaml:"emptyDir"`
 	HostPath *HostPathVolumeSource `yaml:"hostPath"`
 }
+
+func (vs *VolumeSource) IsEmptyDir() bool {
+	return vs.EmptyDir != nil
+}
+
+func (vs *VolumeSource) IsHostPath() bool {
+	return vs.HostPath != nil
+}
+
 type Volume struct {
 	Name         string `yaml:"name"`
 	VolumeSource `yaml:",inline"`

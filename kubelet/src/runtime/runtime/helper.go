@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"github.com/docker/go-connections/nat"
 	"minik8s/apiObject"
+	"minik8s/kubelet/src/netutil"
 	"minik8s/kubelet/src/podutil"
 	"minik8s/kubelet/src/runtime/container"
 	"minik8s/kubelet/src/runtime/image"
 	"minik8s/kubelet/src/types"
+	"strconv"
 	"time"
 )
 
@@ -31,9 +33,29 @@ func (rm *runtimeManager) toFormattedEnv(containerEnv []apiObject.EnvVar) []stri
 }
 
 // toVolumeBinds returns the binds of volumes
-func (rm *runtimeManager) toVolumeBinds() []string {
-	/// TODO implement it
-	return nil
+func (rm *runtimeManager) toVolumeBinds(pod *apiObject.Pod, target *apiObject.Container) []string {
+	// Get volume devices, create a map
+	// Mapping volume name to its source
+	volumes := make(map[string]*apiObject.VolumeSource)
+	// Now we only support HostPath
+	for _, volume := range pod.Spec.Volumes {
+		if volume.IsHostPath() {
+			volumes[volume.Name] = &volume.VolumeSource
+		}
+	}
+
+	var volumeBinds []string
+	for _, volumeMount := range target.VolumeMounts {
+		volumeName := volumeMount.Name
+		// If the specified volume device is existent, and is hostPath(we only support this type temporarily)
+		if device, exists := volumes[volumeName]; exists && device.IsHostPath() {
+			// Volume bind rule: $(host path):$(container path)
+			mountRule := device.HostPath.Path + ":" + volumeMount.MountPath
+			fmt.Println("mount", mountRule)
+			volumeBinds = append(volumeBinds, mountRule)
+		}
+	}
+	return volumeBinds
 }
 
 func (rm *runtimeManager) pauseContainerFullName(podFullName string, podUID types.UID) string {
@@ -56,6 +78,17 @@ func (rm *runtimeManager) addPortBindings(portBindings container.PortBindings, p
 		if port.HostIP == "" {
 			port.HostIP = "127.0.0.1"
 		}
+
+		// assign a random available port
+		if port.HostPort == "" {
+			randomPort, err := netutil.GetAvailablePort()
+			if err != nil {
+				return err
+			}
+			fmt.Println("using random available port", randomPort)
+			port.HostPort = strconv.Itoa(randomPort)
+		}
+
 		portBindings[containerPort] = []nat.PortBinding{{
 			HostIP:   port.HostIP,
 			HostPort: port.HostPort,
@@ -75,6 +108,7 @@ func (rm *runtimeManager) getPauseContainerCreateConfig(pod *apiObject.Pod) (*co
 		KubernetesPodUIDLabel: pod.UID(),
 	}
 
+	// Because all the containers share the same network namespace with pause container
 	portBindings := container.PortBindings{}
 	portSet := container.PortSet{}
 	for _, c := range pod.Spec.Containers {
@@ -96,7 +130,10 @@ func (rm *runtimeManager) getPauseContainerCreateConfig(pod *apiObject.Pod) (*co
 	}, nil
 }
 
-func (rm *runtimeManager) getCommonContainerCreateConfig(c *apiObject.Container, podFullName string, podUID types.UID) *container.ContainerCreateConfig {
+func (rm *runtimeManager) getCommonContainerCreateConfig(pod *apiObject.Pod, c *apiObject.Container) *container.ContainerCreateConfig {
+	podUID := pod.UID()
+	podFullName := pod.FullName()
+
 	// the label of given podUID
 	labels := map[string]string{
 		KubernetesPodUIDLabel: podUID,
@@ -114,7 +151,7 @@ func (rm *runtimeManager) getCommonContainerCreateConfig(c *apiObject.Container,
 		NetworkMode: container.NetworkMode(pauseContainerRef),
 		IpcMode:     container.IpcMode(pauseContainerRef),
 		PidMode:     container.PidMode(pauseContainerRef),
-		Binds:       nil,
+		Binds:       rm.toVolumeBinds(pod, c),
 		VolumesFrom: []string{pauseContainerFullName},
 	}
 }
@@ -314,7 +351,7 @@ func (rm *runtimeManager) startCommonContainer(pod *apiObject.Pod, c *apiObject.
 	containerFullName := podutil.ContainerFullName(c.Name, podFullName, podUID, 0)
 
 	var ID container.ContainerID
-	ID, err = rm.cm.CreateContainer(containerFullName, rm.getCommonContainerCreateConfig(c, podFullName, podUID))
+	ID, err = rm.cm.CreateContainer(containerFullName, rm.getCommonContainerCreateConfig(pod, c))
 	if err != nil {
 		return err
 	}
