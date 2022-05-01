@@ -6,6 +6,10 @@ import (
 	"strings"
 )
 
+func PodFullName(name, namespace string) string {
+	return name + "_" + namespace
+}
+
 func ContainerFullName(containerName, podFullName string, podUID string, restartCount int) string {
 	return "k8s_" + containerName + "_" + podFullName + "_" + podUID + "_" + strconv.Itoa(restartCount)
 }

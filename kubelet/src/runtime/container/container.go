@@ -63,6 +63,7 @@ type Manager interface {
 	CreateContainer(name string, config *ContainerCreateConfig) (string, error)
 	RemoveContainer(ID ContainerID, config *ContainerRemoveConfig) error
 	StartContainer(ID ContainerID, config *ContainerStartConfig) error
+	RenameContainer(ID ContainerID, newName string) error
 	StopContainer(ID ContainerID, config *ContainerStopConfig) error
 	InspectContainer(ID ContainerID) (ContainerInspectInfo, error)
 }
@@ -72,6 +73,10 @@ func NewContainerManager() Manager {
 }
 
 type containerManager struct {
+}
+
+func (cm *containerManager) RenameContainer(ID ContainerID, newName string) error {
+	return docker.Client.ContainerRename(docker.Ctx, ID, newName)
 }
 
 func (cm *containerManager) ListContainers(config *ContainerListConfig) ([]*Container, error) {
@@ -138,6 +143,10 @@ func (cm *containerManager) CreateContainer(name string, config *ContainerCreate
 	}
 
 	return res.ID, err
+}
+
+func (cm *containerManager) RemoveContainerByName(name string, config *ContainerRemoveConfig) error {
+	return docker.Client.ContainerRemove(docker.Ctx, name, *config)
 }
 
 func (cm *containerManager) RemoveContainer(ID ContainerID, config *ContainerRemoveConfig) error {
