@@ -132,6 +132,7 @@ func (rm *runtimeManager) PodRemoveContainer(podUID types.UID, ID container.Cont
 
 // DeletePod deletes a pod according to the given api object
 func (rm *runtimeManager) DeletePod(pod *apiObject.Pod) error {
+	fmt.Println("Delete pod", pod.UID())
 	// Step 1: Remove common container
 	err := rm.removePodCommonContainers(pod)
 

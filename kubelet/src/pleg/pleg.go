@@ -235,11 +235,7 @@ func (m *manager) relist() error {
 	return nil
 }
 
-func (m *manager) Updates() chan *PodLifecycleEvent {
-	return m.eventCh
-}
-
-func (m *manager) Start() {
+func (m *manager) run() {
 	ticker := time.Tick(relistIntervalSeconds * time.Second)
 	for {
 		select {
@@ -249,4 +245,12 @@ func (m *manager) Start() {
 			}
 		}
 	}
+}
+
+func (m *manager) Updates() chan *PodLifecycleEvent {
+	return m.eventCh
+}
+
+func (m *manager) Start() {
+	go m.run()
 }

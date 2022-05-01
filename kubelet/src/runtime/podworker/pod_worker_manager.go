@@ -2,8 +2,8 @@ package podworker
 
 import (
 	"minik8s/apiObject"
+	"minik8s/kubelet/src/pleg"
 	"minik8s/kubelet/src/runtime/container"
-	"minik8s/kubelet/src/runtime/pleg"
 	"minik8s/kubelet/src/types"
 )
 
@@ -16,7 +16,8 @@ type workChanMap map[types.UID]chan podWork
 type Manager interface {
 	AddPod(pod *apiObject.Pod)
 	DeletePod(pod *apiObject.Pod)
-	UpdatePod(event *pleg.PodLifecycleEvent)
+	UpdatePod(newPod *apiObject.Pod)
+	SyncPod(event *pleg.PodLifecycleEvent)
 }
 
 type manager struct {
@@ -40,7 +41,14 @@ func (m *manager) newWorker() *podWorker {
 	}
 }
 
-func (m *manager) UpdatePod(event *pleg.PodLifecycleEvent) {
+func (m *manager) UpdatePod(newPod *apiObject.Pod) {
+	podUID := newPod.UID()
+	workCh := m.workChanMap[podUID]
+	workCh <- newPodDeleteWork(newPod)
+	workCh <- newPodCreateWork(newPod)
+}
+
+func (m *manager) SyncPod(event *pleg.PodLifecycleEvent) {
 	workCh, exists := m.workChanMap[event.ID]
 	if !exists {
 		return

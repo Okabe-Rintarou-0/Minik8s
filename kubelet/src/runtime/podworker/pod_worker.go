@@ -122,9 +122,11 @@ func (w *podWorker) doWork(work podWork) {
 	var err error
 	switch work.WorkType {
 	case podCreate:
+		fmt.Println("pod worker received pod create job")
 		arg := work.Arg.(podCreateFnArg)
 		err = w.PodCreateFn(arg.pod)
 	case podDelete:
+		fmt.Println("pod worker received pod delete job")
 		arg := work.Arg.(podDeleteFnArg)
 		err = w.PodDeleteFn(arg.pod)
 	case podContainerCreateAndStart:
@@ -137,6 +139,7 @@ func (w *podWorker) doWork(work podWork) {
 		arg := work.Arg.(podContainerStartFnArg)
 		err = w.PodContainerStartFn(arg.podUID, arg.ID)
 	case podContainerRestart:
+		fmt.Println("pod worker received restart job")
 		arg := work.Arg.(podContainerRestartFnArg)
 		err = w.PodContainerRestartFn(arg.pod, arg.ID, arg.fullName)
 	}

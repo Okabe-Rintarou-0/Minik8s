@@ -1,11 +1,13 @@
 package kubelet
 
 import (
+	"encoding/json"
 	"fmt"
 	uuid "github.com/satori/go.uuid"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
 	"minik8s/apiObject"
+	"minik8s/kubelet/src/listwatch"
 	"minik8s/kubelet/src/podutil"
 	"testing"
 	"time"
@@ -18,29 +20,62 @@ func readPod(podPath string) *apiObject.Pod {
 	return &pod
 }
 func TestKubelet(t *testing.T) {
-	updates := make(chan PodUpdate, 5)
 	pod := readPod("./testPod.yaml")
 	pod.Metadata.UID = uuid.NewV4().String()
-	updates <- PodUpdate{
+	createAct := PodUpdate{
 		Action: CreateAction,
 		Target: pod,
 	}
-	kl := NewKubelet()
+	deleteAct := PodUpdate{
+		Action: DeleteAction,
+		Target: pod,
+	}
+	createMsg, err := json.Marshal(createAct)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
 
-	// after 15s, delete the pod
+	deleteMsg, err := json.Marshal(deleteAct)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
+	pod2 := readPod("./testPod2.yaml")
+	pod2.Metadata.UID = pod.UID()
+	fmt.Println(pod2)
+	updateAct := PodUpdate{
+		Action: UpdateAction,
+		Target: pod2,
+	}
+	updateMsg, err := json.Marshal(updateAct)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
+	// after 5s, create the pod
+	// after 15s, update the pod
+	// after 50s, delete the pod
 	go func() {
-		timer := time.NewTimer(time.Second * 15)
-		select {
-		case <-timer.C:
-			fmt.Println("Now delete the pod")
-			updates <- PodUpdate{
-				Action: DeleteAction,
-				Target: pod,
+		createTimer := time.NewTimer(time.Second * 5)
+		updateTimer := time.NewTimer(time.Second * 50)
+		deleteTimer := time.NewTimer(time.Second * 100)
+		for i := 0; i < 3; i++ {
+			select {
+			case <-deleteTimer.C:
+				fmt.Println("Now delete the pod")
+				listwatch.Publish(PodUpdateTopic, deleteMsg)
+			case <-updateTimer.C:
+				fmt.Println("Now update the pod")
+				listwatch.Publish(PodUpdateTopic, updateMsg)
+			case <-createTimer.C:
+				fmt.Println("Now create the pod")
+				listwatch.Publish(PodUpdateTopic, createMsg)
 			}
 		}
 	}()
 
-	kl.Run(updates)
+	kl := NewKubelet()
+	kl.Run()
 }
 
 func TestParse(t *testing.T) {
