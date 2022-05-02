@@ -30,6 +30,11 @@ func (tp *ApiObjectType) String() string {
 	return "Unknown"
 }
 
+func IsValidApiObjectType(objectType string) bool {
+	objectType = strings.ToLower(objectType)
+	return objectType == "pod" || objectType == "deployment" || objectType == "service"
+}
+
 func isLetter(char rune) bool {
 	return char >= 'a' && char <= 'z' || char >= 'A' && char <= 'Z'
 }
