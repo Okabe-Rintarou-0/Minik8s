@@ -75,7 +75,7 @@ type ContainerLivenessProbeConfig struct {
 
 type ContainerLifecycleTaskConfig struct {
 	Exec struct {
-		Command []string `yaml:"command,flow"`
+		Command []string `yaml:"cmd,flow"`
 	} `yaml:"exec"`
 }
 
@@ -94,7 +94,7 @@ type Container struct {
 	Name            string                       `yaml:"name"`
 	Image           string                       `yaml:"image"`
 	ImagePullPolicy string                       `yaml:"imagePullPolicy"`
-	Command         []string                     `yaml:"command,flow"`
+	Command         []string                     `yaml:"cmd,flow"`
 	Args            []string                     `yaml:"args,flow"`
 	Env             []EnvVar                     `yaml:"env"`
 	Resources       ContainerResources           `yaml:"resources"`
