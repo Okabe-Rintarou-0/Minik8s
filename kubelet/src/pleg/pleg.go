@@ -92,11 +92,10 @@ type Manager interface {
 	Start()
 }
 
-func NewPlegManager(statusManager status.Manager, podManager runtime.Manager) Manager {
+func NewPlegManager(statusManager status.Manager) Manager {
 	return &manager{
 		eventCh:          make(chan *PodLifecycleEvent, eventChannelSize),
 		statusManager:    statusManager,
-		podManager:       podManager,
 		podStatusRecords: make(podStatusRecords),
 	}
 }
@@ -104,7 +103,6 @@ func NewPlegManager(statusManager status.Manager, podManager runtime.Manager) Ma
 type manager struct {
 	eventCh          chan *PodLifecycleEvent
 	statusManager    status.Manager
-	podManager       runtime.Manager
 	podStatusRecords podStatusRecords
 }
 
@@ -220,9 +218,10 @@ func (m *manager) compareAndProduceLifecycleEvents(apiPod *apiObject.Pod, runtim
 
 func (m *manager) relist() error {
 	// Step 1: Get all *runtime* pod statuses
-	runtimePodStatuses, err := m.podManager.GetPodStatuses()
-	if err != nil {
-		return err
+	// If there are no available pod info, just return
+	runtimePodStatuses := m.statusManager.GetPodStatuses()
+	if runtimePodStatuses == nil {
+		return nil
 	}
 
 	// Step 2: Get pod api object, and according to the api object, produce lifecycle events

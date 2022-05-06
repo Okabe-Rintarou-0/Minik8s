@@ -13,6 +13,7 @@ type ApiObjectType byte
 
 const (
 	Unknown ApiObjectType = iota
+	Node
 	Pod
 	Service
 	Deployment
@@ -22,6 +23,8 @@ func (tp *ApiObjectType) String() string {
 	switch *tp {
 	case Pod:
 		return "Pod"
+	case Node:
+		return "Node"
 	case Service:
 		return "Service"
 	case Deployment:
