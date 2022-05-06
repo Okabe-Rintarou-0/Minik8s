@@ -118,6 +118,7 @@ func newPodContainerRestartWork(pod *apiObject.Pod, ID container.ContainerID, fu
 	}
 }
 
+//TODO: should check whether we do need to do such work
 func (w *podWorker) doWork(work podWork) {
 	var err error
 	switch work.WorkType {
