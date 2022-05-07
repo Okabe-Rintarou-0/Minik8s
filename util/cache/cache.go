@@ -1,7 +1,7 @@
 package cache
 
 import (
-	"minik8s/kubelet/src/types"
+	"minik8s/apiObject/types"
 	"sync"
 )
 
@@ -9,6 +9,7 @@ type Cache interface {
 	Get(podUID types.UID) interface{}
 	Update(podUID types.UID, newValue interface{})
 	Delete(podUID types.UID)
+	Values() []interface{}
 }
 
 type cache struct {
@@ -37,6 +38,16 @@ func (c *cache) deleteInternal(podUID types.UID) {
 	delete(c.cache, podUID)
 }
 
+func (c *cache) getValuesInternal() []interface{} {
+	c.cacheLock.RLock()
+	defer c.cacheLock.RUnlock()
+	var values []interface{}
+	for _, value := range c.cache {
+		values = append(values, value)
+	}
+	return values
+}
+
 func (c *cache) Get(podUID types.UID) interface{} {
 	return c.getInternal(podUID)
 }
@@ -47,6 +58,10 @@ func (c *cache) Update(podUID types.UID, newValue interface{}) {
 
 func (c *cache) Delete(podUID types.UID) {
 	c.deleteInternal(podUID)
+}
+
+func (c *cache) Values() []interface{} {
+	return c.getValuesInternal()
 }
 
 func Default() Cache {

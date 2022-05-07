@@ -1,10 +1,11 @@
 package podworker
 
 import (
+	"fmt"
 	"minik8s/apiObject"
+	"minik8s/apiObject/types"
 	"minik8s/kubelet/src/pleg"
 	"minik8s/kubelet/src/runtime/container"
-	"minik8s/kubelet/src/types"
 )
 
 const (
@@ -74,10 +75,13 @@ func (m *manager) AddPod(pod *apiObject.Pod) {
 }
 
 func (m *manager) DeletePod(pod *apiObject.Pod) {
+	fmt.Printf("[PodWorkerManager]: delete pod %s\n", pod.UID())
 	podUID := pod.UID()
 	workCh := m.workChanMap[podUID]
 	workCh <- newPodDeleteWork(pod)
+	fmt.Println("Hello")
 	delete(m.workChanMap, podUID)
+	close(workCh)
 }
 
 func NewPodWorkerManager(podCreateFn PodCreateFn, podDeleteFn PodDeleteFn, podContainerCreateAndStartFn PodContainerCreateAndStartFn,

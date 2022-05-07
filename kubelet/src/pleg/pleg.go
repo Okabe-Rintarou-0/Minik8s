@@ -3,11 +3,11 @@ package pleg
 import (
 	"fmt"
 	"minik8s/apiObject"
+	"minik8s/apiObject/types"
 	"minik8s/kubelet/src/podutil"
 	"minik8s/kubelet/src/runtime/container"
 	"minik8s/kubelet/src/runtime/runtime"
 	"minik8s/kubelet/src/status"
-	"minik8s/kubelet/src/types"
 	"time"
 )
 

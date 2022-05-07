@@ -157,8 +157,19 @@ func (pod *Pod) Namespace() string {
 	return pod.Metadata.Namespace
 }
 
+func (pod *Pod) Labels() Labels {
+	return pod.Metadata.Labels
+}
+
 func (pod *Pod) Containers() []Container {
 	return pod.Spec.Containers
+}
+
+func (pod *Pod) AddLabel(name, value string) {
+	if pod.Labels() == nil {
+		pod.Metadata.Labels = make(Labels)
+	}
+	pod.Metadata.Labels[name] = value
 }
 
 func (pod *Pod) GetContainerByName(name string) *Container {
@@ -168,4 +179,9 @@ func (pod *Pod) GetContainerByName(name string) *Container {
 		}
 	}
 	return nil
+}
+
+type PodTemplateSpec struct {
+	Metadata Metadata `yaml:"metadata"`
+	Spec     PodSpec  `yaml:"spec"`
 }

@@ -90,7 +90,7 @@ func TestParse(t *testing.T) {
 }
 
 func TestCreatePodWithoutSpecifiedPort(t *testing.T) {
-	pod := readPod("../../test/testPod.yaml")
+	pod := readPod("../../test/testPodWithoutSpecifiedPort.yaml")
 	pod.Metadata.UID = uuid.NewV4().String()
 	createAct := entity.PodUpdate{
 		Action: entity.CreateAction,

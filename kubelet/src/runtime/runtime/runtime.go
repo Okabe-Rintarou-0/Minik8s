@@ -3,10 +3,10 @@ package runtime
 import (
 	"fmt"
 	"minik8s/apiObject"
+	"minik8s/apiObject/types"
 	"minik8s/kubelet/src/podutil"
 	"minik8s/kubelet/src/runtime/container"
 	"minik8s/kubelet/src/runtime/image"
-	"minik8s/kubelet/src/types"
 	"strconv"
 )
 

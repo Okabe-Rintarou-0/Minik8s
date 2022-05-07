@@ -1,6 +1,6 @@
 package apiObject
 
-type MetadataConfigBase struct {
+type Metadata struct {
 	Name        string      `yaml:"name"`
 	Namespace   string      `yaml:"namespace"`
 	UID         string      `yaml:"uid"`
@@ -8,7 +8,7 @@ type MetadataConfigBase struct {
 	Annotations Annotations `yaml:"annotations"`
 }
 type ApiObjectBase struct {
-	ApiVersion string             `yaml:"apiVersion"`
-	Kind       string             `yaml:"kind"`
-	Metadata   MetadataConfigBase `yaml:"metadata"`
+	ApiVersion string   `yaml:"apiVersion"`
+	Kind       string   `yaml:"kind"`
+	Metadata   Metadata `yaml:"metadata"`
 }

@@ -1,10 +1,14 @@
 package podworker
 
 import (
+	"encoding/json"
 	"fmt"
 	"minik8s/apiObject"
+	"minik8s/apiObject/types"
+	"minik8s/entity"
 	"minik8s/kubelet/src/runtime/container"
-	"minik8s/kubelet/src/types"
+	"minik8s/listwatch"
+	"minik8s/util"
 )
 
 type podWorkType byte
@@ -118,18 +122,56 @@ func newPodContainerRestartWork(pod *apiObject.Pod, ID container.ContainerID, fu
 	}
 }
 
+func (w *podWorker) pod2PodStatus(pod *apiObject.Pod) *entity.PodStatus {
+	return &entity.PodStatus{
+		ID:        pod.UID(),
+		Name:      pod.Name(),
+		Labels:    pod.Labels(),
+		Namespace: pod.Namespace(),
+	}
+}
+
+func (w *podWorker) runningPodStatus(pod *apiObject.Pod) *entity.PodStatus {
+	podStatus := w.pod2PodStatus(pod)
+	podStatus.Status = entity.Running
+	return podStatus
+}
+
+func (w *podWorker) containerCreatingPodStatus(pod *apiObject.Pod) *entity.PodStatus {
+	podStatus := w.pod2PodStatus(pod)
+	podStatus.Status = entity.ContainerCreating
+	return podStatus
+}
+
+func (w *podWorker) deletedPodStatus(pod *apiObject.Pod) *entity.PodStatus {
+	podStatus := w.pod2PodStatus(pod)
+	podStatus.Status = entity.Deleted
+	return podStatus
+}
+
+func (w *podWorker) publishPodStatus(podStatus *entity.PodStatus) {
+	topic := util.PodStatusTopic()
+	msg, _ := json.Marshal(*podStatus)
+	listwatch.Publish(topic, msg)
+}
+
 //TODO: should check whether we do need to do such work
 func (w *podWorker) doWork(work podWork) {
 	var err error
 	switch work.WorkType {
 	case podCreate:
-		fmt.Println("pod worker received pod create job")
 		arg := work.Arg.(podCreateFnArg)
-		err = w.PodCreateFn(arg.pod)
+		fmt.Printf("pod worker received pod create job %s\n", arg.pod.UID())
+		w.publishPodStatus(w.containerCreatingPodStatus(arg.pod))
+		if err = w.PodCreateFn(arg.pod); err == nil {
+			w.publishPodStatus(w.runningPodStatus(arg.pod))
+		}
 	case podDelete:
-		fmt.Println("pod worker received pod delete job")
 		arg := work.Arg.(podDeleteFnArg)
-		err = w.PodDeleteFn(arg.pod)
+		fmt.Printf("pod worker received pod delete job %s\n", arg.pod.UID())
+		if err = w.PodDeleteFn(arg.pod); err == nil {
+			w.publishPodStatus(w.deletedPodStatus(arg.pod))
+		}
 	case podContainerCreateAndStart:
 		arg := work.Arg.(podContainerCreateAndStartFnArg)
 		err = w.PodContainerCreateAndStartFn(arg.pod, arg.target)
@@ -152,7 +194,10 @@ func (w *podWorker) doWork(work podWork) {
 func (w *podWorker) Run(workCh <-chan podWork) {
 	for {
 		select {
-		case work := <-workCh:
+		case work, open := <-workCh:
+			if !open {
+				return
+			}
 			w.doWork(work)
 		}
 	}
