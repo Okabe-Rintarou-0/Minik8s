@@ -26,7 +26,7 @@ type Kubelet struct {
 func New() *Kubelet {
 	kl := &Kubelet{
 		runtimeManager: runtime.NewPodManager(),
-		updates:        make(chan *entity.PodUpdate),
+		updates:        make(chan *entity.PodUpdate, 20),
 	}
 	kl.statusManager = status.NewStatusManager(kl.runtimeManager)
 	kl.plegManager = pleg.NewPlegManager(kl.statusManager)
@@ -48,7 +48,7 @@ func (kl *Kubelet) parsePodUpdate(msg *redis.Message) {
 		fmt.Println(err.Error())
 		return
 	}
-
+	fmt.Printf("Kl received pod update action: %s for %s\n", podUpdate.Action.String(), podUpdate.Target.UID())
 	kl.updates <- podUpdate
 }
 
@@ -77,9 +77,10 @@ func (kl *Kubelet) syncLoop(updates <-chan *entity.PodUpdate) {
 }
 
 func (kl *Kubelet) syncLoopIteration(updates <-chan *entity.PodUpdate) bool {
+	fmt.Println("Sync loop")
 	select {
 	case podUpdate := <-updates:
-		fmt.Printf("Received podUpdate %v: %v\n", podUpdate.Action, podUpdate.Target)
+		fmt.Printf("Received podUpdate %v: %v\n", podUpdate.Action.String(), podUpdate.Target)
 		pod := &podUpdate.Target
 		podUID := pod.UID()
 		switch podUpdate.Action {

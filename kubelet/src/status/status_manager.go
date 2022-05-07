@@ -3,9 +3,9 @@ package status
 import (
 	"fmt"
 	"minik8s/apiObject"
-	"minik8s/kubelet/src/runtime/cache"
+	"minik8s/apiObject/types"
 	"minik8s/kubelet/src/runtime/runtime"
-	"minik8s/kubelet/src/types"
+	"minik8s/util/cache"
 	"sync"
 	"time"
 )
@@ -39,7 +39,9 @@ func (m *manager) UpdatePod(podUID types.UID, newPod *apiObject.Pod) {
 }
 
 func (m *manager) DeletePod(podUID types.UID) {
+	fmt.Println("DeletePod")
 	m.podCache.Delete(podUID)
+	fmt.Println("Delete succeed")
 }
 
 func (m *manager) syncWithApiServer() error {

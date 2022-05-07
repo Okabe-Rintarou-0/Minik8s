@@ -13,7 +13,7 @@ func Watch(topic string, handler WatchHandler) {
 	sub := subscribe(topic)
 	fmt.Println("Subscribe", topic)
 	for msg := range sub.Channel() {
-		fmt.Printf("Received from %s: %s\n", msg.Channel, msg.Payload)
+		//fmt.Printf("Received from %s: %s\n", msg.Channel, msg.Payload)
 		handler(msg)
 	}
 }

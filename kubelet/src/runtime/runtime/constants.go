@@ -6,5 +6,6 @@ const (
 	KubernetesPodNameLabel       = "io.kubernetes.pod.name"
 	KubernetesPodNamespaceLabel  = "io.kubernetes.pod.namespace"
 	KubernetesPodUIDLabel        = "io.kubernetes.pod.uid"
+	KubernetesReplicaSetUIDLabel = "io.kubernetes.rs.uid"
 	KubernetesContainerNameLabel = "io.kubernetes.container.name"
 )
