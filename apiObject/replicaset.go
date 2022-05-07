@@ -23,12 +23,35 @@ type ReplicaSet struct {
 	Spec ReplicaSetSpec `yaml:"spec"`
 }
 
+func (template *PodTemplateSpec) ToPod() *Pod {
+	return &Pod{
+		ApiObjectBase: ApiObjectBase{
+			ApiVersion: "v1",
+			Kind:       "Pod",
+			Metadata:   template.Metadata,
+		},
+		Spec: template.Spec,
+	}
+}
+
+func (rs *ReplicaSet) Template() PodTemplateSpec {
+	return rs.Spec.Template
+}
+
 func (rs *ReplicaSet) UID() types.UID {
 	return rs.Metadata.UID
 }
 
 func (rs *ReplicaSet) Replicas() int {
 	return rs.Spec.Replicas
+}
+
+func (rs *ReplicaSet) Name() string {
+	return rs.Metadata.Name
+}
+
+func (rs *ReplicaSet) Namespace() string {
+	return rs.Metadata.Namespace
 }
 
 func (rs *ReplicaSet) FullName() string {

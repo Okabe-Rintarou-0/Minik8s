@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	uuid "github.com/satori/go.uuid"
-	"gopkg.in/yaml.v2"
-	"io/ioutil"
 	"minik8s/apiObject"
 	"minik8s/apiObject/types"
 	"minik8s/controller/controller/cache"
@@ -17,9 +15,12 @@ import (
 )
 
 const timeoutSeconds = 30
+const workChanSize = 5
 
 type Worker interface {
 	Run()
+	SyncChannel() chan<- struct{}
+	SetTarget(rs *apiObject.ReplicaSet)
 }
 
 type worker struct {
@@ -28,24 +29,35 @@ type worker struct {
 	target       *apiObject.ReplicaSet
 }
 
+func (w *worker) SetTarget(rs *apiObject.ReplicaSet) {
+	if rs != nil {
+		w.target = rs
+	}
+}
+
+func (w *worker) SyncChannel() chan<- struct{} {
+	return w.syncCh
+}
+
 // testMap is just for *TEST*, do not use it.
 // We have to save pod into map, because we don't have an api-server now
 // All we can do is to *Mock*
 var testMap = map[types.UID]*apiObject.Pod{}
 
 func (w *worker) addPodToApiServerForTest() {
+	podTemplate := w.target.Template()
+	pod := podTemplate.ToPod()
+	pod.Metadata.Name = w.target.Name()
+	pod.Metadata.Namespace = w.target.Namespace()
 	topic := util.SchedulerPodUpdateTopic()
-	content, _ := ioutil.ReadFile("./testPod.yaml")
-	pod := apiObject.Pod{}
 	pod.Metadata.UID = uuid.NewV4().String()
 	pod.AddLabel(runtime.KubernetesReplicaSetUIDLabel, w.target.UID())
-	_ = yaml.Unmarshal(content, &pod)
-	fmt.Println("Sending test pod", pod)
+	fmt.Println("Sending test pod", *pod)
 	msg, _ := json.Marshal(entity.PodUpdate{
 		Action: entity.CreateAction,
-		Target: pod,
+		Target: *pod,
 	})
-	testMap[pod.UID()] = &pod
+	testMap[pod.UID()] = pod
 	listwatch.Publish(topic, msg)
 }
 
@@ -64,8 +76,6 @@ func (w *worker) deletePodToApiServerForTest(podUID types.UID) {
 	pod2Delete := testMap[podUID]
 	fmt.Printf("Pod 2 delete is %v\n", pod2Delete)
 	topic := util.SchedulerPodUpdateTopic()
-	content, _ := ioutil.ReadFile("./testPod.yaml")
-	_ = yaml.Unmarshal(content, pod2Delete)
 	msg, _ := json.Marshal(entity.PodUpdate{
 		Action: entity.DeleteAction,
 		Target: *pod2Delete,
@@ -76,6 +86,16 @@ func (w *worker) deletePodToApiServerForTest(podUID types.UID) {
 func (w *worker) deletePod(podUID types.UID) {
 	// just for test now
 	w.deletePodToApiServerForTest(podUID)
+}
+
+func (w *worker) numRunningPod(podStatuses []*entity.PodStatus) int {
+	num := 0
+	for _, podStatus := range podStatuses {
+		if podStatus.Status == entity.Running {
+			num++
+		}
+	}
+	return num
 }
 
 func (w *worker) syncLoopIteration() bool {
@@ -116,9 +136,9 @@ func (w *worker) Run() {
 	w.syncLoop()
 }
 
-func NewWorker(syncCh chan struct{}, target *apiObject.ReplicaSet, cacheManager cache.Manager) Worker {
+func NewWorker(target *apiObject.ReplicaSet, cacheManager cache.Manager) Worker {
 	return &worker{
-		syncCh:       syncCh,
+		syncCh:       make(chan struct{}, workChanSize),
 		target:       target,
 		cacheManager: cacheManager,
 	}

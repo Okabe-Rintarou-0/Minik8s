@@ -13,27 +13,62 @@ import (
 	"minik8s/util"
 )
 
-const workChanSize = 5
+var syncSignal = struct{}{}
 
 type controller struct {
 	cacheManager cache.Manager
-	syncChannels map[types.UID]chan struct{}
+	workers      map[types.UID]Worker
 }
 
 func (c *controller) Sync(podStatus *entity.PodStatus) {
 	needSync := podStatus.Status == entity.Deleted || podStatus.Status == entity.Running
 	if UID, exists := podStatus.Labels[runtime.KubernetesReplicaSetUIDLabel]; exists && needSync {
-		c.syncChannels[UID] <- struct{}{}
-		fmt.Printf("Sync called to %s\n", UID)
+		if worker, stillWorking := c.workers[UID]; stillWorking {
+			worker.SyncChannel() <- syncSignal
+			fmt.Printf("Sync called to %s\n", UID)
+		}
 	}
 }
 
 func (c *controller) AddReplicaSet(rs *apiObject.ReplicaSet) {
-	fmt.Println("add rs!")
-	syncCh := make(chan struct{}, workChanSize)
-	c.syncChannels[rs.UID()] = syncCh
-	worker := NewWorker(syncCh, rs, c.cacheManager)
+	fmt.Printf("Add replicaSet: %s_%s\n", rs.FullName(), rs.UID())
+	worker := NewWorker(rs, c.cacheManager)
+	c.workers[rs.UID()] = worker
 	go worker.Run()
+}
+
+///TODO just for test now, should replace with api-server later
+func (c *controller) deleteReplicaSetPods(rs *apiObject.ReplicaSet) {
+	fmt.Printf("Not delete the pods of rs: %s-%s\n", rs.FullName(), rs.UID())
+	podStatuses := c.cacheManager.GetReplicaSetPodStatuses(rs.UID())
+	for _, podStatus := range podStatuses {
+		pod2Delete := testMap[podStatus.ID]
+		fmt.Printf("Pod 2 delete is %v\n", pod2Delete)
+		topic := util.SchedulerPodUpdateTopic()
+		msg, _ := json.Marshal(entity.PodUpdate{
+			Action: entity.DeleteAction,
+			Target: *pod2Delete,
+		})
+		listwatch.Publish(topic, msg)
+	}
+}
+
+func (c *controller) DeleteReplicaSet(rs *apiObject.ReplicaSet) {
+	fmt.Printf("Delete replicaSet: %s_%s\n", rs.FullName(), rs.UID())
+	if worker, exists := c.workers[rs.UID()]; exists {
+		delete(c.workers, rs.UID())
+		close(worker.SyncChannel())
+		c.deleteReplicaSetPods(rs)
+	}
+}
+
+func (c *controller) UpdateReplicaSet(rs *apiObject.ReplicaSet) {
+	fmt.Printf("Update replicaSet: %s_%s\n", rs.FullName(), rs.UID())
+	if worker, exists := c.workers[rs.UID()]; exists {
+		worker.SetTarget(rs)
+		// Sync immediately after update the rs.
+		worker.SyncChannel() <- syncSignal
+	}
 }
 
 func (c *controller) parseReplicaSetUpdate(msg *redis.Message) {
@@ -49,9 +84,9 @@ func (c *controller) parseReplicaSetUpdate(msg *redis.Message) {
 	case entity.CreateAction:
 		c.AddReplicaSet(rs)
 	case entity.UpdateAction:
-
+		c.UpdateReplicaSet(rs)
 	case entity.DeleteAction:
-
+		c.DeleteReplicaSet(rs)
 	}
 }
 
@@ -68,6 +103,6 @@ type Controller interface {
 func NewController(cacheManager cache.Manager) Controller {
 	return &controller{
 		cacheManager: cacheManager,
-		syncChannels: make(map[types.UID]chan struct{}),
+		workers:      make(map[types.UID]Worker),
 	}
 }
