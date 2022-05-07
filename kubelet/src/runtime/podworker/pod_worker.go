@@ -9,6 +9,7 @@ import (
 	"minik8s/kubelet/src/runtime/container"
 	"minik8s/listwatch"
 	"minik8s/util"
+	"time"
 )
 
 type podWorkType byte
@@ -128,6 +129,7 @@ func (w *podWorker) pod2PodStatus(pod *apiObject.Pod) *entity.PodStatus {
 		Name:      pod.Name(),
 		Labels:    pod.Labels(),
 		Namespace: pod.Namespace(),
+		SyncTime:  time.Now(),
 	}
 }
 

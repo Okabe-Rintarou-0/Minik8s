@@ -34,8 +34,8 @@ func (tp *ApiObjectType) String() string {
 }
 
 func IsValidApiObjectType(objectType string) bool {
-	objectType = strings.ToLower(objectType)
-	return objectType == "pod" || objectType == "deployment" || objectType == "service"
+	return objectType == "pod" || objectType == "pods" ||
+		objectType == "deployment" || objectType == "service"
 }
 
 func isLetter(char rune) bool {
