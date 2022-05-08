@@ -35,7 +35,7 @@ type serviceManager struct {
 	tab *iptables.IPTables
 }
 
-func New() (*serviceManager, error) {
+func New() (Manager, error) {
 	tab, err := iptables.New()
 	if err != nil {
 		return nil, nil

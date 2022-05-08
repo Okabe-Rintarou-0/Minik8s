@@ -14,11 +14,10 @@ type dnsManager struct {
 	filename string
 }
 
-func New(filename string) *dnsManager {
-	dm := &dnsManager{
+func New(filename string) Manager {
+	return &dnsManager{
 		filename: filename,
 	}
-	return dm
 }
 
 func (dm *dnsManager) getMapping() (map[string]string, error) {
