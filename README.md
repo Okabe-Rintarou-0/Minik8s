@@ -1,36 +1,38 @@
 # Minik8s
 
-#### Description
+## Description
+
 Group project of SE3356 Cloud Operating System Design and Practice, Spring 2022.
 
-#### Software Architecture
-Software architecture description
+## Structure
 
-#### Installation
+### Kubelet
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+The structure of `kubelet` in minik8s is similar to k8s, but it's greatly simplified.
 
-#### Instructions
+![Our kubelet](./readme-images/kubelet.png)
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+### Pod Resources Monitor
 
-#### Contribution
+The pod resources monitor is based on `cAdvisor`, `Prometheus` and `Grafana`.
 
-1.  Fork the repository
-2.  Create Feat_xxx branch
-3.  Commit your code
-4.  Create Pull Request
+We recommend you to use grafana dashboard with UID `11277`.
 
+Here is a good reference: [Build up Prometheus + Grafana + cAdvisor](https://blog.51cto.com/jiachuanlin/2538983)
 
-#### Gitee Feature
+#### Hint
 
-1.  You can use Readme\_XXX.md to support different languages, such as Readme\_en.md, Readme\_zh.md
-2.  Gitee blog [blog.gitee.com](https://blog.gitee.com)
-3.  Explore open source project [https://gitee.com/explore](https://gitee.com/explore)
-4.  The most valuable open source project [GVP](https://gitee.com/gvp)
-5.  The manual of Gitee [https://gitee.com/help](https://gitee.com/help)
-6.  The most popular members  [https://gitee.com/gitee-stars/](https://gitee.com/gitee-stars/)
+Because all these components are running in containers, so you can't access other running component by simply
+using `localhost`(Even if they are running in `host` network mode).
+Please use the ip instead.
+
+## Tools
+
+For `windows`, we have `Docker Desktop` to monitor the stats of all containers.
+But in linux, we don't have such convenience.
+
+![Portainer](./readme-images/portainer.png)
+
+Fortunately, `portainer` performs even better than `Docker Desktop`.
+It can be deployed easily by using docker. You type `./portainer-run.sh` to start the portainer.
+Then you can access it at http://localhost:9000.
