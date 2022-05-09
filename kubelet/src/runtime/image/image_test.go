@@ -13,7 +13,7 @@ func TestImageService_ListImages(t *testing.T) {
 		fmt.Println(err.Error())
 	}
 	assert.Nil(t, err)
-	fmt.Println("Read images: ")
+	fmt.Println("Read readme-images: ")
 	for _, image := range images {
 		fmt.Println(image.ID)
 	}
@@ -26,7 +26,7 @@ func TestImageService_ListImagesByName(t *testing.T) {
 		fmt.Println(err.Error())
 	}
 	assert.Nil(t, err)
-	fmt.Println("Read images: ")
+	fmt.Println("Read readme-images: ")
 	for _, image := range images {
 		fmt.Println(image.ID)
 	}
