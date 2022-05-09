@@ -174,6 +174,7 @@ func (w *podWorker) doWork(work podWork) {
 		}
 	case podContainerCreateAndStart:
 		arg := work.Arg.(podContainerCreateAndStartFnArg)
+		fmt.Printf("pod worker received pod create and start job %s\n", arg.pod.UID())
 		err = w.PodContainerCreateAndStartFn(arg.pod, arg.target)
 	case podContainerRemove:
 		arg := work.Arg.(podContainerRemoveFnArg)

@@ -51,7 +51,7 @@ func (rm *runtimeManager) toVolumeBinds(pod *apiObject.Pod, target *apiObject.Co
 		if device, exists := volumes[volumeName]; exists && device.IsHostPath() {
 			// Volume bind rule: $(host path):$(container path)
 			mountRule := device.HostPath.Path + ":" + volumeMount.MountPath
-			fmt.Println("mount", mountRule)
+			//fmt.Println("mount", mountRule)
 			volumeBinds = append(volumeBinds, mountRule)
 		}
 	}
@@ -240,7 +240,7 @@ func (rm *runtimeManager) startPauseContainer(pod *apiObject.Pod) error {
 	if !exists {
 		//fmt.Println("Need to pull image", pauseImage)
 		err = rm.im.PullImage(pauseImage, &image.ImagePullConfig{
-			Verbose: true,
+			Verbose: false,
 			All:     false,
 		})
 		if err != nil {
@@ -336,18 +336,18 @@ func (rm *runtimeManager) startCommonContainer(pod *apiObject.Pod, c *apiObject.
 
 	// Step 2: If needed, pull the image for the given container
 	if needPull {
-		//fmt.Println("Need to pull image", c.Image)
+		fmt.Println("Pulling image", c.Image)
 		err = rm.im.PullImage(c.Image, &image.ImagePullConfig{
-			Verbose: true,
+			Verbose: false,
 			All:     false,
 		})
 		if err != nil {
+			fmt.Println("Pull error:", err.Error())
 			return err
 		}
 	} else {
 		//fmt.Printf("No need to pull image %s, continue\n", c.Image)
 	}
-
 	// Prepare
 	podFullName := pod.FullName()
 	podUID := pod.UID()
