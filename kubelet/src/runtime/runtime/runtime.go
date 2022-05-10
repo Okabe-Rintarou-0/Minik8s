@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"minik8s/apiObject"
 	"minik8s/apiObject/types"
+	"minik8s/entity"
 	"minik8s/kubelet/src/podutil"
 	"minik8s/kubelet/src/runtime/container"
 	"minik8s/kubelet/src/runtime/image"
 	"strconv"
+	"time"
 )
 
 type Pod struct {
@@ -29,6 +31,22 @@ type PodStatus struct {
 	IPs []string
 	// Status of containers in the pod.
 	ContainerStatuses []*container.Status
+}
+
+func (podStatus *PodStatus) ToEntity() *entity.PodStatus {
+	cpuPercent, memPercent := calcMetrics(podStatus.ContainerStatuses)
+	return &entity.PodStatus{
+		ID:   podStatus.ID,
+		Name: podStatus.Name,
+		/// TODO what about the labels?
+		//Labels:     podStatus.Labels,
+		Namespace:  podStatus.Namespace,
+		Status:     entity.Running,
+		CpuPercent: cpuPercent,
+		MemPercent: memPercent,
+		Error:      "",
+		SyncTime:   time.Now(),
+	}
 }
 
 func (podStatus *PodStatus) GetContainerStatusByName(name string) *container.Status {
@@ -201,6 +219,7 @@ func (rm *runtimeManager) GetPodStatuses() (PodStatuses, error) {
 			ID:                podUID,
 			ContainerStatuses: cs,
 		}
+		//fmt.Printf("Convert to entity would be: %v\n", *podStatuses[podUID].ToEntity())
 	}
 	return podStatuses, nil
 }

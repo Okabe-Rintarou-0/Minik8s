@@ -406,3 +406,13 @@ func (rm *runtimeManager) getAllPodContainers() (map[types.UID][]*container.Stat
 	}
 	return containerStatuses, nil
 }
+
+func calcMetrics(containerStatuses []*container.Status) (cpuPercent, memPercent float64) {
+	cpuPercent = 0.0
+	memPercent = 0.0
+	for _, cs := range containerStatuses {
+		cpuPercent += cs.ResourcesUsage.CpuPercent
+		memPercent += cs.ResourcesUsage.MemPercent
+	}
+	return
+}
