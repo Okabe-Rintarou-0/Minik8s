@@ -19,8 +19,14 @@ type podWorker struct {
 	currentWork                  podWork
 }
 
-func (w *podWorker) WorkChannel() chan<- podWork {
-	return w.workCh
+func (w *podWorker) AddWork(work podWork) {
+	if w.needDo(&work) {
+		w.workCh <- work
+	}
+}
+
+func (w *podWorker) Done() {
+	close(w.workCh)
 }
 
 // needDo decide whether the worker should do this job.
@@ -73,6 +79,7 @@ func (w *podWorker) doWork(work podWork) {
 	if err != nil {
 		fmt.Println(err.Error())
 	}
+	w.currentWork = noWork
 }
 
 func (w *podWorker) Run() {
@@ -83,10 +90,9 @@ func (w *podWorker) Run() {
 				fmt.Println("Work channel has been closed!")
 				return
 			}
-			if w.needDo(&work) {
-				w.currentWork = work
-				w.doWork(work)
-			}
+			fmt.Println("Worker received job:", work)
+			w.currentWork = work
+			w.doWork(work)
 		}
 	}
 }
@@ -101,9 +107,6 @@ func newWorker(podCreateFn PodCreateFn, podDeleteFn PodDeleteFn, podContainerCre
 		podContainerCreateAndStartFn: podContainerCreateAndStartFn,
 		podContainerRemoveFn:         podContainerRemoveFn,
 		workCh:                       make(chan podWork, workChanSize),
-		currentWork: podWork{
-			WorkType: none,
-			Arg:      nil,
-		},
+		currentWork:                  noWork,
 	}
 }

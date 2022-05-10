@@ -39,9 +39,9 @@ func (m *manager) newWorker() *podWorker {
 
 func (m *manager) UpdatePod(newPod *apiObject.Pod) {
 	podUID := newPod.UID()
-	workCh := m.workers[podUID].WorkChannel()
-	workCh <- newPodDeleteWork(newPod)
-	workCh <- newPodCreateWork(newPod)
+	worker := m.workers[podUID]
+	worker.AddWork(newPodDeleteWork(newPod))
+	worker.AddWork(newPodCreateWork(newPod))
 }
 
 func (m *manager) SyncPod(event *pleg.PodLifecycleEvent) {
@@ -49,34 +49,32 @@ func (m *manager) SyncPod(event *pleg.PodLifecycleEvent) {
 	if !exists {
 		return
 	}
-	workCh := worker.WorkChannel()
 	switch event.Type {
 	case pleg.ContainerNeedCreateAndStart:
 		target := event.Data.(*apiObject.Container)
-		workCh <- newPodContainerCreateAndStartWork(event.Pod, target)
+		worker.AddWork(newPodContainerCreateAndStartWork(event.Pod, target))
 	case pleg.ContainerNeedStart:
-		workCh <- newPodContainerStartWork(event.ID, event.Data.(container.ID))
+		worker.AddWork(newPodContainerStartWork(event.ID, event.Data.(container.ID)))
 	case pleg.ContainerNeedRestart:
 		args := event.Data.(pleg.PodRestartContainerArgs)
-		workCh <- newPodContainerRestartWork(event.Pod, args.ContainerID, args.ContainerFullName)
+		worker.AddWork(newPodContainerRestartWork(event.Pod, args.ContainerID, args.ContainerFullName))
 	}
 }
 
 func (m *manager) AddPod(pod *apiObject.Pod) {
 	worker := m.newWorker()
 	m.workers[pod.UID()] = worker
-	workCh := worker.WorkChannel()
-	workCh <- newPodCreateWork(pod)
+	worker.AddWork(newPodCreateWork(pod))
 	go worker.Run()
 }
 
 func (m *manager) DeletePod(pod *apiObject.Pod) {
 	fmt.Printf("[PodWorkerManager]: delete pod %s\n", pod.UID())
 	podUID := pod.UID()
-	workCh := m.workers[podUID].WorkChannel()
-	workCh <- newPodDeleteWork(pod)
+	worker := m.workers[podUID]
+	worker.AddWork(newPodDeleteWork(pod))
 	delete(m.workers, podUID)
-	close(workCh)
+	worker.Done()
 }
 
 func NewPodWorkerManager(podCreateFn PodCreateFn, podDeleteFn PodDeleteFn, podContainerCreateAndStartFn PodContainerCreateAndStartFn,

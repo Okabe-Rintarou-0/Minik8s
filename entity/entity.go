@@ -1,6 +1,9 @@
 package entity
 
-import "minik8s/apiObject"
+import (
+	"minik8s/apiObject"
+	"time"
+)
 
 const (
 	CreateAction ApiObjectUpdateAction = iota
@@ -46,7 +49,7 @@ func (s *Status) String() string {
 	case ContainerCreating:
 		return "ContainerCreating"
 	case Error:
-		return "ContainerError"
+		return "Error"
 	case Running:
 		return "Running"
 	case Deleted:
@@ -63,4 +66,17 @@ type PodStatus struct {
 	Status     Status
 	CpuPercent float64
 	MemPercent float64
+	Error      string
+	SyncTime   time.Time
+}
+
+type PodStatusLogEntry struct {
+	Status Status
+	Time   time.Time
+	Error  string
+}
+
+type PodDescription struct {
+	CurrentStatus PodStatus
+	Logs          []PodStatusLogEntry
 }

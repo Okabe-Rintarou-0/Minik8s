@@ -6,6 +6,11 @@ import (
 	"minik8s/kubelet/src/runtime/container"
 )
 
+var noWork = podWork{
+	WorkType: none,
+	Arg:      nil,
+}
+
 type podWorkType byte
 
 const (
