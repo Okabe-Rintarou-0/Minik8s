@@ -2,6 +2,7 @@ package podworker
 
 import (
 	"fmt"
+	"minik8s/apiObject"
 )
 
 const (
@@ -45,8 +46,18 @@ func (w *podWorker) needDo(work *podWork) bool {
 	return true
 }
 
+func (w *podWorker) handleError(err error, errPod *apiObject.Pod) {
+	if err != nil && errPod != nil {
+		fmt.Println(err.Error())
+		w.publishPodStatus(w.errorPodStatus(errPod))
+	}
+}
+
 func (w *podWorker) doWork(work podWork) {
 	var err error
+	var errPod *apiObject.Pod
+	defer w.handleError(err, errPod)
+
 	switch work.WorkType {
 	case podCreate:
 		arg := work.Arg.(podCreateFnArg)
@@ -54,12 +65,16 @@ func (w *podWorker) doWork(work podWork) {
 		w.publishPodStatus(w.containerCreatingPodStatus(arg.pod))
 		if err = w.podCreateFn(arg.pod); err == nil {
 			w.publishPodStatus(w.runningPodStatus(arg.pod))
+		} else {
+			errPod = arg.pod
 		}
 	case podDelete:
 		arg := work.Arg.(podDeleteFnArg)
 		fmt.Printf("pod worker received pod delete job %s\n", arg.pod.UID())
 		if err = w.podDeleteFn(arg.pod); err == nil {
 			w.publishPodStatus(w.deletedPodStatus(arg.pod))
+		} else {
+			errPod = arg.pod
 		}
 	case podContainerCreateAndStart:
 		arg := work.Arg.(podContainerCreateAndStartFnArg)
@@ -76,9 +91,7 @@ func (w *podWorker) doWork(work podWork) {
 		arg := work.Arg.(podContainerRestartFnArg)
 		err = w.podContainerRestartFn(arg.pod, arg.ID, arg.fullName)
 	}
-	if err != nil {
-		fmt.Println(err.Error())
-	}
+
 	w.currentWork = noWork
 }
 

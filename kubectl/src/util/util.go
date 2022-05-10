@@ -2,9 +2,7 @@ package util
 
 import (
 	"fmt"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
-	"minik8s/apiObject"
 	"os"
 	"strings"
 )
@@ -82,10 +80,4 @@ func ParseApiObjectType(content []byte) (ApiObjectType, error) {
 	fmt.Println("Api object's type is", tp.String())
 
 	return tp, nil
-}
-
-func ParsePod(content []byte) (*apiObject.Pod, error) {
-	pod := &apiObject.Pod{}
-	err := yaml.Unmarshal(content, pod)
-	return pod, err
 }
