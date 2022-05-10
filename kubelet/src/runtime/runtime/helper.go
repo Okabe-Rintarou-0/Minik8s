@@ -163,15 +163,15 @@ func (rm *runtimeManager) getCommonContainerCreateConfig(pod *apiObject.Pod, c *
 	}
 }
 
-func (rm *runtimeManager) inspectionToContainerStatus(inspection *container.ContainerInspectInfo) (*container.ContainerStatus, error) {
-	state := container.ContainerStateUnknown
+func (rm *runtimeManager) inspectionToContainerStatus(inspection *container.ContainerInspectInfo) (*container.Status, error) {
+	state := container.StateUnknown
 	switch inspection.State.Status {
 	case "running":
-		state = container.ContainerStateRunning
+		state = container.StateRunning
 	case "created":
-		state = container.ContainerStateCreated
+		state = container.StateCreated
 	case "exited":
-		state = container.ContainerStateExited
+		state = container.StateExited
 	}
 
 	createdAt, err := time.Parse(time.RFC3339Nano, inspection.Created)
@@ -189,7 +189,7 @@ func (rm *runtimeManager) inspectionToContainerStatus(inspection *container.Cont
 		return nil, err
 	}
 
-	return &container.ContainerStatus{
+	return &container.Status{
 		ID:           inspection.ID,
 		Name:         inspection.Name,
 		State:        state,
@@ -203,7 +203,7 @@ func (rm *runtimeManager) inspectionToContainerStatus(inspection *container.Cont
 	}, nil
 }
 
-func (rm *runtimeManager) getPodContainerStatuses(pod *apiObject.Pod) ([]*container.ContainerStatus, error) {
+func (rm *runtimeManager) getPodContainerStatuses(pod *apiObject.Pod) ([]*container.Status, error) {
 	containers, err := rm.cm.ListContainers(&container.ContainerListConfig{
 		All: true,
 		LabelSelector: container.LabelSelector{
@@ -214,7 +214,7 @@ func (rm *runtimeManager) getPodContainerStatuses(pod *apiObject.Pod) ([]*contai
 		return nil, err
 	}
 
-	containerStatuses := make([]*container.ContainerStatus, len(containers))
+	containerStatuses := make([]*container.Status, len(containers))
 	for i, c := range containers {
 		inspection, err := rm.cm.InspectContainer(c.ID)
 		if err != nil {
@@ -266,7 +266,7 @@ func (rm *runtimeManager) startPauseContainer(pod *apiObject.Pod) error {
 		return err
 	}
 
-	var ID container.ContainerID
+	var ID container.ID
 	ID, err = rm.cm.CreateContainer(containerFullName, createConfig)
 	if err != nil {
 		return err
@@ -357,7 +357,7 @@ func (rm *runtimeManager) startCommonContainer(pod *apiObject.Pod, c *apiObject.
 
 	containerFullName := podutil.ContainerFullName(c.Name, podFullName, podUID, 0)
 
-	var ID container.ContainerID
+	var ID container.ID
 	ID, err = rm.cm.CreateContainer(containerFullName, rm.getCommonContainerCreateConfig(pod, c))
 	if err != nil {
 		return err
@@ -370,7 +370,7 @@ func (rm *runtimeManager) startCommonContainer(pod *apiObject.Pod, c *apiObject.
 	return err
 }
 
-func (rm *runtimeManager) getAllPodContainers() (map[types.UID][]*container.ContainerStatus, error) {
+func (rm *runtimeManager) getAllPodContainers() (map[types.UID][]*container.Status, error) {
 	containers, err := rm.cm.ListContainers(&container.ContainerListConfig{
 		All: true,
 		LabelSelector: container.LabelSelector{
@@ -380,19 +380,25 @@ func (rm *runtimeManager) getAllPodContainers() (map[types.UID][]*container.Cont
 		return nil, err
 	}
 
-	containerStatuses := make(map[types.UID][]*container.ContainerStatus)
+	containerStatuses := make(map[types.UID][]*container.Status)
 	for _, c := range containers {
-		inspection, err := rm.cm.InspectContainer(c.ID)
+		var inspection container.ContainerInspectInfo
+		inspection, err = rm.cm.InspectContainer(c.ID)
 		if err != nil {
 			return nil, err
 		}
-		var cs *container.ContainerStatus
+		var cs *container.Status
 		if podUID, exists := inspection.Config.Labels[KubernetesPodUIDLabel]; exists {
 			cs, err = rm.inspectionToContainerStatus(&inspection)
 			if err != nil {
 				return nil, err
 			}
 			//fmt.Printf("Container %s belongs to pod %s\n", cs.Name, podUID)
+			cs.ResourcesUsage, err = rm.cm.GetContainerStats(c.ID)
+			if err != nil {
+				return nil, err
+			}
+			//fmt.Println("Got ru: ", cs.ResourcesUsage)
 			containerStatuses[podUID] = append(containerStatuses[podUID], cs)
 		} else {
 			panic("It's impossible!")

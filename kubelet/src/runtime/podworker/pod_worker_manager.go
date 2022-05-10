@@ -8,11 +8,7 @@ import (
 	"minik8s/kubelet/src/runtime/container"
 )
 
-const (
-	workChanSize = 5
-)
-
-type workChanMap map[types.UID]chan podWork
+type workers map[types.UID]*podWorker
 
 type Manager interface {
 	AddPod(pod *apiObject.Pod)
@@ -22,7 +18,7 @@ type Manager interface {
 }
 
 type manager struct {
-	workChanMap                  workChanMap
+	workers                      workers
 	podCreateFn                  PodCreateFn
 	podDeleteFn                  PodDeleteFn
 	podContainerCreateAndStartFn PodContainerCreateAndStartFn
@@ -32,34 +28,34 @@ type manager struct {
 }
 
 func (m *manager) newWorker() *podWorker {
-	return &podWorker{
-		PodCreateFn:                  m.podCreateFn,
-		PodDeleteFn:                  m.podDeleteFn,
-		PodContainerStartFn:          m.podContainerStartFn,
-		PodContainerCreateAndStartFn: m.podContainerCreateAndStartFn,
-		PodContainerRemoveFn:         m.podContainerRemoveFn,
-		PodContainerRestartFn:        m.podContainerRestartFn,
-	}
+	return newWorker(m.podCreateFn,
+		m.podDeleteFn,
+		m.podContainerCreateAndStartFn,
+		m.podContainerStartFn,
+		m.podContainerRemoveFn,
+		m.podContainerRestartFn,
+	)
 }
 
 func (m *manager) UpdatePod(newPod *apiObject.Pod) {
 	podUID := newPod.UID()
-	workCh := m.workChanMap[podUID]
+	workCh := m.workers[podUID].WorkChannel()
 	workCh <- newPodDeleteWork(newPod)
 	workCh <- newPodCreateWork(newPod)
 }
 
 func (m *manager) SyncPod(event *pleg.PodLifecycleEvent) {
-	workCh, exists := m.workChanMap[event.ID]
+	worker, exists := m.workers[event.ID]
 	if !exists {
 		return
 	}
+	workCh := worker.WorkChannel()
 	switch event.Type {
 	case pleg.ContainerNeedCreateAndStart:
 		target := event.Data.(*apiObject.Container)
 		workCh <- newPodContainerCreateAndStartWork(event.Pod, target)
 	case pleg.ContainerNeedStart:
-		workCh <- newPodContainerStartWork(event.ID, event.Data.(container.ContainerID))
+		workCh <- newPodContainerStartWork(event.ID, event.Data.(container.ID))
 	case pleg.ContainerNeedRestart:
 		args := event.Data.(pleg.PodRestartContainerArgs)
 		workCh <- newPodContainerRestartWork(event.Pod, args.ContainerID, args.ContainerFullName)
@@ -67,27 +63,26 @@ func (m *manager) SyncPod(event *pleg.PodLifecycleEvent) {
 }
 
 func (m *manager) AddPod(pod *apiObject.Pod) {
-	workCh := make(chan podWork, workChanSize)
-	m.workChanMap[pod.UID()] = workCh
 	worker := m.newWorker()
+	m.workers[pod.UID()] = worker
+	workCh := worker.WorkChannel()
 	workCh <- newPodCreateWork(pod)
-	go worker.Run(workCh)
+	go worker.Run()
 }
 
 func (m *manager) DeletePod(pod *apiObject.Pod) {
 	fmt.Printf("[PodWorkerManager]: delete pod %s\n", pod.UID())
 	podUID := pod.UID()
-	workCh := m.workChanMap[podUID]
+	workCh := m.workers[podUID].WorkChannel()
 	workCh <- newPodDeleteWork(pod)
-	fmt.Println("Hello")
-	delete(m.workChanMap, podUID)
+	delete(m.workers, podUID)
 	close(workCh)
 }
 
 func NewPodWorkerManager(podCreateFn PodCreateFn, podDeleteFn PodDeleteFn, podContainerCreateAndStartFn PodContainerCreateAndStartFn,
 	podContainerStartFn PodContainerStartFn, podContainerRemoveFn PodContainerRemoveFn, podContainerRestartFn PodContainerRestartFn) Manager {
 	return &manager{
-		workChanMap:                  make(workChanMap),
+		workers:                      make(workers),
 		podCreateFn:                  podCreateFn,
 		podDeleteFn:                  podDeleteFn,
 		podContainerCreateAndStartFn: podContainerCreateAndStartFn,

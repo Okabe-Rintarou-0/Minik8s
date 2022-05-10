@@ -83,7 +83,7 @@ func (statusRecords podStatusRecords) GetRecord(podUID types.UID) *podStatusReco
 }
 
 type PodRestartContainerArgs struct {
-	ContainerID       container.ContainerID
+	ContainerID       container.ID
 	ContainerFullName string
 }
 
@@ -115,11 +115,11 @@ func newPodLifecycleEvent(podUID types.UID, pod *apiObject.Pod, eventType PodLif
 	}
 }
 
-func (m *manager) addStartedLifecycleEvent(podUID types.UID, pod *apiObject.Pod, containerID container.ContainerID) {
+func (m *manager) addStartedLifecycleEvent(podUID types.UID, pod *apiObject.Pod, containerID container.ID) {
 	m.eventCh <- newPodLifecycleEvent(podUID, pod, ContainerStarted, containerID)
 }
 
-func (m *manager) addNeedRemoveLifecycleEvent(podUID types.UID, pod *apiObject.Pod, containerID container.ContainerID) {
+func (m *manager) addNeedRemoveLifecycleEvent(podUID types.UID, pod *apiObject.Pod, containerID container.ID) {
 	m.eventCh <- newPodLifecycleEvent(podUID, pod, ContainerNeedRemove, containerID)
 }
 
@@ -135,19 +135,19 @@ func (m *manager) addNeedCreateAndStartLifecycleEvent(podUID types.UID, pod *api
 	m.eventCh <- newPodLifecycleEvent(podUID, pod, ContainerNeedCreateAndStart, target)
 }
 
-func (m *manager) addDiedLifecycleEvent(podUID types.UID, pod *apiObject.Pod, containerID container.ContainerID) {
+func (m *manager) addDiedLifecycleEvent(podUID types.UID, pod *apiObject.Pod, containerID container.ID) {
 	m.eventCh <- newPodLifecycleEvent(podUID, pod, ContainerDied, containerID)
 }
 
-func (m *manager) addRemovedLifecycleEvent(podUID types.UID, pod *apiObject.Pod, containerID container.ContainerID) {
+func (m *manager) addRemovedLifecycleEvent(podUID types.UID, pod *apiObject.Pod, containerID container.ID) {
 	m.eventCh <- newPodLifecycleEvent(podUID, pod, ContainerRemoved, containerID)
 }
 
-func (m *manager) addPodSyncLifecycleEvent(podUID types.UID, pod *apiObject.Pod, containerID container.ContainerID) {
+func (m *manager) addPodSyncLifecycleEvent(podUID types.UID, pod *apiObject.Pod, containerID container.ID) {
 	m.eventCh <- newPodLifecycleEvent(podUID, pod, PodSync, containerID)
 }
 
-func (m *manager) addChangedLifecycleEvent(podUID types.UID, pod *apiObject.Pod, containerID container.ContainerID) {
+func (m *manager) addChangedLifecycleEvent(podUID types.UID, pod *apiObject.Pod, containerID container.ID) {
 	m.eventCh <- newPodLifecycleEvent(podUID, pod, ContainerChanged, containerID)
 }
 
@@ -193,14 +193,14 @@ func (m *manager) compareAndProduceLifecycleEvents(apiPod *apiObject.Pod, runtim
 
 		if needDealWith {
 			switch cs.State {
-			case container.ContainerStateRunning:
-			case container.ContainerStateCreated:
+			case container.StateRunning:
+			case container.StateCreated:
 				//if apiPod.GetContainerByName(containerName) == nil {
 				//	m.addNeedRemoveLifecycleEvent(podUID, cs.ID)
 				//}
 				break
 			// Need restart it
-			case container.ContainerStateExited:
+			case container.StateExited:
 				if apiPod.GetContainerByName(containerName) != nil {
 					m.addNeedRestartLifecycleEvent(podUID, apiPod, PodRestartContainerArgs{cs.ID, cs.Name})
 				}

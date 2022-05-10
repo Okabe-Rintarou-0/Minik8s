@@ -1,161 +1,44 @@
 package podworker
 
 import (
-	"encoding/json"
 	"fmt"
-	"minik8s/apiObject"
-	"minik8s/apiObject/types"
-	"minik8s/entity"
-	"minik8s/kubelet/src/runtime/container"
-	"minik8s/listwatch"
-	"minik8s/util"
 )
-
-type podWorkType byte
 
 const (
-	podCreate podWorkType = iota
-	podDelete
-	podContainerStart
-	podContainerCreateAndStart
-	podContainerRemove
-	podContainerRestart
+	workChanSize = 5
 )
 
-//CreatePod(pod *apiObject.Pod) error
-//PodRemoveContainer(podUID types.UID, ID container.ContainerID) error
-//PodCreateAndStartContainer(pod *apiObject.Pod, target *apiObject.Container) error
-//PodStartContainer(podUID types.UID, ID container.ContainerID) error
-//PodRestartContainer(pod *apiObject.Pod, containerID container.ContainerID, fullName string) error
-
-type PodCreateFn func(pod *apiObject.Pod) error
-type PodDeleteFn func(pod *apiObject.Pod) error
-type PodContainerStartFn func(podUID types.UID, ID container.ContainerID) error
-type PodContainerCreateAndStartFn func(pod *apiObject.Pod, target *apiObject.Container) error
-type PodContainerRemoveFn func(podUID types.UID, ID container.ContainerID) error
-type PodContainerRestartFn func(pod *apiObject.Pod, containerID container.ContainerID, fullName string) error
-
-type podCreateFnArg struct {
-	pod *apiObject.Pod
-}
-
-type podDeleteFnArg struct {
-	pod *apiObject.Pod
-}
-
-type podContainerStartFnArg struct {
-	podUID types.UID
-	ID     container.ContainerID
-}
-
-type podContainerCreateAndStartFnArg struct {
-	pod    *apiObject.Pod
-	target *apiObject.Container
-}
-
-type podContainerRemoveFnArg struct {
-	podUID types.UID
-	ID     container.ContainerID
-}
-
-type podContainerRestartFnArg struct {
-	pod      *apiObject.Pod
-	ID       container.ContainerID
-	fullName string
-}
-
-type podWorkArgs interface{}
-
-type podWork struct {
-	WorkType podWorkType
-	Arg      podWorkArgs
-}
-
 type podWorker struct {
-	PodCreateFn                  PodCreateFn
-	PodDeleteFn                  PodDeleteFn
-	PodContainerStartFn          PodContainerStartFn
-	PodContainerRestartFn        PodContainerRestartFn
-	PodContainerCreateAndStartFn PodContainerCreateAndStartFn
-	PodContainerRemoveFn         PodContainerRemoveFn
+	podCreateFn                  PodCreateFn
+	podDeleteFn                  PodDeleteFn
+	podContainerStartFn          PodContainerStartFn
+	podContainerRestartFn        PodContainerRestartFn
+	podContainerCreateAndStartFn PodContainerCreateAndStartFn
+	podContainerRemoveFn         PodContainerRemoveFn
+	workCh                       chan podWork
+	currentWork                  podWork
 }
 
-func newPodCreateWork(pod *apiObject.Pod) podWork {
-	return podWork{
-		WorkType: podCreate,
-		Arg:      podCreateFnArg{pod},
+func (w *podWorker) WorkChannel() chan<- podWork {
+	return w.workCh
+}
+
+// needDo decide whether the worker should do this job.
+func (w *podWorker) needDo(work *podWork) bool {
+	lastWorkType := w.currentWork.WorkType
+	workType := work.WorkType
+
+	if lastWorkType == podCreate {
+		// If the worker is creating the pod, it should reject container start, container create jobs
+		// But it should reject pod delete jobs.
+		return workType == podDelete
+	} else if lastWorkType == podDelete {
+		// similar to podCreate
+		return workType == podCreate
 	}
+	return true
 }
 
-func newPodDeleteWork(pod *apiObject.Pod) podWork {
-	return podWork{
-		WorkType: podDelete,
-		Arg:      podDeleteFnArg{pod},
-	}
-}
-
-func newPodContainerStartWork(podUID types.UID, ID container.ContainerID) podWork {
-	return podWork{
-		WorkType: podContainerStart,
-		Arg:      podContainerStartFnArg{podUID, ID},
-	}
-}
-
-func newPodContainerCreateAndStartWork(pod *apiObject.Pod, target *apiObject.Container) podWork {
-	return podWork{
-		WorkType: podContainerCreateAndStart,
-		Arg:      podContainerCreateAndStartFnArg{pod, target},
-	}
-}
-
-func newPodContainerRemoveWork(podUID types.UID, ID container.ContainerID) podWork {
-	return podWork{
-		WorkType: podContainerRemove,
-		Arg:      podContainerRemoveFnArg{podUID, ID},
-	}
-}
-
-func newPodContainerRestartWork(pod *apiObject.Pod, ID container.ContainerID, fullName string) podWork {
-	return podWork{
-		WorkType: podContainerRestart,
-		Arg:      podContainerRestartFnArg{pod, ID, fullName},
-	}
-}
-
-func (w *podWorker) pod2PodStatus(pod *apiObject.Pod) *entity.PodStatus {
-	return &entity.PodStatus{
-		ID:        pod.UID(),
-		Name:      pod.Name(),
-		Labels:    pod.Labels(),
-		Namespace: pod.Namespace(),
-	}
-}
-
-func (w *podWorker) runningPodStatus(pod *apiObject.Pod) *entity.PodStatus {
-	podStatus := w.pod2PodStatus(pod)
-	podStatus.Status = entity.Running
-	return podStatus
-}
-
-func (w *podWorker) containerCreatingPodStatus(pod *apiObject.Pod) *entity.PodStatus {
-	podStatus := w.pod2PodStatus(pod)
-	podStatus.Status = entity.ContainerCreating
-	return podStatus
-}
-
-func (w *podWorker) deletedPodStatus(pod *apiObject.Pod) *entity.PodStatus {
-	podStatus := w.pod2PodStatus(pod)
-	podStatus.Status = entity.Deleted
-	return podStatus
-}
-
-func (w *podWorker) publishPodStatus(podStatus *entity.PodStatus) {
-	topic := util.PodStatusTopic()
-	msg, _ := json.Marshal(*podStatus)
-	listwatch.Publish(topic, msg)
-}
-
-//TODO: should check whether we do need to do such work
 func (w *podWorker) doWork(work podWork) {
 	var err error
 	switch work.WorkType {
@@ -163,43 +46,64 @@ func (w *podWorker) doWork(work podWork) {
 		arg := work.Arg.(podCreateFnArg)
 		fmt.Printf("pod worker received pod create job %s\n", arg.pod.UID())
 		w.publishPodStatus(w.containerCreatingPodStatus(arg.pod))
-		if err = w.PodCreateFn(arg.pod); err == nil {
+		if err = w.podCreateFn(arg.pod); err == nil {
 			w.publishPodStatus(w.runningPodStatus(arg.pod))
 		}
 	case podDelete:
 		arg := work.Arg.(podDeleteFnArg)
 		fmt.Printf("pod worker received pod delete job %s\n", arg.pod.UID())
-		if err = w.PodDeleteFn(arg.pod); err == nil {
+		if err = w.podDeleteFn(arg.pod); err == nil {
 			w.publishPodStatus(w.deletedPodStatus(arg.pod))
 		}
 	case podContainerCreateAndStart:
 		arg := work.Arg.(podContainerCreateAndStartFnArg)
 		fmt.Printf("pod worker received pod create and start job %s\n", arg.pod.UID())
-		err = w.PodContainerCreateAndStartFn(arg.pod, arg.target)
+		err = w.podContainerCreateAndStartFn(arg.pod, arg.target)
 	case podContainerRemove:
 		arg := work.Arg.(podContainerRemoveFnArg)
-		err = w.PodContainerRemoveFn(arg.podUID, arg.ID)
+		err = w.podContainerRemoveFn(arg.podUID, arg.ID)
 	case podContainerStart:
 		arg := work.Arg.(podContainerStartFnArg)
-		err = w.PodContainerStartFn(arg.podUID, arg.ID)
+		err = w.podContainerStartFn(arg.podUID, arg.ID)
 	case podContainerRestart:
 		fmt.Println("pod worker received restart job")
 		arg := work.Arg.(podContainerRestartFnArg)
-		err = w.PodContainerRestartFn(arg.pod, arg.ID, arg.fullName)
+		err = w.podContainerRestartFn(arg.pod, arg.ID, arg.fullName)
 	}
 	if err != nil {
 		fmt.Println(err.Error())
 	}
 }
 
-func (w *podWorker) Run(workCh <-chan podWork) {
+func (w *podWorker) Run() {
 	for {
 		select {
-		case work, open := <-workCh:
+		case work, open := <-w.workCh:
 			if !open {
+				fmt.Println("Work channel has been closed!")
 				return
 			}
-			w.doWork(work)
+			if w.needDo(&work) {
+				w.currentWork = work
+				w.doWork(work)
+			}
 		}
+	}
+}
+
+func newWorker(podCreateFn PodCreateFn, podDeleteFn PodDeleteFn, podContainerCreateAndStartFn PodContainerCreateAndStartFn,
+	podContainerStartFn PodContainerStartFn, podContainerRemoveFn PodContainerRemoveFn, podContainerRestartFn PodContainerRestartFn) *podWorker {
+	return &podWorker{
+		podCreateFn:                  podCreateFn,
+		podDeleteFn:                  podDeleteFn,
+		podContainerStartFn:          podContainerStartFn,
+		podContainerRestartFn:        podContainerRestartFn,
+		podContainerCreateAndStartFn: podContainerCreateAndStartFn,
+		podContainerRemoveFn:         podContainerRemoveFn,
+		workCh:                       make(chan podWork, workChanSize),
+		currentWork: podWork{
+			WorkType: none,
+			Arg:      nil,
+		},
 	}
 }

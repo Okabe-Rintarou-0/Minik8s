@@ -56,9 +56,11 @@ func (s *Status) String() string {
 }
 
 type PodStatus struct {
-	ID        string
-	Name      string
-	Labels    apiObject.Labels
-	Namespace string
-	Status    Status
+	ID         string
+	Name       string
+	Labels     apiObject.Labels
+	Namespace  string
+	Status     Status
+	CpuPercent float64
+	MemPercent float64
 }

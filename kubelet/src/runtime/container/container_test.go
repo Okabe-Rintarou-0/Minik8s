@@ -13,9 +13,21 @@ func TestListContainer(t *testing.T) {
 	containers, err := cm.ListContainers(&ContainerListConfig{
 		All: true,
 	})
+	if err != nil {
+		fmt.Println(err.Error())
+	}
 	assert.Nil(t, err)
 	for _, c := range containers {
 		fmt.Println(c.Name, c.ID, c.Image)
+	}
+}
+
+func TestGetContainerStats(t *testing.T) {
+	cm := NewContainerManager()
+	_, err := cm.GetContainerStats("minik8s-redis")
+	if err != nil {
+		fmt.Println(err.Error())
+		return
 	}
 }
 

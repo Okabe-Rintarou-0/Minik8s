@@ -28,10 +28,10 @@ type PodStatus struct {
 	// All IPs assigned to this pod
 	IPs []string
 	// Status of containers in the pod.
-	ContainerStatuses []*container.ContainerStatus
+	ContainerStatuses []*container.Status
 }
 
-func (podStatus *PodStatus) GetContainerStatusByName(name string) *container.ContainerStatus {
+func (podStatus *PodStatus) GetContainerStatusByName(name string) *container.Status {
 	for _, cs := range podStatus.ContainerStatuses {
 		if cs.Name == name {
 			return cs
@@ -50,7 +50,7 @@ func (pod *Pod) FullName() string {
 }
 
 // GetContainerByID returns the container of pod given the ID of it
-func (pod *Pod) GetContainerByID(ID container.ContainerID) *container.Container {
+func (pod *Pod) GetContainerByID(ID container.ID) *container.Container {
 	for _, c := range pod.Containers {
 		if c.ID == ID {
 			return c
@@ -92,26 +92,26 @@ type Manager interface {
 	DeletePod(pod *apiObject.Pod) error
 	GetPodStatus(pod *apiObject.Pod) (*PodStatus, error)
 	GetPodStatuses() (PodStatuses, error)
-	PodRemoveContainer(podUID types.UID, ID container.ContainerID) error
+	PodRemoveContainer(podUID types.UID, ID container.ID) error
 	PodCreateAndStartContainer(pod *apiObject.Pod, target *apiObject.Container) error
-	PodStartContainer(podUID types.UID, ID container.ContainerID) error
-	PodRestartContainer(pod *apiObject.Pod, containerID container.ContainerID, fullName string) error
+	PodStartContainer(podUID types.UID, ID container.ID) error
+	PodRestartContainer(pod *apiObject.Pod, containerID container.ID, fullName string) error
 }
 
 type runtimeManager struct {
 	cm container.Manager
-	im image.ImageManager
+	im image.Manager
 }
 
 func (rm *runtimeManager) PodCreateAndStartContainer(pod *apiObject.Pod, target *apiObject.Container) error {
 	return rm.startCommonContainer(pod, target)
 }
 
-func (rm *runtimeManager) PodStartContainer(podUID types.UID, ID container.ContainerID) error {
+func (rm *runtimeManager) PodStartContainer(podUID types.UID, ID container.ID) error {
 	return rm.cm.StartContainer(ID, &container.ContainerStartConfig{})
 }
 
-func (rm *runtimeManager) PodRestartContainer(pod *apiObject.Pod, containerID container.ContainerID, fullName string) error {
+func (rm *runtimeManager) PodRestartContainer(pod *apiObject.Pod, containerID container.ID, fullName string) error {
 	parseSucc, _, _, _, _, restartCount := podutil.ParseContainerFullName(fullName)
 	if !parseSucc {
 		panic("Could not happen")
@@ -126,7 +126,7 @@ func (rm *runtimeManager) PodRestartContainer(pod *apiObject.Pod, containerID co
 	return rm.cm.StartContainer(containerID, &container.ContainerStartConfig{})
 }
 
-func (rm *runtimeManager) PodRemoveContainer(podUID types.UID, ID container.ContainerID) error {
+func (rm *runtimeManager) PodRemoveContainer(podUID types.UID, ID container.ID) error {
 	return rm.cm.RemoveContainer(ID, &container.ContainerRemoveConfig{})
 }
 
