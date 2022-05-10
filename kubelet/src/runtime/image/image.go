@@ -9,13 +9,13 @@ import (
 	"minik8s/kubelet/src/runtime/docker"
 )
 
-type ImageSummary = types.ImageSummary
+type Summary = types.ImageSummary
 
-type ImageManager interface {
+type Manager interface {
 	PullImage(name string, config *ImagePullConfig) error
 	ExistsImage(name string) (bool, error)
-	ListImages(config *ImageListConfig) ([]ImageSummary, error)
-	ListImagesByName(name string, config *ImageListConfig) ([]ImageSummary, error)
+	ListImages(config *ImageListConfig) ([]Summary, error)
+	ListImagesByName(name string, config *ImageListConfig) ([]Summary, error)
 	RemoveImage(ID string, config *ImageRemoveConfig) (ImageRemoveResponse, error)
 }
 
@@ -27,13 +27,13 @@ func (is *imageManager) ExistsImage(name string) (bool, error) {
 	return len(images) > 0, err
 }
 
-func (is *imageManager) ListImages(config *ImageListConfig) ([]ImageSummary, error) {
+func (is *imageManager) ListImages(config *ImageListConfig) ([]Summary, error) {
 	return docker.Client.ImageList(docker.Ctx, types.ImageListOptions{
 		All: config.All,
 	})
 }
 
-func (is *imageManager) ListImagesByName(name string, config *ImageListConfig) ([]ImageSummary, error) {
+func (is *imageManager) ListImagesByName(name string, config *ImageListConfig) ([]Summary, error) {
 	filter := filters.NewArgs()
 	filter.Add("dangling", "false")
 	filter.Add("reference", name)
@@ -50,8 +50,9 @@ func (is *imageManager) PullImage(name string, config *ImagePullConfig) error {
 	if err != nil {
 		return err
 	}
-	r := bufio.NewReader(resp)
+	defer resp.Close()
 	if config.Verbose {
+		r := bufio.NewReader(resp)
 		for {
 			row, err := r.ReadString('\n')
 			if err != nil {
@@ -71,6 +72,6 @@ func (is *imageManager) RemoveImage(ID string, config *ImageRemoveConfig) (Image
 	return ImageRemoveResponse{resp}, err
 }
 
-func NewImageManager() ImageManager {
+func NewImageManager() Manager {
 	return &imageManager{}
 }

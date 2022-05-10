@@ -3,10 +3,16 @@ package netutil
 import (
 	"fmt"
 	"net"
+	"sync"
 )
+
+var lock sync.Mutex
 
 // GetAvailablePort returns a random available TCP port
 func GetAvailablePort() (int, error) {
+	// We must use lock here, because many goroutines may call this function
+	lock.Lock()
+	defer lock.Unlock()
 	address, err := net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:0", "0.0.0.0"))
 	if err != nil {
 		return 0, err

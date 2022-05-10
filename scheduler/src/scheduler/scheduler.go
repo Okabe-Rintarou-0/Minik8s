@@ -44,7 +44,7 @@ func (s *scheduler) getNodes() []*apiObject.Node {
 }
 
 func (s *scheduler) Schedule(podUpdate *entity.PodUpdate) error {
-	fmt.Printf("Schedule %v\n", podUpdate)
+	//fmt.Printf("Schedule %v\n", podUpdate)
 	// Step 1: Get nodes from api-server
 	nodes := s.getNodes()
 
@@ -67,14 +67,14 @@ func (s *scheduler) Schedule(podUpdate *entity.PodUpdate) error {
 	}
 
 	// Step 4: Send msg to such node
-	fmt.Printf("Send msg to %s: %v\n", topic, podUpdate)
+	fmt.Printf("Send msg to %s: [%v]%v\n", topic, podUpdate.Action.String(), podUpdate.Target.Name())
 	listwatch.Publish(topic, updateMsg)
 
 	return nil
 }
 
 func (s *scheduler) parseAndSchedule(msg *redis.Message) {
-	fmt.Printf("scheduler received: %v\n", msg)
+	//fmt.Printf("scheduler received: %v\n", msg)
 	podUpdate := &entity.PodUpdate{}
 	err := json.Unmarshal([]byte(msg.Payload), podUpdate)
 	if err != nil {

@@ -16,7 +16,7 @@ The structure of `kubelet` in minik8s is similar to k8s, but it's greatly simpli
 
 The pod resources monitor is based on `cAdvisor`, `Prometheus` and `Grafana`.
 
-We recommend you to use grafana dashboard with UID `11277`.
+We recommend you to use grafana dashboard with UID `11277` and `893`.
 
 Here is a good reference: [Build up Prometheus + Grafana + cAdvisor](https://blog.51cto.com/jiachuanlin/2538983)
 
@@ -34,5 +34,5 @@ But in linux, we don't have such convenience.
 ![Portainer](./readme-images/portainer.png)
 
 Fortunately, `portainer` performs even better than `Docker Desktop`.
-It can be deployed easily by using docker. You type `./portainer-run.sh` to start the portainer.
+It can be deployed easily by using docker. You can type `./portainer-run.sh` to start the portainer.
 Then you can access it at http://localhost:9000.
