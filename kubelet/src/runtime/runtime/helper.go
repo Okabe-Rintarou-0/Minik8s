@@ -8,6 +8,7 @@ import (
 	"minik8s/kubelet/src/podutil"
 	"minik8s/kubelet/src/runtime/container"
 	"minik8s/kubelet/src/runtime/image"
+	"minik8s/util/logger"
 	"strconv"
 	"time"
 )
@@ -369,14 +370,15 @@ func (rm *runtimeManager) startCommonContainer(pod *apiObject.Pod, c *apiObject.
 	return err
 }
 
-func (rm *runtimeManager) getAllPodContainers() (map[types.UID][]*container.Status, error) {
+func (rm *runtimeManager) getAllPodContainers() map[types.UID][]*container.Status {
 	containers, err := rm.cm.ListContainers(&container.ContainerListConfig{
 		All: true,
 		LabelSelector: container.LabelSelector{
 			KubernetesPodUIDLabel: "",
 		}})
 	if err != nil {
-		return nil, err
+		logger.Error(err.Error())
+		return nil
 	}
 
 	containerStatuses := make(map[types.UID][]*container.Status)
@@ -384,18 +386,20 @@ func (rm *runtimeManager) getAllPodContainers() (map[types.UID][]*container.Stat
 		var inspection container.ContainerInspectInfo
 		inspection, err = rm.cm.InspectContainer(c.ID)
 		if err != nil {
-			return nil, err
+			continue
 		}
 		var cs *container.Status
 		if podUID, exists := inspection.Config.Labels[KubernetesPodUIDLabel]; exists {
 			cs, err = rm.inspectionToContainerStatus(&inspection)
 			if err != nil {
-				return nil, err
+				logger.Error(err.Error())
+				continue
 			}
 			//fmt.Printf("Container %s belongs to pod %s\n", cs.Name, podUID)
 			cs.ResourcesUsage, err = rm.cm.GetContainerStats(c.ID)
 			if err != nil {
-				return nil, err
+				logger.Error(err.Error())
+				continue
 			}
 			//fmt.Println("Got ru: ", cs.ResourcesUsage)
 			containerStatuses[podUID] = append(containerStatuses[podUID], cs)
@@ -403,7 +407,7 @@ func (rm *runtimeManager) getAllPodContainers() (map[types.UID][]*container.Stat
 			panic("It's impossible!")
 		}
 	}
-	return containerStatuses, nil
+	return containerStatuses
 }
 
 func calcMetrics(containerStatuses []*container.Status) (cpuPercent, memPercent float64) {
