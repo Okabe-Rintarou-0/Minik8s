@@ -7,6 +7,14 @@ const (
 type Labels map[string]string
 type Annotations map[string]string
 
+func (labels Labels) DeepCopy() Labels {
+	cpy := make(Labels)
+	for key, value := range labels {
+		cpy[key] = value
+	}
+	return cpy
+}
+
 type ContainerPort struct {
 	Name          string `yaml:"name"`
 	HostPort      string `yaml:"hostPort"`
@@ -75,7 +83,7 @@ type ContainerLivenessProbeConfig struct {
 
 type ContainerLifecycleTaskConfig struct {
 	Exec struct {
-		Command []string `yaml:"command,flow"`
+		Command []string `yaml:"cmd,flow"`
 	} `yaml:"exec"`
 }
 
@@ -94,7 +102,7 @@ type Container struct {
 	Name            string                       `yaml:"name"`
 	Image           string                       `yaml:"image"`
 	ImagePullPolicy string                       `yaml:"imagePullPolicy"`
-	Command         []string                     `yaml:"command,flow"`
+	Command         []string                     `yaml:"cmd,flow"`
 	Args            []string                     `yaml:"args,flow"`
 	Env             []EnvVar                     `yaml:"env"`
 	Resources       ContainerResources           `yaml:"resources"`
@@ -157,8 +165,19 @@ func (pod *Pod) Namespace() string {
 	return pod.Metadata.Namespace
 }
 
+func (pod *Pod) Labels() Labels {
+	return pod.Metadata.Labels
+}
+
 func (pod *Pod) Containers() []Container {
 	return pod.Spec.Containers
+}
+
+func (pod *Pod) AddLabel(name, value string) {
+	if pod.Labels() == nil {
+		pod.Metadata.Labels = make(Labels)
+	}
+	pod.Metadata.Labels[name] = value
 }
 
 func (pod *Pod) GetContainerByName(name string) *Container {
@@ -168,4 +187,9 @@ func (pod *Pod) GetContainerByName(name string) *Container {
 		}
 	}
 	return nil
+}
+
+type PodTemplateSpec struct {
+	Metadata Metadata `yaml:"metadata"`
+	Spec     PodSpec  `yaml:"spec"`
 }

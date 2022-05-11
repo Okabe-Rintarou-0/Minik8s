@@ -1,20 +1,23 @@
 package pleg
 
 import (
-	"fmt"
 	"minik8s/apiObject"
+	"minik8s/apiObject/types"
 	"minik8s/kubelet/src/podutil"
 	"minik8s/kubelet/src/runtime/container"
 	"minik8s/kubelet/src/runtime/runtime"
 	"minik8s/kubelet/src/status"
-	"minik8s/kubelet/src/types"
+	"minik8s/util/logger"
+	"minik8s/util/wait"
 	"time"
 )
 
 const (
-	eventChannelSize      = 10
-	relistIntervalSeconds = 10
+	eventChannelSize = 10
+	relistPeriod     = 10 * time.Second
 )
+
+var log = logger.Log("PLEG")
 
 // PodLifecycleEventType define the event type of pod life cycle events.
 type PodLifecycleEventType string
@@ -83,7 +86,7 @@ func (statusRecords podStatusRecords) GetRecord(podUID types.UID) *podStatusReco
 }
 
 type PodRestartContainerArgs struct {
-	ContainerID       container.ContainerID
+	ContainerID       container.ID
 	ContainerFullName string
 }
 
@@ -92,11 +95,10 @@ type Manager interface {
 	Start()
 }
 
-func NewPlegManager(statusManager status.Manager, podManager runtime.Manager) Manager {
+func NewPlegManager(statusManager status.Manager) Manager {
 	return &manager{
 		eventCh:          make(chan *PodLifecycleEvent, eventChannelSize),
 		statusManager:    statusManager,
-		podManager:       podManager,
 		podStatusRecords: make(podStatusRecords),
 	}
 }
@@ -104,7 +106,6 @@ func NewPlegManager(statusManager status.Manager, podManager runtime.Manager) Ma
 type manager struct {
 	eventCh          chan *PodLifecycleEvent
 	statusManager    status.Manager
-	podManager       runtime.Manager
 	podStatusRecords podStatusRecords
 }
 
@@ -117,11 +118,11 @@ func newPodLifecycleEvent(podUID types.UID, pod *apiObject.Pod, eventType PodLif
 	}
 }
 
-func (m *manager) addStartedLifecycleEvent(podUID types.UID, pod *apiObject.Pod, containerID container.ContainerID) {
+func (m *manager) addStartedLifecycleEvent(podUID types.UID, pod *apiObject.Pod, containerID container.ID) {
 	m.eventCh <- newPodLifecycleEvent(podUID, pod, ContainerStarted, containerID)
 }
 
-func (m *manager) addNeedRemoveLifecycleEvent(podUID types.UID, pod *apiObject.Pod, containerID container.ContainerID) {
+func (m *manager) addNeedRemoveLifecycleEvent(podUID types.UID, pod *apiObject.Pod, containerID container.ID) {
 	m.eventCh <- newPodLifecycleEvent(podUID, pod, ContainerNeedRemove, containerID)
 }
 
@@ -137,19 +138,19 @@ func (m *manager) addNeedCreateAndStartLifecycleEvent(podUID types.UID, pod *api
 	m.eventCh <- newPodLifecycleEvent(podUID, pod, ContainerNeedCreateAndStart, target)
 }
 
-func (m *manager) addDiedLifecycleEvent(podUID types.UID, pod *apiObject.Pod, containerID container.ContainerID) {
+func (m *manager) addDiedLifecycleEvent(podUID types.UID, pod *apiObject.Pod, containerID container.ID) {
 	m.eventCh <- newPodLifecycleEvent(podUID, pod, ContainerDied, containerID)
 }
 
-func (m *manager) addRemovedLifecycleEvent(podUID types.UID, pod *apiObject.Pod, containerID container.ContainerID) {
+func (m *manager) addRemovedLifecycleEvent(podUID types.UID, pod *apiObject.Pod, containerID container.ID) {
 	m.eventCh <- newPodLifecycleEvent(podUID, pod, ContainerRemoved, containerID)
 }
 
-func (m *manager) addPodSyncLifecycleEvent(podUID types.UID, pod *apiObject.Pod, containerID container.ContainerID) {
+func (m *manager) addPodSyncLifecycleEvent(podUID types.UID, pod *apiObject.Pod, containerID container.ID) {
 	m.eventCh <- newPodLifecycleEvent(podUID, pod, PodSync, containerID)
 }
 
-func (m *manager) addChangedLifecycleEvent(podUID types.UID, pod *apiObject.Pod, containerID container.ContainerID) {
+func (m *manager) addChangedLifecycleEvent(podUID types.UID, pod *apiObject.Pod, containerID container.ID) {
 	m.eventCh <- newPodLifecycleEvent(podUID, pod, ContainerChanged, containerID)
 }
 
@@ -195,14 +196,14 @@ func (m *manager) compareAndProduceLifecycleEvents(apiPod *apiObject.Pod, runtim
 
 		if needDealWith {
 			switch cs.State {
-			case container.ContainerStateRunning:
-			case container.ContainerStateCreated:
+			case container.StateRunning:
+			case container.StateCreated:
 				//if apiPod.GetContainerByName(containerName) == nil {
 				//	m.addNeedRemoveLifecycleEvent(podUID, cs.ID)
 				//}
 				break
 			// Need restart it
-			case container.ContainerStateExited:
+			case container.StateExited:
 				if apiPod.GetContainerByName(containerName) != nil {
 					m.addNeedRestartLifecycleEvent(podUID, apiPod, PodRestartContainerArgs{cs.ID, cs.Name})
 				}
@@ -220,9 +221,10 @@ func (m *manager) compareAndProduceLifecycleEvents(apiPod *apiObject.Pod, runtim
 
 func (m *manager) relist() error {
 	// Step 1: Get all *runtime* pod statuses
-	runtimePodStatuses, err := m.podManager.GetPodStatuses()
-	if err != nil {
-		return err
+	// If there are no available pod info, just return
+	runtimePodStatuses := m.statusManager.GetPodStatuses()
+	if runtimePodStatuses == nil {
+		return nil
 	}
 
 	// Step 2: Get pod api object, and according to the api object, produce lifecycle events
@@ -236,15 +238,11 @@ func (m *manager) relist() error {
 }
 
 func (m *manager) run() {
-	ticker := time.Tick(relistIntervalSeconds * time.Second)
-	for {
-		select {
-		case <-ticker:
-			if err := m.relist(); err != nil {
-				fmt.Println(err.Error())
-			}
+	wait.Period(relistPeriod, relistPeriod, func() {
+		if err := m.relist(); err != nil {
+			log(err.Error())
 		}
-	}
+	})
 }
 
 func (m *manager) Updates() chan *PodLifecycleEvent {

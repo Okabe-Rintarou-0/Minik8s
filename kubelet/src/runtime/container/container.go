@@ -1,35 +1,36 @@
 package container
 
 import (
-	"fmt"
+	"encoding/json"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	"minik8s/kubelet/src/runtime/docker"
+	"minik8s/util/logger"
 	"time"
 )
 
-type ContainerState string
+type State string
 
 const (
-	// ContainerStateCreated indicates a container that has been created (e.g. with docker create) but not started.
-	ContainerStateCreated ContainerState = "created"
-	// ContainerStateRunning indicates a currently running container.
-	ContainerStateRunning ContainerState = "running"
-	// ContainerStateExited indicates a container that ran and completed ("stopped" in other contexts, although a created container is technically also "stopped").
-	ContainerStateExited ContainerState = "exited"
-	// ContainerStateUnknown encompasses all the states that we currently don't care about (like restarting, paused, dead).
-	ContainerStateUnknown ContainerState = "unknown"
+	// StateCreated indicates a container that has been created (e.g. with docker create) but not started.
+	StateCreated State = "created"
+	// StateRunning indicates a currently running container.
+	StateRunning State = "running"
+	// StateExited indicates a container that ran and completed ("stopped" in other contexts, although a created container is technically also "stopped").
+	StateExited State = "exited"
+	// StateUnknown encompasses all the states that we currently don't care about (like restarting, paused, dead).
+	StateUnknown State = "unknown"
 )
 
-// ContainerStatus represents the status of a container.
-type ContainerStatus struct {
+// Status represents the status of a container.
+type Status struct {
 	// ID of the container.
-	ID ContainerID
+	ID ID
 	// Name of the container.
 	Name string
 	// Status of the container.
-	State ContainerState
+	State State
 	// Creation time of the container.
 	CreatedAt time.Time
 	// Start time of the container.
@@ -44,28 +45,36 @@ type ContainerStatus struct {
 	RestartCount int
 	// A string stands for the error
 	Error string
+	// The status of resource usage
+	ResourcesUsage ResourcesUsage
 }
 
-type ContainerID = string
+type ID = string
 
-type ContainerCmdLine = []string
+type CmdLine = []string
 
 type Container struct {
-	ID      ContainerID
+	ID      ID
 	Name    string
 	Image   string
 	ImageID string
-	State   ContainerState
+	State   State
+}
+
+type ResourcesUsage struct {
+	CpuPercent float64 `json:"cpu_percent"`
+	MemPercent float64 `json:"mem_percent"`
 }
 
 type Manager interface {
 	ListContainers(config *ContainerListConfig) ([]*Container, error)
 	CreateContainer(name string, config *ContainerCreateConfig) (string, error)
-	RemoveContainer(ID ContainerID, config *ContainerRemoveConfig) error
-	StartContainer(ID ContainerID, config *ContainerStartConfig) error
-	RenameContainer(ID ContainerID, newName string) error
-	StopContainer(ID ContainerID, config *ContainerStopConfig) error
-	InspectContainer(ID ContainerID) (ContainerInspectInfo, error)
+	RemoveContainer(ID ID, config *ContainerRemoveConfig) error
+	StartContainer(ID ID, config *ContainerStartConfig) error
+	RenameContainer(ID ID, newName string) error
+	StopContainer(ID ID, config *ContainerStopConfig) error
+	GetContainerStats(ID ID) (ResourcesUsage, error)
+	InspectContainer(ID ID) (ContainerInspectInfo, error)
 }
 
 func NewContainerManager() Manager {
@@ -75,7 +84,34 @@ func NewContainerManager() Manager {
 type containerManager struct {
 }
 
-func (cm *containerManager) RenameContainer(ID ContainerID, newName string) error {
+func (cm *containerManager) GetContainerStats(ID ID) (ResourcesUsage, error) {
+	ru := ResourcesUsage{}
+
+	resp, err := docker.Client.ContainerStats(docker.Ctx, ID, false)
+	if err != nil {
+		return ru, err
+	}
+
+	body := resp.Body
+	osType := resp.OSType
+	defer body.Close()
+	decoder := json.NewDecoder(body)
+	statsJson := &types.StatsJSON{}
+	err = decoder.Decode(statsJson)
+	if err != nil {
+		return ru, err
+	}
+
+	if osType != "windows" {
+		ru.MemPercent = calculateMemPercentUnix(statsJson)
+		ru.CpuPercent = calculateCPUPercentUnix(statsJson)
+	} else {
+		ru.CpuPercent = calculateCPUPercentWindows(statsJson)
+	}
+	return ru, nil
+}
+
+func (cm *containerManager) RenameContainer(ID ID, newName string) error {
 	return docker.Client.ContainerRename(docker.Ctx, ID, newName)
 }
 
@@ -113,7 +149,7 @@ func (cm *containerManager) ListContainers(config *ContainerListConfig) ([]*Cont
 			Name:    c.Names[0],
 			Image:   c.Image,
 			ImageID: c.ImageID,
-			State:   ContainerState(c.State),
+			State:   State(c.State),
 		}
 	}
 	return ret, nil
@@ -139,7 +175,7 @@ func (cm *containerManager) CreateContainer(name string, config *ContainerCreate
 		Links:        config.Links,
 	}, nil, nil, name)
 	for _, warning := range res.Warnings {
-		fmt.Println(warning)
+		logger.Warn(warning)
 	}
 
 	return res.ID, err
@@ -149,18 +185,18 @@ func (cm *containerManager) RemoveContainerByName(name string, config *Container
 	return docker.Client.ContainerRemove(docker.Ctx, name, *config)
 }
 
-func (cm *containerManager) RemoveContainer(ID ContainerID, config *ContainerRemoveConfig) error {
+func (cm *containerManager) RemoveContainer(ID ID, config *ContainerRemoveConfig) error {
 	return docker.Client.ContainerRemove(docker.Ctx, ID, *config)
 }
 
-func (cm *containerManager) StartContainer(ID ContainerID, config *ContainerStartConfig) error {
+func (cm *containerManager) StartContainer(ID ID, config *ContainerStartConfig) error {
 	return docker.Client.ContainerStart(docker.Ctx, ID, *config)
 }
 
-func (cm *containerManager) StopContainer(ID ContainerID, config *ContainerStopConfig) error {
+func (cm *containerManager) StopContainer(ID ID, config *ContainerStopConfig) error {
 	return docker.Client.ContainerStop(docker.Ctx, ID, &config.timeout)
 }
 
-func (cm *containerManager) InspectContainer(ID ContainerID) (ContainerInspectInfo, error) {
+func (cm *containerManager) InspectContainer(ID ID) (ContainerInspectInfo, error) {
 	return docker.Client.ContainerInspect(docker.Ctx, ID)
 }

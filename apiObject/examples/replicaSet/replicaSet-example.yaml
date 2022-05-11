@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: rs
+  namespace: default
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: myApp
+  template:
+    metadata:
+      labels:
+        app: myApp
+    spec:
+      containers:
+        - name: viewer
+          image: dplsming/nginx-fileserver:1.0
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: volume
+              mountPath: /usr/share/nginx/html/files
+        - name: downloader
+          image: dplsming/aria2ng-downloader:1.0
+          ports:
+            - containerPort: 6800
+            - containerPort: 6880
+          volumeMounts:
+            - name: volume
+              mountPath: /data
+      volumes:
+        - name: volume
+          hostPath:
+            path: /pod

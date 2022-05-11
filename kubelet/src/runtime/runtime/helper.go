@@ -1,14 +1,13 @@
 package runtime
 
 import (
-	"fmt"
 	"github.com/docker/go-connections/nat"
 	"minik8s/apiObject"
+	"minik8s/apiObject/types"
 	"minik8s/kubelet/src/netutil"
 	"minik8s/kubelet/src/podutil"
 	"minik8s/kubelet/src/runtime/container"
 	"minik8s/kubelet/src/runtime/image"
-	"minik8s/kubelet/src/types"
 	"strconv"
 	"time"
 )
@@ -51,7 +50,7 @@ func (rm *runtimeManager) toVolumeBinds(pod *apiObject.Pod, target *apiObject.Co
 		if device, exists := volumes[volumeName]; exists && device.IsHostPath() {
 			// Volume bind rule: $(host path):$(container path)
 			mountRule := device.HostPath.Path + ":" + volumeMount.MountPath
-			fmt.Println("mount", mountRule)
+			//fmt.Println("mount", mountRule)
 			volumeBinds = append(volumeBinds, mountRule)
 		}
 	}
@@ -85,7 +84,7 @@ func (rm *runtimeManager) addPortBindings(portBindings container.PortBindings, p
 			if err != nil {
 				return err
 			}
-			fmt.Println("using random available port", randomPort)
+			log("Using random available port %d", randomPort)
 			port.HostPort = strconv.Itoa(randomPort)
 		}
 
@@ -106,6 +105,9 @@ func (rm *runtimeManager) addPortSet(portSet container.PortSet, ports []apiObjec
 func (rm *runtimeManager) getPauseContainerCreateConfig(pod *apiObject.Pod) (*container.ContainerCreateConfig, error) {
 	labels := map[string]string{
 		KubernetesPodUIDLabel: pod.UID(),
+	}
+	for labelName, labelValue := range pod.Metadata.Labels {
+		labels[labelName] = labelValue
 	}
 
 	// Because all the containers share the same network namespace with pause container
@@ -138,6 +140,10 @@ func (rm *runtimeManager) getCommonContainerCreateConfig(pod *apiObject.Pod, c *
 	labels := map[string]string{
 		KubernetesPodUIDLabel: podUID,
 	}
+	for labelName, labelValue := range pod.Metadata.Labels {
+		labels[labelName] = labelValue
+	}
+
 	pauseContainerFullName := rm.pauseContainerFullName(podFullName, podUID)
 	pauseContainerRef := rm.toPauseContainerReference(podFullName, podUID)
 	return &container.ContainerCreateConfig{
@@ -156,15 +162,15 @@ func (rm *runtimeManager) getCommonContainerCreateConfig(pod *apiObject.Pod, c *
 	}
 }
 
-func (rm *runtimeManager) inspectionToContainerStatus(inspection *container.ContainerInspectInfo) (*container.ContainerStatus, error) {
-	state := container.ContainerStateUnknown
+func (rm *runtimeManager) inspectionToContainerStatus(inspection *container.ContainerInspectInfo) (*container.Status, error) {
+	state := container.StateUnknown
 	switch inspection.State.Status {
 	case "running":
-		state = container.ContainerStateRunning
+		state = container.StateRunning
 	case "created":
-		state = container.ContainerStateCreated
+		state = container.StateCreated
 	case "exited":
-		state = container.ContainerStateExited
+		state = container.StateExited
 	}
 
 	createdAt, err := time.Parse(time.RFC3339Nano, inspection.Created)
@@ -182,7 +188,7 @@ func (rm *runtimeManager) inspectionToContainerStatus(inspection *container.Cont
 		return nil, err
 	}
 
-	return &container.ContainerStatus{
+	return &container.Status{
 		ID:           inspection.ID,
 		Name:         inspection.Name,
 		State:        state,
@@ -196,7 +202,7 @@ func (rm *runtimeManager) inspectionToContainerStatus(inspection *container.Cont
 	}, nil
 }
 
-func (rm *runtimeManager) getPodContainerStatuses(pod *apiObject.Pod) ([]*container.ContainerStatus, error) {
+func (rm *runtimeManager) getPodContainerStatuses(pod *apiObject.Pod) ([]*container.Status, error) {
 	containers, err := rm.cm.ListContainers(&container.ContainerListConfig{
 		All: true,
 		LabelSelector: container.LabelSelector{
@@ -207,7 +213,7 @@ func (rm *runtimeManager) getPodContainerStatuses(pod *apiObject.Pod) ([]*contai
 		return nil, err
 	}
 
-	containerStatuses := make([]*container.ContainerStatus, len(containers))
+	containerStatuses := make([]*container.Status, len(containers))
 	for i, c := range containers {
 		inspection, err := rm.cm.InspectContainer(c.ID)
 		if err != nil {
@@ -231,16 +237,16 @@ func (rm *runtimeManager) startPauseContainer(pod *apiObject.Pod) error {
 
 	// Step 2: If needed, pull the image for the given container
 	if !exists {
-		fmt.Println("Need to pull image", pauseImage)
+		//fmt.Println("Need to pull image", pauseImage)
 		err = rm.im.PullImage(pauseImage, &image.ImagePullConfig{
-			Verbose: true,
+			Verbose: false,
 			All:     false,
 		})
 		if err != nil {
 			return err
 		}
 	} else {
-		fmt.Printf("No need to pull image %s, continue\n", pauseImage)
+		//fmt.Printf("No need to pull image %s, continue\n", pauseImage)
 	}
 
 	// Prepare
@@ -248,7 +254,7 @@ func (rm *runtimeManager) startPauseContainer(pod *apiObject.Pod) error {
 	podUID := pod.UID()
 
 	// Step 3: Create a container
-	fmt.Println("Now create the container")
+	//fmt.Println("Now create the container")
 
 	containerFullName := rm.pauseContainerFullName(podFullName, podUID)
 
@@ -259,15 +265,15 @@ func (rm *runtimeManager) startPauseContainer(pod *apiObject.Pod) error {
 		return err
 	}
 
-	var ID container.ContainerID
+	var ID container.ID
 	ID, err = rm.cm.CreateContainer(containerFullName, createConfig)
 	if err != nil {
 		return err
 	}
-	fmt.Println("Create the container successfully, got ID", ID)
+	//fmt.Println("Create the container successfully, got ID", ID)
 
 	// Step 4: Start this container
-	fmt.Println("Now start the container with ID", ID)
+	//fmt.Println("Now start the container with ID", ID)
 	err = rm.cm.StartContainer(ID, &container.ContainerStartConfig{})
 	return err
 }
@@ -329,41 +335,41 @@ func (rm *runtimeManager) startCommonContainer(pod *apiObject.Pod, c *apiObject.
 
 	// Step 2: If needed, pull the image for the given container
 	if needPull {
-		fmt.Println("Need to pull image", c.Image)
+		log("Pulling image[Name = %s]", c.Image)
 		err = rm.im.PullImage(c.Image, &image.ImagePullConfig{
-			Verbose: true,
+			Verbose: false,
 			All:     false,
 		})
 		if err != nil {
+			log("Pull error:", err.Error())
 			return err
 		}
 	} else {
-		fmt.Printf("No need to pull image %s, continue\n", c.Image)
+		//fmt.Printf("No need to pull image %s, continue\n", c.Image)
 	}
-
 	// Prepare
 	podFullName := pod.FullName()
 	podUID := pod.UID()
 
 	// Step 3: Create a container
-	fmt.Println("Now create the container")
+	//fmt.Println("Now create the container")
 
 	containerFullName := podutil.ContainerFullName(c.Name, podFullName, podUID, 0)
 
-	var ID container.ContainerID
+	var ID container.ID
 	ID, err = rm.cm.CreateContainer(containerFullName, rm.getCommonContainerCreateConfig(pod, c))
 	if err != nil {
 		return err
 	}
-	fmt.Println("Create the container successfully, got ID", ID)
+	//fmt.Println("Create the container successfully, got ID", ID)
 
 	// Step 4: Start this container
-	fmt.Println("Now start the container with ID", ID)
+	//fmt.Println("Now start the container with ID", ID)
 	err = rm.cm.StartContainer(ID, &container.ContainerStartConfig{})
 	return err
 }
 
-func (rm *runtimeManager) getAllPodContainers() (map[types.UID][]*container.ContainerStatus, error) {
+func (rm *runtimeManager) getAllPodContainers() (map[types.UID][]*container.Status, error) {
 	containers, err := rm.cm.ListContainers(&container.ContainerListConfig{
 		All: true,
 		LabelSelector: container.LabelSelector{
@@ -373,23 +379,39 @@ func (rm *runtimeManager) getAllPodContainers() (map[types.UID][]*container.Cont
 		return nil, err
 	}
 
-	containerStatuses := make(map[types.UID][]*container.ContainerStatus)
+	containerStatuses := make(map[types.UID][]*container.Status)
 	for _, c := range containers {
-		inspection, err := rm.cm.InspectContainer(c.ID)
+		var inspection container.ContainerInspectInfo
+		inspection, err = rm.cm.InspectContainer(c.ID)
 		if err != nil {
 			return nil, err
 		}
-		var cs *container.ContainerStatus
+		var cs *container.Status
 		if podUID, exists := inspection.Config.Labels[KubernetesPodUIDLabel]; exists {
 			cs, err = rm.inspectionToContainerStatus(&inspection)
 			if err != nil {
 				return nil, err
 			}
-			fmt.Printf("Container %s belongs to pod %s\n", cs.Name, podUID)
+			//fmt.Printf("Container %s belongs to pod %s\n", cs.Name, podUID)
+			cs.ResourcesUsage, err = rm.cm.GetContainerStats(c.ID)
+			if err != nil {
+				return nil, err
+			}
+			//fmt.Println("Got ru: ", cs.ResourcesUsage)
 			containerStatuses[podUID] = append(containerStatuses[podUID], cs)
 		} else {
 			panic("It's impossible!")
 		}
 	}
 	return containerStatuses, nil
+}
+
+func calcMetrics(containerStatuses []*container.Status) (cpuPercent, memPercent float64) {
+	cpuPercent = 0.0
+	memPercent = 0.0
+	for _, cs := range containerStatuses {
+		cpuPercent += cs.ResourcesUsage.CpuPercent
+		memPercent += cs.ResourcesUsage.MemPercent
+	}
+	return
 }

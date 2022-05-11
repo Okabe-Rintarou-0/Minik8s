@@ -2,30 +2,19 @@ package kubelet
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/go-redis/redis/v8"
-	"minik8s/apiObject"
-	"minik8s/kubelet/src/listwatch"
+	"minik8s/entity"
 	"minik8s/kubelet/src/pleg"
 	"minik8s/kubelet/src/runtime/podworker"
 	"minik8s/kubelet/src/runtime/runtime"
 	"minik8s/kubelet/src/status"
+	"minik8s/listwatch"
+	"minik8s/util/logger"
+	"minik8s/util/topicutil"
+	"os"
 )
 
-const (
-	CreateAction PodUpdateAction = iota
-	DeleteAction
-	UpdateAction
-)
-
-const PodUpdateTopic = "PodUpdate"
-
-type PodUpdateAction byte
-
-type PodUpdate struct {
-	Action PodUpdateAction
-	Target *apiObject.Pod
-}
+var log = logger.Log("Kubelet")
 
 type Kubelet struct {
 	statusManager    status.Manager
@@ -33,17 +22,16 @@ type Kubelet struct {
 	plegManager      pleg.Manager
 	podWorkerManager podworker.Manager
 
-	updates chan *PodUpdate
+	updates chan *entity.PodUpdate
 }
 
-func NewKubelet() *Kubelet {
+func New() *Kubelet {
 	kl := &Kubelet{
-		statusManager:  status.NewStatusManager(),
 		runtimeManager: runtime.NewPodManager(),
-
-		updates: make(chan *PodUpdate),
+		updates:        make(chan *entity.PodUpdate, 20),
 	}
-	kl.plegManager = pleg.NewPlegManager(kl.statusManager, kl.runtimeManager)
+	kl.statusManager = status.NewStatusManager(kl.runtimeManager)
+	kl.plegManager = pleg.NewPlegManager(kl.statusManager)
 	kl.podWorkerManager = podworker.NewPodWorkerManager(
 		kl.runtimeManager.CreatePod,
 		kl.runtimeManager.DeletePod,
@@ -56,52 +44,61 @@ func NewKubelet() *Kubelet {
 }
 
 func (kl *Kubelet) parsePodUpdate(msg *redis.Message) {
-	podUpdate := &PodUpdate{}
+	podUpdate := &entity.PodUpdate{}
 	err := json.Unmarshal([]byte(msg.Payload), podUpdate)
 	if err != nil {
-		fmt.Println(err.Error())
+		logger.Error(err.Error())
 		return
 	}
-
+	log("Received pod update action: %s for %s", podUpdate.Action.String(), podUpdate.Target.UID())
 	kl.updates <- podUpdate
 }
 
-func (kl *Kubelet) Run() {
-	go listwatch.Watch(PodUpdateTopic, kl.parsePodUpdate)
+func (kl *Kubelet) podUpdateTopic() (string, error) {
+	hostname, err := os.Hostname()
+	return topicutil.PodUpdateTopic(hostname), err
+}
 
+func (kl *Kubelet) Run() {
+	topic, err := kl.podUpdateTopic()
+	if err != nil {
+		panic(err)
+	}
+
+	go listwatch.Watch(topic, kl.parsePodUpdate)
+
+	kl.statusManager.Start()
 	kl.plegManager.Start()
 	kl.syncLoop(kl.updates)
 }
 
-func (kl *Kubelet) syncLoop(updates <-chan *PodUpdate) {
+func (kl *Kubelet) syncLoop(updates <-chan *entity.PodUpdate) {
 	for kl.syncLoopIteration(updates) {
 
 	}
 }
 
-func (kl *Kubelet) syncLoopIteration(updates <-chan *PodUpdate) bool {
+func (kl *Kubelet) syncLoopIteration(updates <-chan *entity.PodUpdate) bool {
+	log("Sync loop Iteration")
 	select {
 	case podUpdate := <-updates:
-		fmt.Printf("Received podUpdate %v: %v\n", podUpdate.Action, podUpdate.Target)
-		pod := podUpdate.Target
+		log("Received podUpdate %v: Pod[Name = %v, UID = %v]", podUpdate.Action.String(), podUpdate.Target.FullName(), podUpdate.Target.UID())
+		pod := &podUpdate.Target
 		podUID := pod.UID()
 		switch podUpdate.Action {
-		case CreateAction:
-			// If pod is newly created
-			if kl.statusManager.GetPod(podUID) == nil {
-				kl.statusManager.UpdatePod(podUID, pod)
-				kl.podWorkerManager.AddPod(pod)
-			}
-		case UpdateAction:
+		case entity.CreateAction:
+			kl.statusManager.AddPod(podUID, pod)
+			kl.podWorkerManager.AddPod(pod)
+		case entity.UpdateAction:
 			kl.statusManager.UpdatePod(podUID, pod)
 			kl.podWorkerManager.UpdatePod(pod)
-		case DeleteAction:
+		case entity.DeleteAction:
 			kl.statusManager.DeletePod(podUID)
 			kl.podWorkerManager.DeletePod(pod)
 		}
 
 	case event := <-kl.plegManager.Updates():
-		fmt.Printf("Receive ple: %v, data = %v\n", event, event.Data)
+		log("Receive ple: %v, data = %v", event, event.Data)
 		kl.podWorkerManager.SyncPod(event)
 	}
 	return true

@@ -1,14 +1,18 @@
 package runtime
 
 import (
-	"fmt"
 	"minik8s/apiObject"
+	"minik8s/apiObject/types"
+	"minik8s/entity"
 	"minik8s/kubelet/src/podutil"
 	"minik8s/kubelet/src/runtime/container"
 	"minik8s/kubelet/src/runtime/image"
-	"minik8s/kubelet/src/types"
+	"minik8s/util/logger"
 	"strconv"
+	"time"
 )
+
+var log = logger.Log("Runtime")
 
 type Pod struct {
 	ID         types.UID
@@ -27,11 +31,27 @@ type PodStatus struct {
 	Namespace string
 	// All IPs assigned to this pod
 	IPs []string
-	// Status of containers in the pod.
-	ContainerStatuses []*container.ContainerStatus
+	// PodLifecycle of containers in the pod.
+	ContainerStatuses []*container.Status
 }
 
-func (podStatus *PodStatus) GetContainerStatusByName(name string) *container.ContainerStatus {
+func (podStatus *PodStatus) ToEntity() *entity.PodStatus {
+	cpuPercent, memPercent := calcMetrics(podStatus.ContainerStatuses)
+	return &entity.PodStatus{
+		ID:   podStatus.ID,
+		Name: podStatus.Name,
+		/// TODO what about the labels?
+		//Labels:     podStatus.Labels,
+		Namespace:  podStatus.Namespace,
+		Lifecycle:  entity.PodRunning,
+		CpuPercent: cpuPercent,
+		MemPercent: memPercent,
+		Error:      "",
+		SyncTime:   time.Now(),
+	}
+}
+
+func (podStatus *PodStatus) GetContainerStatusByName(name string) *container.Status {
 	for _, cs := range podStatus.ContainerStatuses {
 		if cs.Name == name {
 			return cs
@@ -50,7 +70,7 @@ func (pod *Pod) FullName() string {
 }
 
 // GetContainerByID returns the container of pod given the ID of it
-func (pod *Pod) GetContainerByID(ID container.ContainerID) *container.Container {
+func (pod *Pod) GetContainerByID(ID container.ID) *container.Container {
 	for _, c := range pod.Containers {
 		if c.ID == ID {
 			return c
@@ -92,26 +112,26 @@ type Manager interface {
 	DeletePod(pod *apiObject.Pod) error
 	GetPodStatus(pod *apiObject.Pod) (*PodStatus, error)
 	GetPodStatuses() (PodStatuses, error)
-	PodRemoveContainer(podUID types.UID, ID container.ContainerID) error
+	PodRemoveContainer(podUID types.UID, ID container.ID) error
 	PodCreateAndStartContainer(pod *apiObject.Pod, target *apiObject.Container) error
-	PodStartContainer(podUID types.UID, ID container.ContainerID) error
-	PodRestartContainer(pod *apiObject.Pod, containerID container.ContainerID, fullName string) error
+	PodStartContainer(podUID types.UID, ID container.ID) error
+	PodRestartContainer(pod *apiObject.Pod, containerID container.ID, fullName string) error
 }
 
 type runtimeManager struct {
 	cm container.Manager
-	im image.ImageManager
+	im image.Manager
 }
 
 func (rm *runtimeManager) PodCreateAndStartContainer(pod *apiObject.Pod, target *apiObject.Container) error {
 	return rm.startCommonContainer(pod, target)
 }
 
-func (rm *runtimeManager) PodStartContainer(podUID types.UID, ID container.ContainerID) error {
+func (rm *runtimeManager) PodStartContainer(podUID types.UID, ID container.ID) error {
 	return rm.cm.StartContainer(ID, &container.ContainerStartConfig{})
 }
 
-func (rm *runtimeManager) PodRestartContainer(pod *apiObject.Pod, containerID container.ContainerID, fullName string) error {
+func (rm *runtimeManager) PodRestartContainer(pod *apiObject.Pod, containerID container.ID, fullName string) error {
 	parseSucc, _, _, _, _, restartCount := podutil.ParseContainerFullName(fullName)
 	if !parseSucc {
 		panic("Could not happen")
@@ -126,13 +146,13 @@ func (rm *runtimeManager) PodRestartContainer(pod *apiObject.Pod, containerID co
 	return rm.cm.StartContainer(containerID, &container.ContainerStartConfig{})
 }
 
-func (rm *runtimeManager) PodRemoveContainer(podUID types.UID, ID container.ContainerID) error {
+func (rm *runtimeManager) PodRemoveContainer(podUID types.UID, ID container.ID) error {
 	return rm.cm.RemoveContainer(ID, &container.ContainerRemoveConfig{})
 }
 
 // DeletePod deletes a pod according to the given api object
 func (rm *runtimeManager) DeletePod(pod *apiObject.Pod) error {
-	fmt.Println("Delete pod", pod.UID())
+	log("Delete pod[ID = %s]", pod.UID())
 	// Step 1: Remove common container
 	err := rm.removePodCommonContainers(pod)
 
@@ -149,7 +169,7 @@ func (rm *runtimeManager) DeletePod(pod *apiObject.Pod) error {
 		return err
 	}
 
-	fmt.Printf("Pod with UID %s has been removed!\n", pod.UID())
+	log("Pod[ID = %s] has been removed!", pod.UID())
 	return nil
 }
 
@@ -172,7 +192,7 @@ func (rm *runtimeManager) CreatePod(pod *apiObject.Pod) error {
 		}
 	}
 
-	fmt.Printf("Pod with UID %s created!\n", pod.UID())
+	log("Pod[ID = %s] has been created!", pod.UID())
 	return nil
 }
 
@@ -197,10 +217,12 @@ func (rm *runtimeManager) GetPodStatuses() (PodStatuses, error) {
 	}
 	podStatuses := make(PodStatuses)
 	for podUID, cs := range allContainerStatuses {
+		/// TODO name?
 		podStatuses[podUID] = &PodStatus{
 			ID:                podUID,
 			ContainerStatuses: cs,
 		}
+		//fmt.Printf("Convert to entity would be: %v\n", *podStatuses[podUID].ToEntity())
 	}
 	return podStatuses, nil
 }

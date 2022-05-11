@@ -1,7 +1,7 @@
 package podutil
 
 import (
-	"minik8s/kubelet/src/types"
+	"minik8s/apiObject/types"
 	"strconv"
 	"strings"
 )

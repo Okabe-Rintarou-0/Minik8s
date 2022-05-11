@@ -9,8 +9,8 @@ import (
 
 type ContainerCreateConfig struct {
 	Image        string              // Name of the image as it was passed by the operator (e.g. could be symbolic)
-	Entrypoint   ContainerCmdLine    // Entrypoint to run when starting the container
-	Cmd          ContainerCmdLine    // Command to run when starting the container
+	Entrypoint   CmdLine             // Entrypoint to run when starting the container
+	Cmd          CmdLine             // Command to run when starting the container
 	Env          []string            // List of environment variable to set in the container
 	Volumes      map[string]struct{} // List of volumes (mounts) used for the container
 	Labels       map[string]string   // List of labels set to this container
