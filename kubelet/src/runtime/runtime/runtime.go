@@ -29,7 +29,7 @@ type PodStatus struct {
 	Namespace string
 	// All IPs assigned to this pod
 	IPs []string
-	// Status of containers in the pod.
+	// PodLifecycle of containers in the pod.
 	ContainerStatuses []*container.Status
 }
 
@@ -41,7 +41,7 @@ func (podStatus *PodStatus) ToEntity() *entity.PodStatus {
 		/// TODO what about the labels?
 		//Labels:     podStatus.Labels,
 		Namespace:  podStatus.Namespace,
-		Status:     entity.Running,
+		Lifecycle:  entity.PodRunning,
 		CpuPercent: cpuPercent,
 		MemPercent: memPercent,
 		Error:      "",

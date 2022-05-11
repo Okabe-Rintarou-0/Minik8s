@@ -9,7 +9,7 @@ import (
 	"minik8s/apiObject"
 	"minik8s/entity"
 	"minik8s/listwatch"
-	"minik8s/util"
+	"minik8s/util/topicutil"
 	"testing"
 	"time"
 )
@@ -55,7 +55,7 @@ func TestScheduler(t *testing.T) {
 		fmt.Println(err.Error())
 	}
 
-	topic := util.SchedulerPodUpdateTopic()
+	topic := topicutil.SchedulerPodUpdateTopic()
 	// after 5s, create the pod
 	// after 15s, update the pod
 	// after 50s, delete the pod

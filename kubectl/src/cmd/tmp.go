@@ -12,7 +12,7 @@ func podStatusForTest() *entity.PodStatus {
 		Name:      "example",
 		Labels:    nil,
 		Namespace: "default",
-		Status:    entity.ContainerCreating,
+		Lifecycle: entity.PodContainerCreating,
 		SyncTime:  time.Now(),
 	}
 }
@@ -24,13 +24,13 @@ func podDescriptionForTest(name string) *entity.PodDescription {
 
 	podStatus := podStatusForTest()
 	logs = append(logs, entity.PodStatusLogEntry{
-		Status: podStatus.Status,
+		Status: podStatus.Lifecycle,
 		Time:   podStatus.SyncTime,
 		Error:  podStatus.Error,
 	})
 
 	logs = append(logs, entity.PodStatusLogEntry{
-		Status: entity.Running,
+		Status: entity.PodRunning,
 		Time:   time.Now().Add(time.Minute * 30),
 		Error:  "",
 	})

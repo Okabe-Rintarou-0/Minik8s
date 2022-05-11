@@ -46,12 +46,20 @@ func (rs *ReplicaSet) Replicas() int {
 	return rs.Spec.Replicas
 }
 
+func (rs *ReplicaSet) SetReplicas(numReplicas int) {
+	rs.Spec.Replicas = numReplicas
+}
+
 func (rs *ReplicaSet) Name() string {
 	return rs.Metadata.Name
 }
 
 func (rs *ReplicaSet) Namespace() string {
 	return rs.Metadata.Namespace
+}
+
+func (rs *ReplicaSet) Labels() Labels {
+	return rs.Metadata.Labels
 }
 
 func (rs *ReplicaSet) FullName() string {

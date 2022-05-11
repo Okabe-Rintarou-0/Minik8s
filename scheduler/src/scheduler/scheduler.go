@@ -8,7 +8,7 @@ import (
 	"minik8s/entity"
 	"minik8s/listwatch"
 	"minik8s/scheduler/src/selector"
-	"minik8s/util"
+	"minik8s/util/topicutil"
 	"os"
 )
 
@@ -60,7 +60,7 @@ func (s *scheduler) Schedule(podUpdate *entity.PodUpdate) error {
 
 	// Step 3: Prepare for the message
 	nodeName := node.Metadata.Name
-	topic := util.PodUpdateTopic(nodeName)
+	topic := topicutil.PodUpdateTopic(nodeName)
 	updateMsg, err := json.Marshal(*podUpdate)
 	if err != nil {
 		return err
@@ -88,7 +88,7 @@ func (s *scheduler) parseAndSchedule(msg *redis.Message) {
 }
 
 func (s *scheduler) Start() {
-	topic := util.SchedulerPodUpdateTopic()
+	topic := topicutil.SchedulerPodUpdateTopic()
 
 	listwatch.Watch(topic, s.parseAndSchedule)
 }

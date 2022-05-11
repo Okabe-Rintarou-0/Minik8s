@@ -10,7 +10,7 @@ import (
 	"minik8s/kubelet/src/runtime/runtime"
 	"minik8s/kubelet/src/status"
 	"minik8s/listwatch"
-	"minik8s/util"
+	"minik8s/util/topicutil"
 	"os"
 )
 
@@ -54,7 +54,7 @@ func (kl *Kubelet) parsePodUpdate(msg *redis.Message) {
 
 func (kl *Kubelet) podUpdateTopic() (string, error) {
 	hostname, err := os.Hostname()
-	return util.PodUpdateTopic(hostname), err
+	return topicutil.PodUpdateTopic(hostname), err
 }
 
 func (kl *Kubelet) Run() {

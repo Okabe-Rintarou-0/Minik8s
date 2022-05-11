@@ -4,13 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	uuid "github.com/satori/go.uuid"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 	"io/ioutil"
 	"minik8s/apiObject"
-	"minik8s/controller/controller"
+	"minik8s/controller/src/controller"
 	"minik8s/entity"
 	"minik8s/listwatch"
-	"minik8s/util"
+	"minik8s/util/topicutil"
 	"testing"
 	"time"
 )
@@ -23,7 +23,7 @@ func TestControllerManager(t *testing.T) {
 	rs := apiObject.ReplicaSet{}
 	_ = yaml.Unmarshal(content, &rs)
 	rs.Metadata.UID = uuid.NewV4().String()
-	topic := util.ReplicaSetUpdateTopic()
+	topic := topicutil.ReplicaSetUpdateTopic()
 
 	content, err = ioutil.ReadFile("./rs2.yaml")
 	if err != nil {

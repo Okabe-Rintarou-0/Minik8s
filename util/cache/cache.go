@@ -1,29 +1,28 @@
 package cache
 
 import (
-	"minik8s/apiObject/types"
 	"sync"
 )
 
 type Cache interface {
-	Get(podUID types.UID) interface{}
-	Update(podUID types.UID, newValue interface{})
-	Delete(podUID types.UID)
+	Get(podUID string) interface{}
+	Update(podUID string, newValue interface{})
+	Delete(podUID string)
 	Values() []interface{}
 }
 
 type cache struct {
 	cacheLock sync.RWMutex
-	cache     map[types.UID]interface{}
+	cache     map[string]interface{}
 }
 
-func (c *cache) updateInternal(podUID types.UID, newValue interface{}) {
+func (c *cache) updateInternal(podUID string, newValue interface{}) {
 	c.cacheLock.Lock()
 	defer c.cacheLock.Unlock()
 	c.cache[podUID] = newValue
 }
 
-func (c *cache) getInternal(podUID types.UID) interface{} {
+func (c *cache) getInternal(podUID string) interface{} {
 	c.cacheLock.RLock()
 	defer c.cacheLock.RUnlock()
 	if value, exists := c.cache[podUID]; exists {
@@ -32,7 +31,7 @@ func (c *cache) getInternal(podUID types.UID) interface{} {
 	return nil
 }
 
-func (c *cache) deleteInternal(podUID types.UID) {
+func (c *cache) deleteInternal(podUID string) {
 	c.cacheLock.Lock()
 	defer c.cacheLock.Unlock()
 	delete(c.cache, podUID)
@@ -48,15 +47,15 @@ func (c *cache) getValuesInternal() []interface{} {
 	return values
 }
 
-func (c *cache) Get(podUID types.UID) interface{} {
+func (c *cache) Get(podUID string) interface{} {
 	return c.getInternal(podUID)
 }
 
-func (c *cache) Update(podUID types.UID, newValue interface{}) {
+func (c *cache) Update(podUID string, newValue interface{}) {
 	c.updateInternal(podUID, newValue)
 }
 
-func (c *cache) Delete(podUID types.UID) {
+func (c *cache) Delete(podUID string) {
 	c.deleteInternal(podUID)
 }
 
@@ -67,6 +66,6 @@ func (c *cache) Values() []interface{} {
 func Default() Cache {
 	return &cache{
 		cacheLock: sync.RWMutex{},
-		cache:     make(map[types.UID]interface{}),
+		cache:     make(map[string]interface{}),
 	}
 }

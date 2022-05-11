@@ -49,7 +49,7 @@ func (w *podWorker) needDo(work *podWork) bool {
 func (w *podWorker) handleError(err error, errPod *apiObject.Pod) {
 	if err != nil && errPod != nil {
 		fmt.Println(err.Error())
-		w.publishPodStatus(w.errorPodStatus(errPod))
+		w.error(errPod)
 	}
 }
 
@@ -62,9 +62,9 @@ func (w *podWorker) doWork(work podWork) {
 	case podCreate:
 		arg := work.Arg.(podCreateFnArg)
 		fmt.Printf("pod worker received pod create job %s\n", arg.pod.UID())
-		w.publishPodStatus(w.containerCreatingPodStatus(arg.pod))
+		w.containerCreating(arg.pod)
 		if err = w.podCreateFn(arg.pod); err == nil {
-			w.publishPodStatus(w.runningPodStatus(arg.pod))
+			w.running(arg.pod)
 		} else {
 			errPod = arg.pod
 		}
@@ -72,7 +72,7 @@ func (w *podWorker) doWork(work podWork) {
 		arg := work.Arg.(podDeleteFnArg)
 		fmt.Printf("pod worker received pod delete job %s\n", arg.pod.UID())
 		if err = w.podDeleteFn(arg.pod); err == nil {
-			w.publishPodStatus(w.deletedPodStatus(arg.pod))
+			w.deleted(arg.pod)
 		} else {
 			errPod = arg.pod
 		}

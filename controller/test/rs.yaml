@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: ReplicaSet
 metadata:
   name: rs
-  namespace: test
+  namespace: default
 spec:
   replicas: 3
   selector:
