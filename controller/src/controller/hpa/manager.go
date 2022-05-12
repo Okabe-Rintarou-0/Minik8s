@@ -10,10 +10,12 @@ import (
 	"minik8s/controller/src/cache"
 	"minik8s/entity"
 	"minik8s/listwatch"
+	"minik8s/util/logger"
 	"minik8s/util/topicutil"
 )
 
 var bgCtx = context.Background()
+var logManager = logger.Log("HPA manager")
 
 type controller struct {
 	cacheManager cache.Manager
@@ -23,7 +25,7 @@ type controller struct {
 
 func (c *controller) AddHpa(hpa *apiObject.HorizontalPodAutoscaler) {
 	UID := hpa.UID()
-	fmt.Printf("Add hpa: %s_%s\n", hpa.FullName(), hpa.UID())
+	logManager("Add hpa: %s_%s", hpa.FullName(), hpa.UID())
 	ctx, cancelFunc := context.WithCancel(bgCtx)
 	worker := NewWorker(ctx, hpa, c.cacheManager)
 	c.cancelFuncs[UID] = cancelFunc
@@ -32,7 +34,7 @@ func (c *controller) AddHpa(hpa *apiObject.HorizontalPodAutoscaler) {
 }
 
 func (c *controller) DeleteHpa(hpa *apiObject.HorizontalPodAutoscaler) {
-	fmt.Printf("Delete hpa: %s_%s\n", hpa.FullName(), hpa.UID())
+	logManager("Delete hpa: %s_%s", hpa.FullName(), hpa.UID())
 	UID := hpa.UID()
 	if cancel, exists := c.cancelFuncs[UID]; exists {
 		delete(c.cancelFuncs, UID)
@@ -41,7 +43,7 @@ func (c *controller) DeleteHpa(hpa *apiObject.HorizontalPodAutoscaler) {
 }
 
 func (c *controller) UpdateHpa(hpa *apiObject.HorizontalPodAutoscaler) {
-	fmt.Printf("Update hpa: %s_%s\n", hpa.FullName(), hpa.UID())
+	logManager("Update hpa: %s_%s", hpa.FullName(), hpa.UID())
 	UID := hpa.UID()
 	if worker, exists := c.workers[UID]; exists {
 		worker.SetTarget(hpa)
@@ -55,7 +57,6 @@ func (c *controller) parseHPAUpdate(msg *redis.Message) {
 		fmt.Println(err.Error())
 		return
 	}
-	fmt.Printf("[HPA] parse result: %v\n", hpaUpdate)
 	hpa := &hpaUpdate.Target
 
 	switch hpaUpdate.Action {

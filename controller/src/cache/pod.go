@@ -16,7 +16,7 @@ func (m *manager) updatePodStatus(msg *redis.Message) {
 		fmt.Println(err.Error())
 		return
 	}
-	fmt.Printf("Received status %s of Pod[ID = %s]\n", podStatus.Lifecycle.String(), podStatus.ID)
+	log("Received status %s of Pod[ID = %s]", podStatus.Lifecycle.String(), podStatus.ID)
 	if podStatus.Lifecycle == entity.PodDeleted {
 		m.podStatusCache.Delete(podStatus.ID)
 	} else {

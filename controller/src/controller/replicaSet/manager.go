@@ -2,7 +2,6 @@ package replicaSet
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/go-redis/redis/v8"
 	"minik8s/apiObject"
 	"minik8s/apiObject/types"
@@ -11,9 +10,11 @@ import (
 	"minik8s/entity"
 	"minik8s/kubelet/src/runtime/runtime"
 	"minik8s/listwatch"
+	"minik8s/util/logger"
 	"minik8s/util/topicutil"
 )
 
+var logManager = logger.Log("ReplicaSet Manager")
 var syncSignal = struct{}{}
 
 type controller struct {
@@ -26,13 +27,13 @@ func (c *controller) Sync(podStatus *entity.PodStatus) {
 	if UID, exists := podStatus.Labels[runtime.KubernetesReplicaSetUIDLabel]; exists && needSync {
 		if worker, stillWorking := c.workers[UID]; stillWorking {
 			worker.SyncChannel() <- syncSignal
-			fmt.Printf("Sync called to %s\n", UID)
+			logManager("Sync called to %s", UID)
 		}
 	}
 }
 
 func (c *controller) AddReplicaSet(rs *apiObject.ReplicaSet) {
-	fmt.Printf("Add replicaSet: %s_%s\n", rs.FullName(), rs.UID())
+	logManager("Add replicaSet: %s_%s", rs.FullName(), rs.UID())
 	hpa.AddRsForTest(rs)
 	worker := NewWorker(rs, c.cacheManager)
 	c.workers[rs.UID()] = worker
@@ -41,11 +42,11 @@ func (c *controller) AddReplicaSet(rs *apiObject.ReplicaSet) {
 
 ///TODO just for test now, should replace with api-server later
 func (c *controller) deleteReplicaSetPods(rs *apiObject.ReplicaSet) {
-	fmt.Printf("Not delete the pods of rs: %s-%s\n", rs.FullName(), rs.UID())
+	logManager("Not delete the pods of rs: %s-%s", rs.FullName(), rs.UID())
 	podStatuses := c.cacheManager.GetReplicaSetPodStatuses(rs.UID())
 	for _, podStatus := range podStatuses {
 		pod2Delete := testMap[podStatus.ID]
-		fmt.Printf("Pod 2 delete is %v\n", pod2Delete)
+		logManager("Pod to delete is Pod[ID = %v]", pod2Delete.UID())
 		topic := topicutil.SchedulerPodUpdateTopic()
 		msg, _ := json.Marshal(entity.PodUpdate{
 			Action: entity.DeleteAction,
@@ -56,7 +57,7 @@ func (c *controller) deleteReplicaSetPods(rs *apiObject.ReplicaSet) {
 }
 
 func (c *controller) DeleteReplicaSet(rs *apiObject.ReplicaSet) {
-	fmt.Printf("Delete replicaSet: %s_%s\n", rs.FullName(), rs.UID())
+	logManager("Delete replicaSet: %s_%s", rs.FullName(), rs.UID())
 	if worker, exists := c.workers[rs.UID()]; exists {
 		delete(c.workers, rs.UID())
 		close(worker.SyncChannel())
@@ -65,7 +66,7 @@ func (c *controller) DeleteReplicaSet(rs *apiObject.ReplicaSet) {
 }
 
 func (c *controller) UpdateReplicaSet(rs *apiObject.ReplicaSet) {
-	fmt.Printf("Update replicaSet: %s_%s\n", rs.FullName(), rs.UID())
+	logManager("Update replicaSet: %s_%s", rs.FullName(), rs.UID())
 	if worker, exists := c.workers[rs.UID()]; exists {
 		worker.SetTarget(rs)
 		// Sync immediately after update the rs.
@@ -77,7 +78,7 @@ func (c *controller) parseReplicaSetUpdate(msg *redis.Message) {
 	replicaSetUpdate := &entity.ReplicaSetUpdate{}
 	err := json.Unmarshal([]byte(msg.Payload), replicaSetUpdate)
 	if err != nil {
-		fmt.Println(err.Error())
+		logManager(err.Error())
 		return
 	}
 	rs := &replicaSetUpdate.Target

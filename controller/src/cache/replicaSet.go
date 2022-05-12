@@ -16,7 +16,7 @@ func (m *manager) updateReplicaSetStatus(msg *redis.Message) {
 		fmt.Println(err.Error())
 		return
 	}
-	fmt.Printf("Received status %s of ReplicaSet[ID = %s]\n", replicaSetStatus.Lifecycle.String(), replicaSetStatus.ID)
+	log("Received status %s of ReplicaSet[ID = %s]", replicaSetStatus.Lifecycle.String(), replicaSetStatus.ID)
 	if replicaSetStatus.Lifecycle == entity.ReplicaSetDeleted {
 		m.replicaSetStatusCache.Delete(replicaSetStatus.FullName())
 	} else {

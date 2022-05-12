@@ -6,8 +6,11 @@ import (
 	"minik8s/kubelet/src/runtime/runtime"
 	"minik8s/listwatch"
 	utilcache "minik8s/util/cache"
+	"minik8s/util/logger"
 	"minik8s/util/topicutil"
 )
+
+var log = logger.Log("Cache Manager")
 
 type PodStatusUpdateHook func(podStatus *entity.PodStatus)
 

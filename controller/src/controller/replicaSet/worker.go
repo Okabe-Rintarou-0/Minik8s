@@ -2,7 +2,6 @@ package replicaSet
 
 import (
 	"encoding/json"
-	"fmt"
 	uuid "github.com/satori/go.uuid"
 	"minik8s/apiObject"
 	"minik8s/apiObject/types"
@@ -10,9 +9,12 @@ import (
 	"minik8s/entity"
 	"minik8s/kubelet/src/runtime/runtime"
 	"minik8s/listwatch"
+	"minik8s/util/logger"
 	"minik8s/util/topicutil"
 	"time"
 )
+
+var logWorker = logger.Log("ReplicaSet Worker")
 
 const timeoutSeconds = 30
 const workChanSize = 5
@@ -52,7 +54,6 @@ func (w *worker) addPodToApiServerForTest() {
 	topic := topicutil.SchedulerPodUpdateTopic()
 	pod.Metadata.UID = uuid.NewV4().String()
 	pod.AddLabel(runtime.KubernetesReplicaSetUIDLabel, w.target.UID())
-	fmt.Println("Sending test pod", *pod)
 	msg, _ := json.Marshal(entity.PodUpdate{
 		Action: entity.CreateAction,
 		Target: *pod,
@@ -74,7 +75,7 @@ func (w *worker) addPod() {
 
 func (w *worker) deletePodToApiServerForTest(podUID types.UID) {
 	pod2Delete := testMap[podUID]
-	fmt.Printf("Pod 2 delete is %v\n", pod2Delete)
+	logWorker("Pod to delete is Pod[ID = %v]", pod2Delete.UID())
 	topic := topicutil.SchedulerPodUpdateTopic()
 	msg, _ := json.Marshal(entity.PodUpdate{
 		Action: entity.DeleteAction,
@@ -106,7 +107,7 @@ func (w *worker) syncLoopIteration() bool {
 	numPods := len(podStatuses)
 	numRunningPods := w.numRunningPods(podStatuses)
 	diff := numPods - numReplicas
-	fmt.Printf("Syn result: diff = %d\n", diff)
+	logWorker("Syn result: diff = %d", diff)
 	if diff == 0 {
 		w.ready()
 	} else if diff > 0 {

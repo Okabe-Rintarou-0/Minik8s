@@ -60,7 +60,7 @@ func printSpecifiedPodDescription(name string) error {
 
 	logs := podDesc.Logs
 	tbl := podStatusLogTbl()
-	fmt.Println("History log:")
+	fmt.Println("History logger:")
 	for _, log := range logs {
 		tbl.AddRow(log.Time.Format(time.RFC3339), log.Status.String(), log.Error)
 	}

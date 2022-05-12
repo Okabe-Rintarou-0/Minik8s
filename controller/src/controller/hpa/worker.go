@@ -8,9 +8,12 @@ import (
 	"minik8s/controller/src/cache"
 	"minik8s/entity"
 	"minik8s/listwatch"
+	"minik8s/util/logger"
 	"minik8s/util/topicutil"
 	"time"
 )
+
+var logWorker = logger.Log("HPA worker")
 
 const syncPeriodSeconds = 30
 
@@ -51,7 +54,7 @@ func (w *worker) getReplicaSetStatus() *entity.ReplicaSetStatus {
 func (w *worker) updateReplicaSetToApiServerForTest(fullName string, numReplicas int) {
 	rs := testMap[fullName]
 	rs.SetReplicas(numReplicas)
-	fmt.Println("[HPA]Update rs test pod", rs)
+	logWorker("Update rs test pod[ID = %s]", rs.UID())
 	msg, _ := json.Marshal(entity.ReplicaSetUpdate{
 		Action: entity.UpdateAction,
 		Target: *rs,
@@ -69,18 +72,18 @@ func (w *worker) updateReplicaSet(fullName string, numReplicas int) {
 func (w *worker) syncLoopIteration() bool {
 	// Step 1: Get replicaSet status from Cache
 	replicaSetStatus := w.getReplicaSetStatus()
-	fmt.Println("[HPA]Got replicaSet status:", replicaSetStatus)
+	logWorker("Got replicaSet status:", replicaSetStatus)
 	if replicaSetStatus == nil {
-		fmt.Println("Something bad happens...🙄")
+		logWorker("Something bad happens...🙄")
 		return true
 	}
 
 	// judge the numReplicas we need
 	numReplicas := w.scaleJudge.Judge(replicaSetStatus)
-	fmt.Printf("[HPA]judge result is %d num replicas\n", numReplicas)
+	logWorker("Judge result is %d num replicas", numReplicas)
 
 	diff := replicaSetStatus.NumReplicas - numReplicas
-	fmt.Printf("[HPA]auto scale result: diff = %d\n", diff)
+	logWorker("Auto scale result: diff = %d", diff)
 	if diff != 0 {
 		go w.updateReplicaSet(replicaSetStatus.FullName(), numReplicas)
 	}
@@ -89,14 +92,12 @@ func (w *worker) syncLoopIteration() bool {
 
 func (w *worker) syncLoop() {
 	tick := time.Tick(time.Second * syncPeriodSeconds)
-	for {
+	for w.syncLoopIteration() {
 		select {
 		case <-tick:
-			if !w.syncLoopIteration() {
-				return
-			}
+			continue
 		case <-w.ctx.Done():
-			fmt.Printf("[HPA worker]stop working on hpa[ID = %s]", w.target.UID())
+			fmt.Printf("Stop working on hpa[ID = %s]\n", w.target.UID())
 			return
 		}
 	}
