@@ -2,11 +2,11 @@ package container
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	"minik8s/kubelet/src/runtime/docker"
+	"minik8s/util/logger"
 	"time"
 )
 
@@ -102,15 +102,12 @@ func (cm *containerManager) GetContainerStats(ID ID) (ResourcesUsage, error) {
 		return ru, err
 	}
 
-	//fmt.Println("Got stats", statsJson)
-
 	if osType != "windows" {
 		ru.MemPercent = calculateMemPercentUnix(statsJson)
 		ru.CpuPercent = calculateCPUPercentUnix(statsJson)
 	} else {
 		ru.CpuPercent = calculateCPUPercentWindows(statsJson)
 	}
-	//fmt.Println("ru:", ru)
 	return ru, nil
 }
 
@@ -178,7 +175,7 @@ func (cm *containerManager) CreateContainer(name string, config *ContainerCreate
 		Links:        config.Links,
 	}, nil, nil, name)
 	for _, warning := range res.Warnings {
-		fmt.Println(warning)
+		logger.Warn(warning)
 	}
 
 	return res.ID, err

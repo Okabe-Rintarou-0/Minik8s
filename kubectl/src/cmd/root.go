@@ -16,8 +16,8 @@ var filePath string
 func init() {
 	applyCmd.Flags().StringVarP(&filePath, "filePath", "f", "", "filePath of api object yaml file")
 
-	autoscaleCmd.Flags().Float64VarP(&cpuPercent, "cpu", "c", 50.0, "cpu utilization percent metric")
-	autoscaleCmd.Flags().Float64VarP(&memPercent, "mem", "m", 50.0, "memory utilization percent metric")
+	autoscaleCmd.Flags().Float64VarP(&cpuPercent, "cpu", "c", 0.0, "cpu utilization percent metric")
+	autoscaleCmd.Flags().Float64VarP(&memPercent, "mem", "m", 0.0, "memory utilization percent metric")
 	autoscaleCmd.Flags().IntVarP(&minReplicas, "min", "", 1, "min replicas")
 	autoscaleCmd.Flags().IntVarP(&maxReplicas, "max", "", 1, "max replicas")
 

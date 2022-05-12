@@ -21,6 +21,18 @@ type HorizontalPodAutoscaler struct {
 	Spec          HPASpec `yaml:"spec"`
 }
 
+func (tgt *ScaleTargetRef) Name() string {
+	return tgt.Metadata.Name
+}
+
+func (tgt *ScaleTargetRef) Namespace() string {
+	return tgt.Metadata.Namespace
+}
+
+func (tgt *ScaleTargetRef) FullName() string {
+	return tgt.Metadata.Name + "_" + tgt.Metadata.Namespace
+}
+
 func (hpa *HorizontalPodAutoscaler) Name() string {
 	return hpa.Metadata.Name
 }
@@ -39,6 +51,18 @@ func (hpa *HorizontalPodAutoscaler) Labels() Labels {
 
 func (hpa *HorizontalPodAutoscaler) Metrics() *Metrics {
 	return hpa.Spec.Metrics
+}
+
+func (hpa *HorizontalPodAutoscaler) MinReplicas() int {
+	return hpa.Spec.MinReplicas
+}
+
+func (hpa *HorizontalPodAutoscaler) MaxReplicas() int {
+	return hpa.Spec.MaxReplicas
+}
+
+func (hpa *HorizontalPodAutoscaler) Target() *ScaleTargetRef {
+	return &hpa.Spec.ScaleTargetRef
 }
 
 func (hpa *HorizontalPodAutoscaler) TargetMetadata() *Metadata {

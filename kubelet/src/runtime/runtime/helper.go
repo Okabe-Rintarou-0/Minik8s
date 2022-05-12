@@ -1,7 +1,6 @@
 package runtime
 
 import (
-	"fmt"
 	"github.com/docker/go-connections/nat"
 	"minik8s/apiObject"
 	"minik8s/apiObject/types"
@@ -85,7 +84,7 @@ func (rm *runtimeManager) addPortBindings(portBindings container.PortBindings, p
 			if err != nil {
 				return err
 			}
-			fmt.Println("using random available port", randomPort)
+			log("Using random available port %d", randomPort)
 			port.HostPort = strconv.Itoa(randomPort)
 		}
 
@@ -336,13 +335,13 @@ func (rm *runtimeManager) startCommonContainer(pod *apiObject.Pod, c *apiObject.
 
 	// Step 2: If needed, pull the image for the given container
 	if needPull {
-		fmt.Println("Pulling image", c.Image)
+		log("Pulling image[Name = %s]", c.Image)
 		err = rm.im.PullImage(c.Image, &image.ImagePullConfig{
 			Verbose: false,
 			All:     false,
 		})
 		if err != nil {
-			fmt.Println("Pull error:", err.Error())
+			log("Pull error:", err.Error())
 			return err
 		}
 	} else {

@@ -5,7 +5,7 @@ import (
 	"minik8s/apiObject"
 	"minik8s/entity"
 	"minik8s/listwatch"
-	"minik8s/util"
+	"minik8s/util/topicutil"
 )
 
 func (w *podWorker) pod2PodStatus(pod *apiObject.Pod) *entity.PodStatus {
@@ -17,32 +17,32 @@ func (w *podWorker) pod2PodStatus(pod *apiObject.Pod) *entity.PodStatus {
 	}
 }
 
-func (w *podWorker) runningPodStatus(pod *apiObject.Pod) *entity.PodStatus {
+func (w *podWorker) running(pod *apiObject.Pod) {
 	podStatus := w.pod2PodStatus(pod)
-	podStatus.Status = entity.Running
-	return podStatus
+	podStatus.Lifecycle = entity.PodRunning
+	publishPodStatus(podStatus)
 }
 
-func (w *podWorker) containerCreatingPodStatus(pod *apiObject.Pod) *entity.PodStatus {
+func (w *podWorker) containerCreating(pod *apiObject.Pod) {
 	podStatus := w.pod2PodStatus(pod)
-	podStatus.Status = entity.ContainerCreating
-	return podStatus
+	podStatus.Lifecycle = entity.PodContainerCreating
+	publishPodStatus(podStatus)
 }
 
-func (w *podWorker) deletedPodStatus(pod *apiObject.Pod) *entity.PodStatus {
+func (w *podWorker) deleted(pod *apiObject.Pod) {
 	podStatus := w.pod2PodStatus(pod)
-	podStatus.Status = entity.Deleted
-	return podStatus
+	podStatus.Lifecycle = entity.PodDeleted
+	publishPodStatus(podStatus)
 }
 
-func (w *podWorker) errorPodStatus(pod *apiObject.Pod) *entity.PodStatus {
+func (w *podWorker) error(pod *apiObject.Pod) {
 	podStatus := w.pod2PodStatus(pod)
-	podStatus.Status = entity.Error
-	return podStatus
+	podStatus.Lifecycle = entity.PodError
+	publishPodStatus(podStatus)
 }
 
-func (w *podWorker) publishPodStatus(podStatus *entity.PodStatus) {
-	topic := util.PodStatusTopic()
+func publishPodStatus(podStatus *entity.PodStatus) {
+	topic := topicutil.PodStatusTopic()
 	msg, _ := json.Marshal(*podStatus)
 	listwatch.Publish(topic, msg)
 }

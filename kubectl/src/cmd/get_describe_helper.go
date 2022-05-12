@@ -12,7 +12,7 @@ func podStatusTbl() table.Table {
 	headerFmt := color.New(color.FgGreen, color.Underline).SprintfFunc()
 	columnFmt := color.New(color.FgYellow).SprintfFunc()
 
-	tbl := table.New("Name", "UID", "Status", "Last Sync Time", "Error")
+	tbl := table.New("Name", "UID", "PodLifecycle", "Last Sync Time", "PodError")
 	tbl.WithHeaderFormatter(headerFmt).WithFirstColumnFormatter(columnFmt)
 	return tbl
 }
@@ -21,7 +21,7 @@ func podStatusLogTbl() table.Table {
 	headerFmt := color.New(color.FgGreen, color.Underline).SprintfFunc()
 	columnFmt := color.New(color.FgYellow).SprintfFunc()
 
-	tbl := table.New("Time", "Status", "Error")
+	tbl := table.New("Time", "PodLifecycle", "PodError")
 	tbl.WithHeaderFormatter(headerFmt).WithFirstColumnFormatter(columnFmt)
 	return tbl
 }
@@ -35,8 +35,8 @@ func getPodsFromApiServer() []*entity.PodStatus {
 	//TODO just for test now, replace it with api-server
 	pod1 := podStatusForTest()
 	pod2 := podStatusForTest()
-	pod2.Status = entity.Error
-	pod2.Error = "Image Pull Error"
+	pod2.Lifecycle = entity.PodError
+	pod2.Error = "Image Pull PodError"
 	return []*entity.PodStatus{pod1, pod2}
 }
 
@@ -47,7 +47,7 @@ func printSpecifiedPodStatus(name string) error {
 	}
 
 	tbl := podStatusTbl()
-	tbl.AddRow(podStatus.Name, podStatus.ID, podStatus.Status.String(), podStatus.SyncTime.Format(time.RFC3339), podStatus.Error)
+	tbl.AddRow(podStatus.Name, podStatus.ID, podStatus.Lifecycle.String(), podStatus.SyncTime.Format(time.RFC3339), podStatus.Error)
 	tbl.Print()
 	return nil
 }
@@ -60,7 +60,7 @@ func printSpecifiedPodDescription(name string) error {
 
 	logs := podDesc.Logs
 	tbl := podStatusLogTbl()
-	fmt.Println("History log:")
+	fmt.Println("History logger:")
 	for _, log := range logs {
 		tbl.AddRow(log.Time.Format(time.RFC3339), log.Status.String(), log.Error)
 	}
@@ -69,7 +69,7 @@ func printSpecifiedPodDescription(name string) error {
 	fmt.Println("Current status:")
 	podStatus := podDesc.CurrentStatus
 	tbl = podStatusTbl()
-	tbl.AddRow(podStatus.Name, podStatus.ID, podStatus.Status.String(), podStatus.SyncTime.Format(time.RFC3339), podStatus.Error)
+	tbl.AddRow(podStatus.Name, podStatus.ID, podStatus.Lifecycle.String(), podStatus.SyncTime.Format(time.RFC3339), podStatus.Error)
 	tbl.Print()
 
 	return nil
@@ -80,7 +80,7 @@ func printPodStatuses() error {
 
 	tbl := podStatusTbl()
 	for _, podStatus := range podStatuses {
-		tbl.AddRow(podStatus.Name, podStatus.ID, podStatus.Status.String(), podStatus.SyncTime.Format(time.RFC3339), podStatus.Error)
+		tbl.AddRow(podStatus.Name, podStatus.ID, podStatus.Lifecycle.String(), podStatus.SyncTime.Format(time.RFC3339), podStatus.Error)
 	}
 	tbl.Print()
 	return nil

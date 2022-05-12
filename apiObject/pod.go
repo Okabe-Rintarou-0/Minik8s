@@ -7,6 +7,14 @@ const (
 type Labels map[string]string
 type Annotations map[string]string
 
+func (labels Labels) DeepCopy() Labels {
+	cpy := make(Labels)
+	for key, value := range labels {
+		cpy[key] = value
+	}
+	return cpy
+}
+
 type ContainerPort struct {
 	Name          string `yaml:"name"`
 	HostPort      string `yaml:"hostPort"`
