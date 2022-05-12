@@ -2,16 +2,80 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"io/ioutil"
 	"minik8s/apiObject"
+	"minik8s/entity"
+	"minik8s/listwatch"
+	"minik8s/util/logger"
+	"minik8s/util/topicutil"
+	"minik8s/util/uidutil"
 )
 
+var log = logger.Log("Api-server")
+
 func HandleApplyPod(c *gin.Context) {
-	body, _ := ioutil.ReadAll(c.Request.Body)
+	body, err := ioutil.ReadAll(c.Request.Body)
+	if err != nil {
+		logger.Error(err.Error())
+		return
+	}
 	defer c.Request.Body.Close()
 	pod := &apiObject.Pod{}
-	_ = json.Unmarshal(body, pod)
-	fmt.Printf("receive pod[ID = %v]: %v\n", pod.UID(), pod)
+	if err = json.Unmarshal(body, pod); err != nil {
+		logger.Error(err.Error())
+		return
+	}
+	pod.Metadata.UID = uidutil.New()
+	log("receive pod[ID = %v]: %v", pod.UID(), pod)
+	var msg []byte
+	msg, err = json.Marshal(entity.PodUpdate{
+		Action: entity.CreateAction,
+		Target: *pod,
+	})
+	listwatch.Publish(topicutil.SchedulerPodUpdateTopic(), msg)
+}
+
+func HandleApplyReplicaSet(c *gin.Context) {
+	body, err := ioutil.ReadAll(c.Request.Body)
+	if err != nil {
+		logger.Error(err.Error())
+		return
+	}
+	defer c.Request.Body.Close()
+	rs := &apiObject.ReplicaSet{}
+	if err = json.Unmarshal(body, rs); err != nil {
+		logger.Error(err.Error())
+		return
+	}
+	rs.Metadata.UID = uidutil.New()
+	log("receive rs[ID = %v]: %v", rs.UID(), rs)
+	var msg []byte
+	msg, err = json.Marshal(entity.ReplicaSetUpdate{
+		Action: entity.CreateAction,
+		Target: *rs,
+	})
+	listwatch.Publish(topicutil.ReplicaSetUpdateTopic(), msg)
+}
+
+func HandleApplyHPA(c *gin.Context) {
+	body, err := ioutil.ReadAll(c.Request.Body)
+	if err != nil {
+		logger.Error(err.Error())
+		return
+	}
+	defer c.Request.Body.Close()
+	hpa := &apiObject.HorizontalPodAutoscaler{}
+	if err = json.Unmarshal(body, hpa); err != nil {
+		logger.Error(err.Error())
+		return
+	}
+	hpa.Metadata.UID = uidutil.New()
+	log("receive hpa[ID = %v]: %v", hpa.UID(), hpa)
+	var msg []byte
+	msg, err = json.Marshal(entity.HPAUpdate{
+		Action: entity.CreateAction,
+		Target: *hpa,
+	})
+	listwatch.Publish(topicutil.HPAUpdateTopic(), msg)
 }

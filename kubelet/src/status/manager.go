@@ -56,7 +56,6 @@ func (m *manager) DeletePod(podUID types.UID) {
 
 //TODO call REST api of api-server? or just publish it to the topic and api-server also watches it?
 func (m *manager) publishPodStatus(podStatuses runtime.PodStatuses) {
-	log("Sync For Test")
 	topic := topicutil.PodStatusTopic()
 	for _, podStatus := range podStatuses {
 		e := podStatus.ToEntity()
