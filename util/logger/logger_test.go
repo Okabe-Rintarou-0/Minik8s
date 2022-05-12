@@ -1,7 +1,10 @@
 package logger
 
-import "testing"
+import (
+	"io"
+	"testing"
+)
 
 func TestWarn(t *testing.T) {
-	Warn("DDL is today!")
+	Warn(io.EOF.Error())
 }

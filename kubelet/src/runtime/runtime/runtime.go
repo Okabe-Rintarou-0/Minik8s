@@ -211,10 +211,7 @@ func (rm *runtimeManager) GetPodStatus(pod *apiObject.Pod) (*PodStatus, error) {
 }
 
 func (rm *runtimeManager) GetPodStatuses() (PodStatuses, error) {
-	allContainerStatuses, err := rm.getAllPodContainers()
-	if err != nil {
-		return nil, err
-	}
+	allContainerStatuses := rm.getAllPodContainers()
 	podStatuses := make(PodStatuses)
 	for podUID, cs := range allContainerStatuses {
 		/// TODO name?

@@ -43,6 +43,6 @@ func (w *podWorker) error(pod *apiObject.Pod) {
 
 func publishPodStatus(podStatus *entity.PodStatus) {
 	topic := topicutil.PodStatusTopic()
-	msg, _ := json.Marshal(*podStatus)
+	msg, _ := json.Marshal(podStatus)
 	listwatch.Publish(topic, msg)
 }

@@ -3,7 +3,8 @@ package logger
 import "fmt"
 
 var (
-	redFont = string([]byte{27, 91, 57, 49, 109})
+	reset = string([]byte{27, 91, 48, 109})
+	red   = string([]byte{27, 91, 57, 49, 109})
 )
 
 // Log returns a closure
@@ -15,9 +16,9 @@ func Log(prefix string) func(format string, v ...interface{}) {
 }
 
 func Warn(format string, v ...interface{}) {
-	fmt.Println(redFont + "[Warn] " + fmt.Sprintf(format, v...))
+	fmt.Println(red + "[Warn] " + fmt.Sprintf(format, v...) + reset)
 }
 
 func Error(format string, v ...interface{}) {
-	fmt.Println(redFont + "[Error] " + fmt.Sprintf(format, v...))
+	fmt.Println(red + "[Error] " + fmt.Sprintf(format, v...) + reset)
 }
