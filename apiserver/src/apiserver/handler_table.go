@@ -9,7 +9,9 @@ import (
 type Handler = gin.HandlerFunc
 
 var postTable = map[string]Handler{
-	url.PodURL: handlers.HandleApplyPod,
+	url.PodURL:        handlers.HandleApplyPod,
+	url.ReplicaSetURL: handlers.HandleApplyReplicaSet,
+	url.HPAURL:        handlers.HandleApplyHPA,
 }
 
 var getTable = map[string]Handler{}

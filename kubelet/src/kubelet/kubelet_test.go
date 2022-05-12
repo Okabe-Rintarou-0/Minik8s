@@ -24,7 +24,7 @@ func readPod(podPath string) *apiObject.Pod {
 }
 
 func TestKubelet(t *testing.T) {
-	pod := readPod("../../test/testPod.yaml")
+	pod := readPod("../../test/pod.yaml")
 	pod.Metadata.UID = uuid.NewV4().String()
 	createAct := entity.PodUpdate{
 		Action: entity.CreateAction,

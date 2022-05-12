@@ -61,7 +61,7 @@ func (s *scheduler) Schedule(podUpdate *entity.PodUpdate) error {
 	// Step 3: Prepare for the message
 	nodeName := node.Metadata.Name
 	topic := topicutil.PodUpdateTopic(nodeName)
-	updateMsg, err := json.Marshal(*podUpdate)
+	updateMsg, err := json.Marshal(podUpdate)
 	if err != nil {
 		return err
 	}

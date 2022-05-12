@@ -61,7 +61,7 @@ func (w *worker) error() {
 
 func publishReplicaSetStatus(replicaSetStatus *entity.ReplicaSetStatus) {
 	topic := topicutil.ReplicaSetStatusTopic()
-	msg, _ := json.Marshal(*replicaSetStatus)
+	msg, _ := json.Marshal(replicaSetStatus)
 	//fmt.Printf("publish: %v\n", replicaSetStatus)
 	listwatch.Publish(topic, msg)
 }

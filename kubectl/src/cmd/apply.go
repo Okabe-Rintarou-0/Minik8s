@@ -26,7 +26,29 @@ func applyPodToApiServer(pod *apiObject.Pod) {
 	}
 	respBody, _ := ioutil.ReadAll(resp.Body)
 	defer resp.Body.Close()
-	fmt.Println("Got rsp: ", respBody)
+	fmt.Println(respBody)
+}
+
+func applyReplicaSetToApiServer(rs *apiObject.ReplicaSet) {
+	resp, err := httputil.PostJson(url.Prefix+url.ReplicaSetURL, rs)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+	respBody, _ := ioutil.ReadAll(resp.Body)
+	defer resp.Body.Close()
+	fmt.Println(respBody)
+}
+
+func applyHPAToApiServer(hpa *apiObject.HorizontalPodAutoscaler) {
+	resp, err := httputil.PostJson(url.Prefix+url.HPAURL, hpa)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+	respBody, _ := ioutil.ReadAll(resp.Body)
+	defer resp.Body.Close()
+	fmt.Println(respBody)
 }
 
 func apply(cmd *cobra.Command, args []string) {
@@ -47,8 +69,22 @@ func apply(cmd *cobra.Command, args []string) {
 		pod, err := parseutil.ParsePod(content)
 		if err != nil {
 			fmt.Println(err.Error())
+			return
 		}
-		fmt.Printf("Get pod %v\n", *pod)
 		applyPodToApiServer(pod)
+	case util.ReplicaSet:
+		rs, err := parseutil.ParseReplicaSet(content)
+		if err != nil {
+			fmt.Println(err.Error())
+			return
+		}
+		applyReplicaSetToApiServer(rs)
+	case util.HorizontalPodAutoscaler:
+		hpa, err := parseutil.ParseHPA(content)
+		if err != nil {
+			fmt.Println(err.Error())
+			return
+		}
+		applyHPAToApiServer(hpa)
 	}
 }

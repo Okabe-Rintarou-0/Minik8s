@@ -1,7 +1,6 @@
 package util
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -15,6 +14,8 @@ const (
 	Pod
 	Service
 	Deployment
+	ReplicaSet
+	HorizontalPodAutoscaler
 )
 
 func (tp *ApiObjectType) String() string {
@@ -27,13 +28,17 @@ func (tp *ApiObjectType) String() string {
 		return "Service"
 	case Deployment:
 		return "Deployment"
+	case ReplicaSet:
+		return "ReplicaSet"
+	case HorizontalPodAutoscaler:
+		return "HorizontalPodAutoscaler"
 	}
 	return "Unknown"
 }
 
 func IsValidApiObjectType(objectType string) bool {
 	return objectType == "pod" || objectType == "pods" ||
-		objectType == "deployment" || objectType == "service"
+		objectType == "deployment" || objectType == "service" || objectType == "replicaset"
 }
 
 func isLetter(char rune) bool {
@@ -41,7 +46,7 @@ func isLetter(char rune) bool {
 }
 
 func parseType(content []byte) ApiObjectType {
-	idx := strings.LastIndex(string(content), "kind:") + 5
+	idx := strings.Index(string(content), "kind:") + 5
 	total := len(content)
 	// Ignore spaces
 	for idx < total && content[idx] == ' ' {
@@ -57,6 +62,10 @@ func parseType(content []byte) ApiObjectType {
 	switch kind {
 	case "Pod":
 		return Pod
+	case "ReplicaSet":
+		return ReplicaSet
+	case "HorizontalPodAutoscaler":
+		return HorizontalPodAutoscaler
 	}
 	return Unknown
 }
@@ -70,14 +79,12 @@ func LoadContent(filePath string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("Read content: %s \nfrom %s\n", content, filePath)
+	//fmt.Printf("Read content: %s \nfrom %s\n", content, filePath)
 	return content, nil
 }
 
 func ParseApiObjectType(content []byte) (ApiObjectType, error) {
 	tp := parseType(content)
-
-	fmt.Println("Api object's type is", tp.String())
-
+	//fmt.Println("Api object's type is", tp.String())
 	return tp, nil
 }
