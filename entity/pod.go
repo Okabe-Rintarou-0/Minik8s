@@ -18,13 +18,13 @@ const (
 func (pl *PodLifecycle) String() string {
 	switch *pl {
 	case PodContainerCreating:
-		return "PodContainerCreating"
+		return "ContainerCreating"
 	case PodError:
-		return "PodError"
+		return "Error"
 	case PodRunning:
-		return "PodRunning"
+		return "Running"
 	case PodDeleted:
-		return "PodDeleted"
+		return "Deleted"
 	}
 	return "Unknown"
 }

@@ -41,9 +41,9 @@ type cpuScaleJudge struct {
 
 func (c *cpuScaleJudge) Judge(status *entity.ReplicaSetStatus) int {
 	cpuPercent := status.CpuPercent
-	ratio := cpuPercent / c.benchmark
+	ratio := c.benchmark / cpuPercent
 	numReplicas := mathutil.Clamp(int(math.Round(ratio)), c.minReplicas, c.maxReplicas)
-	fmt.Printf("[CPU judge] Num replicas should be: %d\n", numReplicas)
+	fmt.Printf("[CPU judge] Benchmark = %v, cpuPercent = %v, So num replicas should be: %d\n", c.benchmark, cpuPercent, numReplicas)
 	return numReplicas
 }
 

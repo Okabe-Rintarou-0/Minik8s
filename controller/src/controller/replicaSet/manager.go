@@ -22,6 +22,11 @@ type controller struct {
 	workers      map[types.UID]Worker
 }
 
+type Controller interface {
+	Run()
+	Sync(podStatus *entity.PodStatus)
+}
+
 func (c *controller) Sync(podStatus *entity.PodStatus) {
 	needSync := podStatus.Lifecycle == entity.PodDeleted || podStatus.Lifecycle == entity.PodRunning
 	if UID, exists := podStatus.Labels[runtime.KubernetesReplicaSetUIDLabel]; exists && needSync {
@@ -96,11 +101,6 @@ func (c *controller) parseReplicaSetUpdate(msg *redis.Message) {
 func (c *controller) Run() {
 	topic := topicutil.ReplicaSetUpdateTopic()
 	listwatch.Watch(topic, c.parseReplicaSetUpdate)
-}
-
-type Controller interface {
-	Run()
-	Sync(podStatus *entity.PodStatus)
 }
 
 func NewController(cacheManager cache.Manager) Controller {

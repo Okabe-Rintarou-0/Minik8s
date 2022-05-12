@@ -12,7 +12,6 @@ import (
 	"minik8s/listwatch"
 	"minik8s/util/parseutil"
 	"minik8s/util/topicutil"
-	"os"
 	"time"
 )
 
@@ -32,26 +31,31 @@ func main() {
 	}
 	rs2 := apiObject.ReplicaSet{}
 	_ = yaml.Unmarshal(content, &rs2)
-	rs2.Metadata.UID = rs.UID()
+	rs2.Metadata.UID = uuid.NewV4().String()
 
 	content, _ = ioutil.ReadFile("../test/hpa.yaml")
 	hpa, _ := parseutil.ParseHPA(content)
 	hpa.Metadata.UID = uuid.NewV4().String()
-	fmt.Printf("Read hpa: %v\n", hpa)
+	fmt.Printf("Read hpa: [min = %v, max = %v]\n", hpa.MinReplicas(), hpa.MaxReplicas())
+
+	content, _ = ioutil.ReadFile("../test/hpa2.yaml")
+	hpa2, _ := parseutil.ParseHPA(content)
+	hpa2.Metadata.UID = uuid.NewV4().String()
+	fmt.Printf("Read hpa2: [min = %v, max = %v]\n", hpa.MinReplicas(), hpa.MaxReplicas())
 
 	go func() {
 		<-time.Tick(time.Second * 5)
-		fmt.Println("Create a rs")
+		fmt.Println("Create rs")
 		msg, _ := json.Marshal(entity.ReplicaSetUpdate{
 			Action: entity.CreateAction,
 			Target: rs,
 		})
 		listwatch.Publish(topic, msg)
 
-		<-time.Tick(time.Second * 25)
-		fmt.Println("Update a rs")
+		<-time.Tick(time.Second * 5)
+		fmt.Println("Create rs2")
 		msg, _ = json.Marshal(entity.ReplicaSetUpdate{
-			Action: entity.UpdateAction,
+			Action: entity.CreateAction,
 			Target: rs2,
 		})
 		listwatch.Publish(topic, msg)
@@ -64,16 +68,24 @@ func main() {
 		})
 		listwatch.Publish(topicutil.HPAUpdateTopic(), msg)
 
-		<-time.Tick(time.Second * 25)
-		fmt.Println("Delete a hpa")
+		<-time.Tick(time.Second * 5)
+		fmt.Println("Add hpa2")
 		msg, _ = json.Marshal(entity.HPAUpdate{
-			Action: entity.DeleteAction,
-			Target: *hpa,
+			Action: entity.CreateAction,
+			Target: *hpa2,
 		})
 		listwatch.Publish(topicutil.HPAUpdateTopic(), msg)
 
-		<-time.Tick(time.Minute)
-		os.Exit(0)
+		//<-time.Tick(time.Second * 25)
+		//fmt.Println("Delete a hpa")
+		//msg, _ = json.Marshal(entity.HPAUpdate{
+		//	Action: entity.DeleteAction,
+		//	Target: *hpa,
+		//})
+		//listwatch.Publish(topicutil.HPAUpdateTopic(), msg)
+
+		//<-time.Tick(time.Minute)
+		//os.Exit(0)
 		//fmt.Println("Delete the rs")
 		//msg, _ = json.Marshal(entity.ReplicaSetUpdate{
 		//	Action: entity.DeleteAction,

@@ -38,6 +38,7 @@ func (c *controller) DeleteHpa(hpa *apiObject.HorizontalPodAutoscaler) {
 	UID := hpa.UID()
 	if cancel, exists := c.cancelFuncs[UID]; exists {
 		delete(c.cancelFuncs, UID)
+		delete(c.workers, UID)
 		cancel()
 	}
 }

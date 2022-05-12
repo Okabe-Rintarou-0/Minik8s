@@ -2,7 +2,6 @@ package kubelet
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/go-redis/redis/v8"
 	"minik8s/entity"
 	"minik8s/kubelet/src/pleg"
@@ -10,9 +9,12 @@ import (
 	"minik8s/kubelet/src/runtime/runtime"
 	"minik8s/kubelet/src/status"
 	"minik8s/listwatch"
+	"minik8s/util/logger"
 	"minik8s/util/topicutil"
 	"os"
 )
+
+var log = logger.Log("Kubelet")
 
 type Kubelet struct {
 	statusManager    status.Manager
@@ -45,10 +47,10 @@ func (kl *Kubelet) parsePodUpdate(msg *redis.Message) {
 	podUpdate := &entity.PodUpdate{}
 	err := json.Unmarshal([]byte(msg.Payload), podUpdate)
 	if err != nil {
-		fmt.Println(err.Error())
+		logger.Error(err.Error())
 		return
 	}
-	fmt.Printf("Kl received pod update action: %s for %s\n", podUpdate.Action.String(), podUpdate.Target.UID())
+	log("Received pod update action: %s for %s", podUpdate.Action.String(), podUpdate.Target.UID())
 	kl.updates <- podUpdate
 }
 
@@ -77,19 +79,16 @@ func (kl *Kubelet) syncLoop(updates <-chan *entity.PodUpdate) {
 }
 
 func (kl *Kubelet) syncLoopIteration(updates <-chan *entity.PodUpdate) bool {
-	fmt.Println("Sync loop")
+	log("Sync loop Iteration")
 	select {
 	case podUpdate := <-updates:
-		fmt.Printf("Received podUpdate %v: %v\n", podUpdate.Action.String(), podUpdate.Target)
+		log("Received podUpdate %v: Pod[Name = %v, UID = %v]", podUpdate.Action.String(), podUpdate.Target.FullName(), podUpdate.Target.UID())
 		pod := &podUpdate.Target
 		podUID := pod.UID()
 		switch podUpdate.Action {
 		case entity.CreateAction:
-			// If pod is newly created
-			if kl.statusManager.GetPod(podUID) == nil {
-				kl.statusManager.UpdatePod(podUID, pod)
-				kl.podWorkerManager.AddPod(pod)
-			}
+			kl.statusManager.AddPod(podUID, pod)
+			kl.podWorkerManager.AddPod(pod)
 		case entity.UpdateAction:
 			kl.statusManager.UpdatePod(podUID, pod)
 			kl.podWorkerManager.UpdatePod(pod)
@@ -99,7 +98,7 @@ func (kl *Kubelet) syncLoopIteration(updates <-chan *entity.PodUpdate) bool {
 		}
 
 	case event := <-kl.plegManager.Updates():
-		fmt.Printf("Receive ple: %v, data = %v\n", event, event.Data)
+		log("Receive ple: %v, data = %v", event, event.Data)
 		kl.podWorkerManager.SyncPod(event)
 	}
 	return true

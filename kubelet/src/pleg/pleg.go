@@ -1,20 +1,23 @@
 package pleg
 
 import (
-	"fmt"
 	"minik8s/apiObject"
 	"minik8s/apiObject/types"
 	"minik8s/kubelet/src/podutil"
 	"minik8s/kubelet/src/runtime/container"
 	"minik8s/kubelet/src/runtime/runtime"
 	"minik8s/kubelet/src/status"
+	"minik8s/util/logger"
+	"minik8s/util/wait"
 	"time"
 )
 
 const (
-	eventChannelSize      = 10
-	relistIntervalSeconds = 10
+	eventChannelSize = 10
+	relistPeriod     = 10 * time.Second
 )
+
+var log = logger.Log("PLEG")
 
 // PodLifecycleEventType define the event type of pod life cycle events.
 type PodLifecycleEventType string
@@ -235,15 +238,11 @@ func (m *manager) relist() error {
 }
 
 func (m *manager) run() {
-	ticker := time.Tick(relistIntervalSeconds * time.Second)
-	for {
-		select {
-		case <-ticker:
-			if err := m.relist(); err != nil {
-				fmt.Println(err.Error())
-			}
+	wait.Period(relistPeriod, relistPeriod, func() {
+		if err := m.relist(); err != nil {
+			log(err.Error())
 		}
-	}
+	})
 }
 
 func (m *manager) Updates() chan *PodLifecycleEvent {

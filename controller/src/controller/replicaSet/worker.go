@@ -109,7 +109,8 @@ func (w *worker) syncLoopIteration() bool {
 	diff := numPods - numReplicas
 	logWorker("Syn result: diff = %d", diff)
 	if diff == 0 {
-		w.ready()
+		cpu, mem := w.calcMetrics(podStatuses)
+		w.ready(cpu, mem)
 	} else if diff > 0 {
 		podUID := podStatuses[0].ID
 		w.scaling(numRunningPods)

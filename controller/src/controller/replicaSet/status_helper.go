@@ -20,10 +20,22 @@ func (w *worker) replicaSet2ReplicaSetStatus(replicaSet *apiObject.ReplicaSet) *
 	}
 }
 
-func (w *worker) ready() {
+func (w *worker) calcMetrics(podStatuses []*entity.PodStatus) (cpu, mem float64) {
+	cpu = 0.0
+	mem = 0.0
+	for _, podStatus := range podStatuses {
+		cpu += podStatus.CpuPercent
+		mem += podStatus.MemPercent
+	}
+	return
+}
+
+func (w *worker) ready(cpu, mem float64) {
 	replicaSetStatus := w.replicaSet2ReplicaSetStatus(w.target)
 	replicaSetStatus.Lifecycle = entity.ReplicaSetReady
 	replicaSetStatus.NumReady = replicaSetStatus.NumReplicas
+	replicaSetStatus.CpuPercent = cpu
+	replicaSetStatus.MemPercent = mem
 	publishReplicaSetStatus(replicaSetStatus)
 }
 

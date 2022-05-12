@@ -18,6 +18,7 @@ type ReplicaSetStatusUpdateHook func(replicaSetStatus *entity.ReplicaSetStatus)
 
 type Manager interface {
 	Start()
+	RefreshReplicaSetStatus(fullName string)
 	GetReplicaSetStatus(fullName string) *entity.ReplicaSetStatus
 	GetReplicaSetPodStatuses(rsUID types.UID) []*entity.PodStatus
 	SetPodStatusUpdateHook(podStatusUpdateHook PodStatusUpdateHook)
@@ -29,6 +30,25 @@ type manager struct {
 	replicaSetStatusCache      utilcache.Cache
 	podStatusUpdateHook        PodStatusUpdateHook
 	replicaSetStatusUpdateHook ReplicaSetStatusUpdateHook
+}
+
+func (m *manager) calcMetrics(podStatuses []*entity.PodStatus) (cpuPercent, memPercent float64) {
+	cpuPercent = 0.0
+	memPercent = 0.0
+	for _, podStatus := range podStatuses {
+		cpuPercent += podStatus.CpuPercent
+		memPercent += podStatus.MemPercent
+	}
+	return
+}
+
+// RefreshReplicaSetStatus TODO deprecate it
+func (m *manager) RefreshReplicaSetStatus(fullName string) {
+	if v := m.replicaSetStatusCache.Get(fullName); v != nil {
+		replicaSetStatus := v.(*entity.ReplicaSetStatus)
+		podStatuses := m.GetReplicaSetPodStatuses(replicaSetStatus.ID)
+		replicaSetStatus.CpuPercent, replicaSetStatus.MemPercent = m.calcMetrics(podStatuses)
+	}
 }
 
 func (m *manager) GetReplicaSetStatus(fullName string) *entity.ReplicaSetStatus {

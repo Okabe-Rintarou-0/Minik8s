@@ -16,11 +16,16 @@ func (m *manager) updatePodStatus(msg *redis.Message) {
 		fmt.Println(err.Error())
 		return
 	}
-	log("Received status %s of Pod[ID = %s]", podStatus.Lifecycle.String(), podStatus.ID)
-	if podStatus.Lifecycle == entity.PodDeleted {
+	log("Received status %s of Pod[ID = %s, cpu = %v, mem = %v]", podStatus.Lifecycle.String(), podStatus.ID, podStatus.CpuPercent, podStatus.MemPercent)
+	switch podStatus.Lifecycle {
+	case entity.PodDeleted:
 		m.podStatusCache.Delete(podStatus.ID)
-	} else {
-		m.podStatusCache.Update(podStatus.ID, podStatus)
+	default:
+		if !m.podStatusCache.Exists(podStatus.ID) {
+			m.podStatusCache.Add(podStatus.ID, podStatus)
+		} else {
+			m.podStatusCache.Update(podStatus.ID, podStatus)
+		}
 	}
 	m.podStatusUpdateHook(podStatus)
 }

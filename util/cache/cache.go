@@ -5,9 +5,11 @@ import (
 )
 
 type Cache interface {
-	Get(podUID string) interface{}
-	Update(podUID string, newValue interface{})
-	Delete(podUID string)
+	Get(key string) interface{}
+	Add(key string, value interface{})
+	Update(key string, newValue interface{})
+	Delete(key string)
+	Exists(key string) bool
 	Values() []interface{}
 }
 
@@ -16,25 +18,43 @@ type cache struct {
 	cache     map[string]interface{}
 }
 
-func (c *cache) updateInternal(podUID string, newValue interface{}) {
-	c.cacheLock.Lock()
-	defer c.cacheLock.Unlock()
-	c.cache[podUID] = newValue
+func (c *cache) Exists(key string) bool {
+	return c.Get(key) != nil
 }
 
-func (c *cache) getInternal(podUID string) interface{} {
+func (c *cache) Add(key string, value interface{}) {
+	c.addInternal(key, value)
+}
+
+func (c *cache) addInternal(key string, newValue interface{}) {
+	c.cacheLock.Lock()
+	defer c.cacheLock.Unlock()
+	if _, exists := c.cache[key]; !exists {
+		c.cache[key] = newValue
+	}
+}
+
+func (c *cache) updateInternal(key string, newValue interface{}) {
+	c.cacheLock.Lock()
+	defer c.cacheLock.Unlock()
+	if _, exists := c.cache[key]; exists {
+		c.cache[key] = newValue
+	}
+}
+
+func (c *cache) getInternal(key string) interface{} {
 	c.cacheLock.RLock()
 	defer c.cacheLock.RUnlock()
-	if value, exists := c.cache[podUID]; exists {
+	if value, exists := c.cache[key]; exists {
 		return value
 	}
 	return nil
 }
 
-func (c *cache) deleteInternal(podUID string) {
+func (c *cache) deleteInternal(key string) {
 	c.cacheLock.Lock()
 	defer c.cacheLock.Unlock()
-	delete(c.cache, podUID)
+	delete(c.cache, key)
 }
 
 func (c *cache) getValuesInternal() []interface{} {
@@ -47,16 +67,16 @@ func (c *cache) getValuesInternal() []interface{} {
 	return values
 }
 
-func (c *cache) Get(podUID string) interface{} {
-	return c.getInternal(podUID)
+func (c *cache) Get(key string) interface{} {
+	return c.getInternal(key)
 }
 
-func (c *cache) Update(podUID string, newValue interface{}) {
-	c.updateInternal(podUID, newValue)
+func (c *cache) Update(key string, newValue interface{}) {
+	c.updateInternal(key, newValue)
 }
 
-func (c *cache) Delete(podUID string) {
-	c.deleteInternal(podUID)
+func (c *cache) Delete(key string) {
+	c.deleteInternal(key)
 }
 
 func (c *cache) Values() []interface{} {

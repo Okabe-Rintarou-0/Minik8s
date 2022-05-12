@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: ReplicaSet
 metadata:
-  name: rs
+  name: rs2
   namespace: default
 spec:
   replicas: 1

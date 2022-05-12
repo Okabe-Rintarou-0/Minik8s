@@ -3,7 +3,6 @@ package hpa
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"minik8s/apiObject"
 	"minik8s/controller/src/cache"
 	"minik8s/entity"
@@ -48,13 +47,15 @@ func AddRsForTest(rs *apiObject.ReplicaSet) {
 // getReplicaSetStatus get rs status from cache
 func (w *worker) getReplicaSetStatus() *entity.ReplicaSetStatus {
 	targetReplicaSet := w.target.Target()
-	return w.cacheManager.GetReplicaSetStatus(targetReplicaSet.FullName())
+	fullName := targetReplicaSet.FullName()
+	//w.cacheManager.RefreshReplicaSetStatus(fullName)
+	return w.cacheManager.GetReplicaSetStatus(fullName)
 }
 
 func (w *worker) updateReplicaSetToApiServerForTest(fullName string, numReplicas int) {
 	rs := testMap[fullName]
 	rs.SetReplicas(numReplicas)
-	logWorker("Update rs test pod[ID = %s]", rs.UID())
+	logWorker("Update rs test rs[ID = %s]", rs.UID())
 	msg, _ := json.Marshal(entity.ReplicaSetUpdate{
 		Action: entity.UpdateAction,
 		Target: *rs,
@@ -72,9 +73,9 @@ func (w *worker) updateReplicaSet(fullName string, numReplicas int) {
 func (w *worker) syncLoopIteration() bool {
 	// Step 1: Get replicaSet status from Cache
 	replicaSetStatus := w.getReplicaSetStatus()
-	logWorker("Got replicaSet status:", replicaSetStatus)
+	logWorker("Got replicaSet status: %v", replicaSetStatus)
 	if replicaSetStatus == nil {
-		logWorker("Something bad happens...🙄")
+		logWorker("Something bad happens...")
 		return true
 	}
 
@@ -97,7 +98,7 @@ func (w *worker) syncLoop() {
 		case <-tick:
 			continue
 		case <-w.ctx.Done():
-			fmt.Printf("Stop working on hpa[ID = %s]\n", w.target.UID())
+			logWorker("Stop working on hpa[ID = %s]\n", w.target.UID())
 			return
 		}
 	}
@@ -117,7 +118,7 @@ func decideMetrics(hpa *apiObject.HorizontalPodAutoscaler) ScaleJudge {
 	)
 
 	// for test only, delete it afterwards
-	return FakeScaleJudge()
+	//return FakeScaleJudge()
 
 	// Cpu takes the highest priority
 	if cpuPercent > 0 {

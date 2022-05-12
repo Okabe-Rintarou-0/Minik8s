@@ -1,16 +1,18 @@
 package runtime
 
 import (
-	"fmt"
 	"minik8s/apiObject"
 	"minik8s/apiObject/types"
 	"minik8s/entity"
 	"minik8s/kubelet/src/podutil"
 	"minik8s/kubelet/src/runtime/container"
 	"minik8s/kubelet/src/runtime/image"
+	"minik8s/util/logger"
 	"strconv"
 	"time"
 )
+
+var log = logger.Log("Runtime")
 
 type Pod struct {
 	ID         types.UID
@@ -150,7 +152,7 @@ func (rm *runtimeManager) PodRemoveContainer(podUID types.UID, ID container.ID) 
 
 // DeletePod deletes a pod according to the given api object
 func (rm *runtimeManager) DeletePod(pod *apiObject.Pod) error {
-	fmt.Println("Delete pod", pod.UID())
+	log("Delete pod[ID = %s]", pod.UID())
 	// Step 1: Remove common container
 	err := rm.removePodCommonContainers(pod)
 
@@ -167,7 +169,7 @@ func (rm *runtimeManager) DeletePod(pod *apiObject.Pod) error {
 		return err
 	}
 
-	fmt.Printf("Pod with UID %s has been removed!\n", pod.UID())
+	log("Pod[ID = %s] has been removed!", pod.UID())
 	return nil
 }
 
@@ -190,7 +192,7 @@ func (rm *runtimeManager) CreatePod(pod *apiObject.Pod) error {
 		}
 	}
 
-	fmt.Printf("Pod with UID %s created!\n", pod.UID())
+	log("Pod[ID = %s] has been created!", pod.UID())
 	return nil
 }
 
@@ -215,6 +217,7 @@ func (rm *runtimeManager) GetPodStatuses() (PodStatuses, error) {
 	}
 	podStatuses := make(PodStatuses)
 	for podUID, cs := range allContainerStatuses {
+		/// TODO name?
 		podStatuses[podUID] = &PodStatus{
 			ID:                podUID,
 			ContainerStatuses: cs,

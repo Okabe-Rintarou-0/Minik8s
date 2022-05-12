@@ -20,7 +20,12 @@ func (m *manager) updateReplicaSetStatus(msg *redis.Message) {
 	if replicaSetStatus.Lifecycle == entity.ReplicaSetDeleted {
 		m.replicaSetStatusCache.Delete(replicaSetStatus.FullName())
 	} else {
-		m.replicaSetStatusCache.Update(replicaSetStatus.FullName(), replicaSetStatus)
+		fullName := replicaSetStatus.FullName()
+		if m.replicaSetStatusCache.Exists(fullName) {
+			m.replicaSetStatusCache.Update(fullName, replicaSetStatus)
+		} else {
+			m.replicaSetStatusCache.Add(fullName, replicaSetStatus)
+		}
 	}
 	//m.replicaSetStatusUpdateHook(replicaSetStatus)
 }
