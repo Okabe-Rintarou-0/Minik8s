@@ -6,7 +6,7 @@ import (
 )
 
 func MarshalPodStatus(status *entity.PodStatus) []byte {
-	result, err := json.Marshal(*status)
+	result, err := json.Marshal(status)
 	if err != nil {
 		return nil
 	}
