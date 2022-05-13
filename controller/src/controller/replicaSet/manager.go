@@ -28,7 +28,7 @@ type Controller interface {
 }
 
 func (c *controller) Sync(podStatus *entity.PodStatus) {
-	needSync := podStatus.Lifecycle == entity.PodDeleted || podStatus.Lifecycle == entity.PodRunning
+	needSync := podStatus.Lifecycle == entity.PodDeleted || podStatus.Lifecycle == entity.PodCreated
 	if UID, exists := podStatus.Labels[runtime.KubernetesReplicaSetUIDLabel]; exists && needSync {
 		if worker, stillWorking := c.workers[UID]; stillWorking {
 			worker.SyncChannel() <- syncSignal

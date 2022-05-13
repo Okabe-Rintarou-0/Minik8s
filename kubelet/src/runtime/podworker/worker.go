@@ -66,7 +66,7 @@ func (w *podWorker) doWork(work podWork) {
 		logWorker("Received pod create job %s", arg.pod.UID())
 		w.containerCreating(arg.pod)
 		if err = w.podCreateFn(arg.pod); err == nil {
-			w.running(arg.pod)
+			w.created(arg.pod)
 		} else {
 			errPod = arg.pod
 		}

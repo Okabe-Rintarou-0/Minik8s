@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"github.com/spf13/cobra"
-	"minik8s/kubectl/src/util"
 	"strings"
 )
 
@@ -23,18 +22,20 @@ func get(cmd *cobra.Command, args []string) {
 	if len(args) > 1 {
 		name = args[1]
 	}
-	apiObjectType = strings.ToLower(apiObjectType)
-	if !util.IsValidApiObjectType(apiObjectType) {
-		fmt.Printf("invalid api object type \"%s\", acceptable api object type is pod, service, etc.", apiObjectType)
-		return
-	}
 
+	apiObjectType = strings.ToLower(apiObjectType)
 	var err error
 	switch apiObjectType {
 	case "pod":
 		err = printSpecifiedPodStatus(name)
 	case "pods":
 		err = printPodStatuses()
+	case "node":
+		err = printSpecifiedNodeStatus(name)
+	case "nodes":
+		err = printNodeStatuses()
+	default:
+		err = fmt.Errorf("invalid api object type \"%s\", acceptable api object type is pod, service, etc", apiObjectType)
 	}
 	if err != nil {
 		fmt.Println(err.Error())

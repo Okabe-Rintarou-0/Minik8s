@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"github.com/fatih/color"
 	"github.com/rodaine/table"
+	"minik8s/apiserver/src/url"
 	"minik8s/entity"
+	"minik8s/util/httputil"
 	"time"
 )
 
@@ -12,7 +14,16 @@ func podStatusTbl() table.Table {
 	headerFmt := color.New(color.FgGreen, color.Underline).SprintfFunc()
 	columnFmt := color.New(color.FgYellow).SprintfFunc()
 
-	tbl := table.New("Name", "UID", "PodLifecycle", "Last Sync Time", "PodError")
+	tbl := table.New("Name", "UID", "Status", "Last Sync Time", "Error")
+	tbl.WithHeaderFormatter(headerFmt).WithFirstColumnFormatter(columnFmt)
+	return tbl
+}
+
+func nodeStatusTbl() table.Table {
+	headerFmt := color.New(color.FgGreen, color.Underline).SprintfFunc()
+	columnFmt := color.New(color.FgYellow).SprintfFunc()
+
+	tbl := table.New("Hostname", "Ipv4", "Status", "Last Sync Time", "Error")
 	tbl.WithHeaderFormatter(headerFmt).WithFirstColumnFormatter(columnFmt)
 	return tbl
 }
@@ -21,27 +32,36 @@ func podStatusLogTbl() table.Table {
 	headerFmt := color.New(color.FgGreen, color.Underline).SprintfFunc()
 	columnFmt := color.New(color.FgYellow).SprintfFunc()
 
-	tbl := table.New("Time", "PodLifecycle", "PodError")
+	tbl := table.New("Time", "Status", "Error")
 	tbl.WithHeaderFormatter(headerFmt).WithFirstColumnFormatter(columnFmt)
 	return tbl
 }
 
-func getPodFromApiServer(name string) *entity.PodStatus {
-	//TODO just for test now, replace it with api-server
-	return podStatusForTest()
+func getPodFromApiServer(name string) (pod *entity.PodStatus, err error) {
+	err = httputil.GetAndUnmarshal(url.Prefix+url.PodURL+name, &pod)
+	return
 }
 
-func getPodsFromApiServer() []*entity.PodStatus {
-	//TODO just for test now, replace it with api-server
-	pod1 := podStatusForTest()
-	pod2 := podStatusForTest()
-	pod2.Lifecycle = entity.PodError
-	pod2.Error = "Image Pull PodError"
-	return []*entity.PodStatus{pod1, pod2}
+func getPodsFromApiServer() (pods []*entity.PodStatus, err error) {
+	err = httputil.GetAndUnmarshal(url.Prefix+url.PodURL, &pods)
+	return
+}
+
+func getNodesFromApiServer() (nodes []*entity.NodeStatus, err error) {
+	err = httputil.GetAndUnmarshal(url.Prefix+url.NodeURL, &nodes)
+	return
+}
+
+func getNodeFromApiServer(name string) (node *entity.NodeStatus, err error) {
+	err = httputil.GetAndUnmarshal(url.Prefix+url.NodeURL+name, &node)
+	return
 }
 
 func printSpecifiedPodStatus(name string) error {
-	podStatus := getPodFromApiServer(name)
+	podStatus, err := getPodFromApiServer(name)
+	if err != nil {
+		return err
+	}
 	if podStatus == nil {
 		return fmt.Errorf("no such pod")
 	}
@@ -53,7 +73,10 @@ func printSpecifiedPodStatus(name string) error {
 }
 
 func printSpecifiedPodDescription(name string) error {
-	podDesc := getPodDescriptionFromApiServer(name)
+	podDesc, err := getPodDescriptionFromApiServer(name)
+	if err != nil {
+		return err
+	}
 	if podDesc == nil {
 		return fmt.Errorf("no such pod")
 	}
@@ -75,12 +98,44 @@ func printSpecifiedPodDescription(name string) error {
 	return nil
 }
 
+func printSpecifiedNodeStatus(name string) error {
+	nodeStatus, err := getNodeFromApiServer(name)
+	if err != nil {
+		return err
+	}
+	if nodeStatus == nil {
+		return fmt.Errorf("no such node")
+	}
+
+	tbl := nodeStatusTbl()
+	tbl.AddRow(nodeStatus.Hostname, nodeStatus.Ip, nodeStatus.Lifecycle.String(), nodeStatus.SyncTime.Format(time.RFC3339), nodeStatus.Error)
+	tbl.Print()
+
+	return nil
+}
+
 func printPodStatuses() error {
-	podStatuses := getPodsFromApiServer()
+	podStatuses, err := getPodsFromApiServer()
+	if err != nil {
+		return err
+	}
 
 	tbl := podStatusTbl()
 	for _, podStatus := range podStatuses {
 		tbl.AddRow(podStatus.Name, podStatus.ID, podStatus.Lifecycle.String(), podStatus.SyncTime.Format(time.RFC3339), podStatus.Error)
+	}
+	tbl.Print()
+	return nil
+}
+
+func printNodeStatuses() error {
+	nodeStatuses, err := getNodesFromApiServer()
+	if err != nil {
+		return err
+	}
+	tbl := nodeStatusTbl()
+	for _, nodeStatus := range nodeStatuses {
+		tbl.AddRow(nodeStatus.Hostname, nodeStatus.Ip, nodeStatus.Lifecycle.String(), nodeStatus.SyncTime.Format(time.RFC3339), nodeStatus.Error)
 	}
 	tbl.Print()
 	return nil

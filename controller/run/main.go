@@ -2,12 +2,12 @@ package main
 
 import (
 	"fmt"
-	uuid "github.com/satori/go.uuid"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
 	"minik8s/apiObject"
 	"minik8s/controller/src/controller"
 	"minik8s/util/parseutil"
+	"minik8s/util/uidutil"
 )
 
 func main() {
@@ -17,7 +17,7 @@ func main() {
 	}
 	rs := apiObject.ReplicaSet{}
 	_ = yaml.Unmarshal(content, &rs)
-	rs.Metadata.UID = uuid.NewV4().String()
+	rs.Metadata.UID = uidutil.New()
 	//topic := topicutil.ReplicaSetUpdateTopic()
 
 	content, err = ioutil.ReadFile("../test/rs2.yaml")
@@ -26,16 +26,16 @@ func main() {
 	}
 	rs2 := apiObject.ReplicaSet{}
 	_ = yaml.Unmarshal(content, &rs2)
-	rs2.Metadata.UID = uuid.NewV4().String()
+	rs2.Metadata.UID = uidutil.New()
 
 	content, _ = ioutil.ReadFile("../test/hpa.yaml")
 	hpa, _ := parseutil.ParseHPA(content)
-	hpa.Metadata.UID = uuid.NewV4().String()
+	hpa.Metadata.UID = uidutil.New()
 	fmt.Printf("Read hpa: [min = %v, max = %v]\n", hpa.MinReplicas(), hpa.MaxReplicas())
 
 	content, _ = ioutil.ReadFile("../test/hpa2.yaml")
 	hpa2, _ := parseutil.ParseHPA(content)
-	hpa2.Metadata.UID = uuid.NewV4().String()
+	hpa2.Metadata.UID = uidutil.New()
 	fmt.Printf("Read hpa2: [min = %v, max = %v]\n", hpa.MinReplicas(), hpa.MaxReplicas())
 
 	//go func() {

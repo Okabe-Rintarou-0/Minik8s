@@ -26,7 +26,7 @@ func applyPodToApiServer(pod *apiObject.Pod) {
 	}
 	respBody, _ := ioutil.ReadAll(resp.Body)
 	defer resp.Body.Close()
-	fmt.Println(respBody)
+	fmt.Println(string(respBody))
 }
 
 func applyReplicaSetToApiServer(rs *apiObject.ReplicaSet) {
@@ -37,7 +37,7 @@ func applyReplicaSetToApiServer(rs *apiObject.ReplicaSet) {
 	}
 	respBody, _ := ioutil.ReadAll(resp.Body)
 	defer resp.Body.Close()
-	fmt.Println(respBody)
+	fmt.Println(string(respBody))
 }
 
 func applyHPAToApiServer(hpa *apiObject.HorizontalPodAutoscaler) {
@@ -48,7 +48,7 @@ func applyHPAToApiServer(hpa *apiObject.HorizontalPodAutoscaler) {
 	}
 	respBody, _ := ioutil.ReadAll(resp.Body)
 	defer resp.Body.Close()
-	fmt.Println(respBody)
+	fmt.Println(string(respBody))
 }
 
 func apply(cmd *cobra.Command, args []string) {

@@ -2,7 +2,6 @@ package replicaSet
 
 import (
 	"encoding/json"
-	uuid "github.com/satori/go.uuid"
 	"minik8s/apiObject"
 	"minik8s/apiObject/types"
 	"minik8s/controller/src/cache"
@@ -11,6 +10,7 @@ import (
 	"minik8s/listwatch"
 	"minik8s/util/logger"
 	"minik8s/util/topicutil"
+	"minik8s/util/uidutil"
 	"time"
 )
 
@@ -52,7 +52,7 @@ func (w *worker) addPodToApiServerForTest() {
 	pod.Metadata.Name = w.target.Name()
 	pod.Metadata.Namespace = w.target.Namespace()
 	topic := topicutil.SchedulerPodUpdateTopic()
-	pod.Metadata.UID = uuid.NewV4().String()
+	pod.Metadata.UID = uidutil.New()
 	pod.AddLabel(runtime.KubernetesReplicaSetUIDLabel, w.target.UID())
 	msg, _ := json.Marshal(entity.PodUpdate{
 		Action: entity.CreateAction,
@@ -108,15 +108,15 @@ func (w *worker) syncLoopIteration() bool {
 	numRunningPods := w.numRunningPods(podStatuses)
 	diff := numPods - numReplicas
 	logWorker("Syn result: diff = %d", diff)
+	cpu, mem := w.calcMetrics(podStatuses)
 	if diff == 0 {
-		cpu, mem := w.calcMetrics(podStatuses)
 		w.ready(cpu, mem)
 	} else if diff > 0 {
 		podUID := podStatuses[0].ID
-		w.scaling(numRunningPods)
+		w.scaling(numRunningPods, cpu, mem)
 		go w.deletePod(podUID)
 	} else {
-		w.scaling(numRunningPods)
+		w.scaling(numRunningPods, cpu, mem)
 		go w.addPod()
 	}
 

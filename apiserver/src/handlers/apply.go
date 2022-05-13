@@ -10,20 +10,21 @@ import (
 	"minik8s/util/logger"
 	"minik8s/util/topicutil"
 	"minik8s/util/uidutil"
+	"net/http"
 )
 
 var log = logger.Log("Api-server")
 
 func HandleApplyPod(c *gin.Context) {
 	body, err := ioutil.ReadAll(c.Request.Body)
+	defer c.Request.Body.Close()
 	if err != nil {
-		logger.Error(err.Error())
+		c.String(http.StatusOK, err.Error())
 		return
 	}
-	defer c.Request.Body.Close()
 	pod := &apiObject.Pod{}
 	if err = json.Unmarshal(body, pod); err != nil {
-		logger.Error(err.Error())
+		c.String(http.StatusOK, err.Error())
 		return
 	}
 	pod.Metadata.UID = uidutil.New()
@@ -34,18 +35,19 @@ func HandleApplyPod(c *gin.Context) {
 		Target: *pod,
 	})
 	listwatch.Publish(topicutil.SchedulerPodUpdateTopic(), msg)
+	c.String(http.StatusOK, "Apply successfully!")
 }
 
 func HandleApplyReplicaSet(c *gin.Context) {
 	body, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil {
-		logger.Error(err.Error())
+		c.String(http.StatusOK, err.Error())
 		return
 	}
 	defer c.Request.Body.Close()
 	rs := &apiObject.ReplicaSet{}
 	if err = json.Unmarshal(body, rs); err != nil {
-		logger.Error(err.Error())
+		c.String(http.StatusOK, err.Error())
 		return
 	}
 	rs.Metadata.UID = uidutil.New()
@@ -56,26 +58,25 @@ func HandleApplyReplicaSet(c *gin.Context) {
 		Target: *rs,
 	})
 	listwatch.Publish(topicutil.ReplicaSetUpdateTopic(), msg)
+	c.String(http.StatusOK, "Apply successfully!")
 }
 
 func HandleApplyHPA(c *gin.Context) {
 	body, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil {
-		logger.Error(err.Error())
+		c.String(http.StatusOK, err.Error())
 		return
 	}
 	defer c.Request.Body.Close()
 	hpa := &apiObject.HorizontalPodAutoscaler{}
 	if err = json.Unmarshal(body, hpa); err != nil {
-		logger.Error(err.Error())
+		c.String(http.StatusOK, err.Error())
 		return
 	}
-	hpa.Metadata.UID = uidutil.New()
-	log("receive hpa[ID = %v]: %v", hpa.UID(), hpa)
-	var msg []byte
-	msg, err = json.Marshal(entity.HPAUpdate{
-		Action: entity.CreateAction,
-		Target: *hpa,
-	})
-	listwatch.Publish(topicutil.HPAUpdateTopic(), msg)
+	if err = addHPA(hpa); err != nil {
+		c.String(http.StatusOK, err.Error())
+		return
+	}
+
+	c.String(http.StatusOK, "Apply successfully!")
 }

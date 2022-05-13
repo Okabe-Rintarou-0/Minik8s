@@ -2,11 +2,11 @@ package selector
 
 import (
 	"math/rand"
-	"minik8s/apiObject"
+	"minik8s/entity"
 )
 
 type Selector interface {
-	Select(nodes []*apiObject.Node) *apiObject.Node
+	Select(nodes []*entity.NodeStatus) *entity.NodeStatus
 }
 
 type selector struct {
@@ -16,7 +16,7 @@ func New() Selector {
 	return &selector{}
 }
 
-func (s *selector) Select(nodes []*apiObject.Node) *apiObject.Node {
+func (s *selector) Select(nodes []*entity.NodeStatus) *entity.NodeStatus {
 	numNodes := len(nodes)
 	if numNodes == 0 {
 		return nil
