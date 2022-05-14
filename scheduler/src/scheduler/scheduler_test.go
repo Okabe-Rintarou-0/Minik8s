@@ -3,7 +3,7 @@ package scheduler
 import (
 	"encoding/json"
 	"fmt"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 	"io/ioutil"
 	"minik8s/apiObject"
 	"minik8s/entity"
