@@ -23,8 +23,7 @@ type ContainerPort struct {
 	HostIP        string `yaml:"hostIP"`
 }
 
-type ProbeHandler struct {
-}
+type ProbeHandler struct{}
 
 // Probe describes a health check to be performed against a container to determine whether it is
 // alive or ready to receive traffic.
@@ -113,8 +112,7 @@ type Container struct {
 	TTY             bool                         `yaml:"tty"`
 }
 
-type EmptyDirVolumeSource struct {
-}
+type EmptyDirVolumeSource struct{}
 
 type HostPathVolumeSource struct {
 	Path string `yaml:"path"`
@@ -138,15 +136,15 @@ type Volume struct {
 }
 
 type PodSpec struct {
-	RestartPolicy string            `yaml:"restartPolicy"`
-	NodeSelector  map[string]string `yaml:"nodeSelector,omitempty"`
-	Containers    []Container       `yaml:"containers"`
-	Volumes       []Volume          `yaml:"volumes"`
+	RestartPolicy string      `yaml:"restartPolicy"`
+	NodeSelector  Labels      `yaml:"nodeSelector,omitempty"`
+	Containers    []Container `yaml:"containers"`
+	Volumes       []Volume    `yaml:"volumes"`
 }
 
 type Pod struct {
-	ApiObjectBase `yaml:",inline"` // 处理继承关系，详情请见: https://github.com/go-yaml/yaml/pull/94/commits/e90bcf783f7abddaa0ee0994a09e536498744e49
-	Spec          PodSpec          `yaml:"spec"`
+	Base `yaml:",inline"` // 处理继承关系，详情请见: https://github.com/go-yaml/yaml/pull/94/commits/e90bcf783f7abddaa0ee0994a09e536498744e49
+	Spec PodSpec          `yaml:"spec"`
 }
 
 func (pod *Pod) FullName() string {
@@ -187,6 +185,10 @@ func (pod *Pod) GetContainerByName(name string) *Container {
 		}
 	}
 	return nil
+}
+
+func (pod *Pod) NodeSelector() map[string]string {
+	return pod.Spec.NodeSelector
 }
 
 type PodTemplateSpec struct {

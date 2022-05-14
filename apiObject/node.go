@@ -1,6 +1,6 @@
 package apiObject
 
 type Node struct {
-	ApiObjectBase `yaml:",inline"`
-	Ip            string `yaml:"ip,omitempty"`
+	Base `yaml:",inline"`
+	Ip   string `yaml:"ip,omitempty"`
 }

@@ -17,7 +17,7 @@ type ReplicaSetSpec struct {
 
 // ReplicaSet ensures that a specified number of pod replicas are running at any given time.
 type ReplicaSet struct {
-	ApiObjectBase `yaml:",inline"`
+	Base `yaml:",inline"`
 	// Spec defines the desired behavior of this ReplicaSet.
 	// +optional
 	Spec ReplicaSetSpec `yaml:"spec"`
@@ -25,7 +25,7 @@ type ReplicaSet struct {
 
 func (template *PodTemplateSpec) ToPod() *Pod {
 	return &Pod{
-		ApiObjectBase: ApiObjectBase{
+		Base: Base{
 			ApiVersion: "v1",
 			Kind:       "Pod",
 			Metadata:   template.Metadata,

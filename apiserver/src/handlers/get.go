@@ -17,11 +17,17 @@ func getTestNodes() []*entity.NodeStatus {
 	hostname, _ := os.Hostname()
 	node.Hostname = hostname
 	node.SyncTime = time.Now()
+	node.Labels = map[string]string{
+		"os": "windows",
+	}
 
 	node2 := &entity.NodeStatus{}
 	node2.Ip = "192.168.1.103"
 	node2.Hostname = "example"
 	node2.SyncTime = time.Now()
+	node2.Labels = map[string]string{
+		"os": "linux",
+	}
 
 	nodes = append(nodes, node)
 	nodes = append(nodes, node2)

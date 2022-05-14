@@ -2,7 +2,7 @@ package apiObject
 
 import "minik8s/apiObject/types"
 
-type ScaleTargetRef = ApiObjectBase
+type ScaleTargetRef = Base
 
 type Metrics struct {
 	CPUUtilizationPercentage float64 `yaml:"CPUUtilizationPercentage"`
@@ -17,8 +17,8 @@ type HPASpec struct {
 }
 
 type HorizontalPodAutoscaler struct {
-	ApiObjectBase `yaml:",inline"`
-	Spec          HPASpec `yaml:"spec"`
+	Base `yaml:",inline"`
+	Spec HPASpec `yaml:"spec"`
 }
 
 func (tgt *ScaleTargetRef) Name() string {
