@@ -14,8 +14,15 @@ var postTable = map[string]Handler{
 	url.HPAURL:        handlers.HandleApplyHPA,
 }
 
-var getTable = map[string]Handler{}
+var getTable = map[string]Handler{
+	url.PodURL:        handlers.HandleGetPod,
+	url.ReplicaSetURL: handlers.HandleGetReplicaSet,
+	url.HPAURL:        handlers.HandleGetHPA,
+}
 
 var putTable = map[string]Handler{}
 
-var deleteTable = map[string]Handler{}
+var deleteTable = map[string]Handler{
+	url.PodURL:        handlers.HandleDeletePod,
+	url.ReplicaSetURL: handlers.HandleDeleteReplicaSet,
+}
