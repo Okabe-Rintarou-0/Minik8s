@@ -17,6 +17,9 @@ var postTable = map[string]Handler{
 	// kubectl autoscale hpa_name -t target -c cpu -m memory --min=min_replicas --max=max_replicas
 	url.AutoscaleURLWithSpecifiedName: handlers.HandleAutoscale,
 
+	// kubectl label nodes node_name os=linux --overwrite
+	url.NodeLabelsURLWithSpecifiedName: handlers.HandleLabelNode,
+
 	// Set Node Status
 	url.NodeStatusURLWithSpecifiedName: handlers.HandleSetNodeStatus,
 }

@@ -22,11 +22,14 @@ func init() {
 	autoscaleCmd.Flags().IntVarP(&minReplicas, "min", "", 1, "min replicas")
 	autoscaleCmd.Flags().IntVarP(&maxReplicas, "max", "", 1, "max replicas")
 
+	labelCmd.Flags().BoolVarP(&overwrite, "overwrite", "o", false, "overwrite labels")
+
 	rootCmd.AddCommand(applyCmd)
 	rootCmd.AddCommand(getCmd)
 	rootCmd.AddCommand(describeCmd)
 	rootCmd.AddCommand(autoscaleCmd)
 	rootCmd.AddCommand(deleteCmd)
+	rootCmd.AddCommand(labelCmd)
 }
 
 var rootCmd = &cobra.Command{
