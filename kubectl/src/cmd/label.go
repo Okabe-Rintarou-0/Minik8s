@@ -8,6 +8,7 @@ import (
 	"minik8s/apiserver/src/url"
 	"minik8s/util/httputil"
 	"minik8s/util/logger"
+	"strconv"
 	"strings"
 )
 
@@ -22,7 +23,7 @@ var labelCmd = &cobra.Command{
 }
 
 func labelSpecifiedNode(name string, labels apiObject.Labels) {
-	URL := url.Prefix + strings.Replace(url.NodeLabelsURLWithSpecifiedName, ":name", name, 1)
+	URL := url.Prefix + strings.Replace(url.NodeLabelsURLWithSpecifiedName, ":name", name, 1) + "?overwrite=" + strconv.FormatBool(overwrite)
 	resp, err := httputil.PostJson(URL, labels)
 	if err != nil {
 		logger.Error(err.Error())
