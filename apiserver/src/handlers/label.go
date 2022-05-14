@@ -6,11 +6,16 @@ import (
 	"io/ioutil"
 	"minik8s/apiObject"
 	"net/http"
+	"strconv"
 )
 
 func HandleLabelNode(c *gin.Context) {
 	name := c.Param("name")
 	body := c.Request.Body
+	overwrite, _ := strconv.ParseBool(c.Query("overwrite"))
+	if overwrite {
+		log("Add labels with overwrite")
+	}
 
 	defer body.Close()
 	content, err := ioutil.ReadAll(body)
