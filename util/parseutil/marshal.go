@@ -2,11 +2,10 @@ package parseutil
 
 import (
 	"encoding/json"
-	"minik8s/entity"
 )
 
-func MarshalPodStatus(status *entity.PodStatus) []byte {
-	result, err := json.Marshal(status)
+func MarshalAny(v interface{}) []byte {
+	result, err := json.Marshal(v)
 	if err != nil {
 		return nil
 	}

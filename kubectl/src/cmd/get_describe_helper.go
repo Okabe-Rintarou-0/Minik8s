@@ -23,7 +23,7 @@ func nodeStatusTbl() table.Table {
 	headerFmt := color.New(color.FgGreen, color.Underline).SprintfFunc()
 	columnFmt := color.New(color.FgYellow).SprintfFunc()
 
-	tbl := table.New("Hostname", "Ipv4", "Status", "Last Sync Time", "Error")
+	tbl := table.New("Hostname", "Status", "Ipv4", "Cpu", "Memory", "Pods", "Last Sync Time", "Error")
 	tbl.WithHeaderFormatter(headerFmt).WithFirstColumnFormatter(columnFmt)
 	return tbl
 }
@@ -108,7 +108,16 @@ func printSpecifiedNodeStatus(name string) error {
 	}
 
 	tbl := nodeStatusTbl()
-	tbl.AddRow(nodeStatus.Hostname, nodeStatus.Ip, nodeStatus.Lifecycle.String(), nodeStatus.SyncTime.Format(time.RFC3339), nodeStatus.Error)
+	tbl.AddRow(
+		nodeStatus.Hostname,
+		nodeStatus.Lifecycle.String(),
+		nodeStatus.Ip,
+		nodeStatus.CpuPercent,
+		nodeStatus.MemPercent,
+		nodeStatus.NumPods,
+		nodeStatus.SyncTime.Format(time.RFC3339),
+		nodeStatus.Error,
+	)
 	tbl.Print()
 
 	return nil
@@ -135,7 +144,16 @@ func printNodeStatuses() error {
 	}
 	tbl := nodeStatusTbl()
 	for _, nodeStatus := range nodeStatuses {
-		tbl.AddRow(nodeStatus.Hostname, nodeStatus.Ip, nodeStatus.Lifecycle.String(), nodeStatus.SyncTime.Format(time.RFC3339), nodeStatus.Error)
+		tbl.AddRow(
+			nodeStatus.Hostname,
+			nodeStatus.Lifecycle.String(),
+			nodeStatus.Ip,
+			nodeStatus.CpuPercent,
+			nodeStatus.MemPercent,
+			nodeStatus.NumPods,
+			nodeStatus.SyncTime.Format(time.RFC3339),
+			nodeStatus.Error,
+		)
 	}
 	tbl.Print()
 	return nil

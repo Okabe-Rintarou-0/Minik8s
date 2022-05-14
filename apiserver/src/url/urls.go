@@ -15,4 +15,5 @@ const (
 	HPAURL                             = "/api/v1/hpa/"
 	AutoscaleURL                       = "/autoscaling/v1/"
 	AutoscaleURLWithSpecifiedName      = "/autoscaling/v1/:name"
+	NodeStatusURLWithSpecifiedName     = "/api/v1/nodes/:name/status"
 )

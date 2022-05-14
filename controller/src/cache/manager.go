@@ -5,9 +5,12 @@ import (
 	"minik8s/entity"
 	"minik8s/kubelet/src/runtime/runtime"
 	"minik8s/listwatch"
-	utilcache "minik8s/util/cache"
+	cacheutil "minik8s/util/cache"
 	"minik8s/util/logger"
 	"minik8s/util/topicutil"
+	"minik8s/util/wait"
+	"sync"
+	"time"
 )
 
 var log = logger.Log("Cache Manager")
@@ -21,15 +24,42 @@ type Manager interface {
 	RefreshReplicaSetStatus(fullName string)
 	GetReplicaSetStatus(fullName string) *entity.ReplicaSetStatus
 	GetReplicaSetPodStatuses(rsUID types.UID) []*entity.PodStatus
+	GetNodeStatuses() []*entity.NodeStatus
+	SetNodeStatus(hostname string, newStatus *entity.NodeStatus)
 	SetPodStatusUpdateHook(podStatusUpdateHook PodStatusUpdateHook)
 	SetReplicaSetStatusUpdateHook(replicaSetStatusUpdateHook ReplicaSetStatusUpdateHook)
 }
 
 type manager struct {
-	podStatusCache             utilcache.Cache
-	replicaSetStatusCache      utilcache.Cache
+	nodeStatusLock             sync.RWMutex
+	podStatusCache             cacheutil.Cache
+	replicaSetStatusCache      cacheutil.Cache
+	nodeStatusCache            cacheutil.Cache
 	podStatusUpdateHook        PodStatusUpdateHook
 	replicaSetStatusUpdateHook ReplicaSetStatusUpdateHook
+}
+
+func (m *manager) SetNodeStatus(hostname string, newStatus *entity.NodeStatus) {
+	m.nodeStatusLock.Lock()
+	defer m.nodeStatusLock.Unlock()
+	m.nodeStatusCache.Update(hostname, newStatus)
+}
+
+func (m *manager) getNodeStatusesInternal() []*entity.NodeStatus {
+	values := m.nodeStatusCache.Values()
+	var nodeStatus *entity.NodeStatus
+	var nodeStatuses []*entity.NodeStatus
+	for _, value := range values {
+		nodeStatus = value.(*entity.NodeStatus)
+		nodeStatuses = append(nodeStatuses, nodeStatus)
+	}
+	return nodeStatuses
+}
+
+func (m *manager) GetNodeStatuses() []*entity.NodeStatus {
+	m.nodeStatusLock.RLock()
+	defer m.nodeStatusLock.RUnlock()
+	return m.getNodeStatusesInternal()
 }
 
 func (m *manager) calcMetrics(podStatuses []*entity.PodStatus) (cpuPercent, memPercent float64) {
@@ -72,6 +102,9 @@ func (m *manager) SetReplicaSetStatusUpdateHook(replicaSetStatusUpdateHook Repli
 func (m *manager) Start() {
 	go listwatch.Watch(topicutil.PodStatusTopic(), m.updatePodStatus)
 	go listwatch.Watch(topicutil.ReplicaSetStatusTopic(), m.updateReplicaSetStatus)
+	go listwatch.Watch(topicutil.NodeStatusTopic(), m.updateNodeStatus)
+
+	go wait.Period(time.Second*30, nodeStatusFullSyncPeriod, m.fullSyncNodeStatuses)
 }
 
 func (m *manager) GetReplicaSetPodStatuses(rsUID types.UID) []*entity.PodStatus {
@@ -89,7 +122,8 @@ func (m *manager) GetReplicaSetPodStatuses(rsUID types.UID) []*entity.PodStatus 
 
 func NewManager() Manager {
 	return &manager{
-		podStatusCache:        utilcache.Default(),
-		replicaSetStatusCache: utilcache.Default(),
+		podStatusCache:        cacheutil.Default(),
+		replicaSetStatusCache: cacheutil.Default(),
+		nodeStatusCache:       cacheutil.Default(),
 	}
 }

@@ -2,7 +2,6 @@ package cache
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/go-redis/redis/v8"
 	"minik8s/entity"
 )
@@ -13,7 +12,7 @@ func (m *manager) updatePodStatus(msg *redis.Message) {
 	podStatus := &entity.PodStatus{}
 	err := json.Unmarshal([]byte(msg.Payload), podStatus)
 	if err != nil {
-		fmt.Println(err.Error())
+		log(err.Error())
 		return
 	}
 	log("Received status %s of Pod[ID = %s, cpu = %v, mem = %v]", podStatus.Lifecycle.String(), podStatus.ID, podStatus.CpuPercent, podStatus.MemPercent)

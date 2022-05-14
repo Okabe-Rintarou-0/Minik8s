@@ -3,8 +3,9 @@ package topicutil
 const podUpdateTopic = "PodUpdate"
 const hpaUpdateTopic = "HPAUpdate"
 const podStatusTopic = "PodStatus"
+const nodeStatusTopic = "NodeStatus"
 const replicaSetStatusTopic = "ReplicaSetStatus"
-const replicaSetUpdateTopic = "ReplicaSet"
+const replicaSetUpdateTopic = "ReplicaSetUpdate"
 const testTopic = "__test__"
 
 func PodUpdateTopic(hostname string) string {
@@ -13,6 +14,10 @@ func PodUpdateTopic(hostname string) string {
 
 func PodStatusTopic() string {
 	return podStatusTopic
+}
+
+func NodeStatusTopic() string {
+	return nodeStatusTopic
 }
 
 func SchedulerPodUpdateTopic() string {

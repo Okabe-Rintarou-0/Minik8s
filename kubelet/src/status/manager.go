@@ -10,7 +10,9 @@ import (
 	"minik8s/util/logger"
 	"minik8s/util/parseutil"
 	"minik8s/util/topicutil"
+	"minik8s/util/utility"
 	"minik8s/util/wait"
+	"os"
 	"sync"
 	"time"
 )
@@ -61,13 +63,30 @@ func (m *manager) publishPodStatus(podStatuses runtime.PodStatuses) {
 		e := podStatus.ToEntity()
 		m.addLabels(e)
 		log("Publish Pod[ID = %v, cpu = %v, mem = %v]", e.ID, e.CpuPercent, e.MemPercent)
-		listwatch.Publish(topic, parseutil.MarshalPodStatus(e))
+		listwatch.Publish(topic, parseutil.MarshalAny(e))
 	}
 }
 
-//TODO implement it
+func (m *manager) publishNodeStatus(podStatuses runtime.PodStatuses) {
+	hostname, _ := os.Hostname()
+	cpu, mem := utility.GetCpuAndMemoryUsage()
+	nodeStatus := &entity.NodeStatus{
+		Hostname:   hostname,
+		Lifecycle:  entity.NodeReady,
+		Error:      "",
+		CpuPercent: cpu,
+		MemPercent: mem,
+		NumPods:    len(podStatuses),
+		SyncTime:   time.Now(),
+	}
+	topic := topicutil.NodeStatusTopic()
+	listwatch.Publish(topic, parseutil.MarshalAny(nodeStatus))
+	log("Publish Node Status[Host: %v, cpu: %v, mem: %v, pods: %v]", hostname, cpu, mem, nodeStatus.NumPods)
+}
+
 func (m *manager) syncWithApiServer(podStatuses runtime.PodStatuses) error {
 	m.publishPodStatus(podStatuses)
+	m.publishNodeStatus(podStatuses)
 	return nil
 }
 

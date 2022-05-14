@@ -41,6 +41,7 @@ func (w *worker) SyncChannel() chan<- struct{} {
 	return w.syncCh
 }
 
+/// TODO replace it with api-server, urgent!
 // testMap is just for *TEST*, do not use it.
 // We have to save pod into map, because we don't have an api-server now
 // All we can do is to *Mock*
