@@ -5,11 +5,14 @@ import (
 	"github.com/gin-gonic/gin"
 	"io/ioutil"
 	"minik8s/apiObject"
+	"minik8s/apiserver/src/etcd"
+	"minik8s/apiserver/src/url"
 	"minik8s/entity"
 	"minik8s/listwatch"
 	"minik8s/util/logger"
 	"minik8s/util/topicutil"
 	"minik8s/util/uidutil"
+	"time"
 )
 
 var log = logger.Log("Api-server")
@@ -34,6 +37,20 @@ func HandleApplyPod(c *gin.Context) {
 		Target: *pod,
 	})
 	listwatch.Publish(topicutil.SchedulerPodUpdateTopic(), msg)
+
+	info := etcd.PodInfo{
+		Pod: *pod,
+		Status: entity.PodStatus{
+			ID:        pod.UID(),
+			Name:      pod.Name(),
+			Namespace: pod.Namespace(),
+			Labels:    pod.Labels(),
+			Lifecycle: entity.PodContainerCreating,
+			SyncTime:  time.Now(),
+		},
+	}
+	msg, err = json.Marshal(info)
+	etcd.Put(url.PodURL+pod.UID(), string(msg))
 }
 
 func HandleApplyReplicaSet(c *gin.Context) {

@@ -16,6 +16,7 @@ var (
 )
 
 func init() {
+	Start()
 	config = clientv3.Config{
 		Endpoints:            []string{"localhost:2379"},
 		DialTimeout:          30 * time.Second,
@@ -25,9 +26,9 @@ func init() {
 	cli, err := clientv3.New(config)
 	defer cli.Close()
 	if err != nil {
-		log.Printf("[etcd] connect to etcd failed, err:%v\n", err)
+		log.Printf("[etcd] Connect to etcd failed, err:%v\n", err)
 	}
-	log.Printf("[etcd] connect to etcd success\n")
+	log.Printf("[etcd] Connect to etcd success\n")
 }
 
 func Put(key, value string) {
