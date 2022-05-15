@@ -39,10 +39,12 @@ func (w *worker) ready(cpu, mem float64) {
 	publishReplicaSetStatus(replicaSetStatus)
 }
 
-func (w *worker) scaling(numRunningPods int) {
+func (w *worker) scaling(numRunningPods int, cpu, mem float64) {
 	replicaSetStatus := w.replicaSet2ReplicaSetStatus(w.target)
 	replicaSetStatus.Lifecycle = entity.ReplicaSetScaling
 	replicaSetStatus.NumReady = numRunningPods
+	replicaSetStatus.CpuPercent = cpu
+	replicaSetStatus.MemPercent = mem
 	publishReplicaSetStatus(replicaSetStatus)
 }
 

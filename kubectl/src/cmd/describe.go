@@ -3,13 +3,14 @@ package cmd
 import (
 	"fmt"
 	"github.com/spf13/cobra"
+	"minik8s/apiserver/src/url"
 	"minik8s/entity"
+	"minik8s/util/httputil"
 )
 
-func getPodDescriptionFromApiServer(name string) *entity.PodDescription {
-	//TODO just for test now, replace it with api-server
-	podDesc := podDescriptionForTest(name)
-	return podDesc
+func getPodDescriptionFromApiServer(name string) (desc *entity.PodDescription, err error) {
+	err = httputil.GetAndUnmarshal(url.Prefix+url.PodDescriptionURL+name, &desc)
+	return
 }
 
 var describeCmd = &cobra.Command{

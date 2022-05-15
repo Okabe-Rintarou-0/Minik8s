@@ -3,13 +3,14 @@ package scheduler
 import (
 	"encoding/json"
 	"fmt"
-	uuid "github.com/satori/go.uuid"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"minik8s/apiObject"
 	"minik8s/entity"
 	"minik8s/listwatch"
+	"minik8s/scheduler/src/selector"
 	"minik8s/util/topicutil"
+	"minik8s/util/uidutil"
 	"testing"
 	"time"
 )
@@ -21,9 +22,14 @@ func readPod(podPath string) *apiObject.Pod {
 	return &pod
 }
 
+func TestGetNodes(t *testing.T) {
+	sch := scheduler{selector: selector.New()}
+	fmt.Println(sch.getNodes()[0])
+}
+
 func TestScheduler(t *testing.T) {
 	pod := readPod("../../test/testPod.yaml")
-	pod.Metadata.UID = uuid.NewV4().String()
+	pod.Metadata.UID = uidutil.New()
 	createAct := entity.PodUpdate{
 		Action: entity.CreateAction,
 		Target: *pod,

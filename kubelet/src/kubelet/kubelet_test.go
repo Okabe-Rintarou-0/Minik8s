@@ -3,7 +3,6 @@ package kubelet
 import (
 	"encoding/json"
 	"fmt"
-	uuid "github.com/satori/go.uuid"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
 	"minik8s/apiObject"
@@ -11,6 +10,7 @@ import (
 	"minik8s/kubelet/src/podutil"
 	"minik8s/listwatch"
 	"minik8s/util/topicutil"
+	"minik8s/util/uidutil"
 	"os"
 	"testing"
 	"time"
@@ -25,7 +25,7 @@ func readPod(podPath string) *apiObject.Pod {
 
 func TestKubelet(t *testing.T) {
 	pod := readPod("../../test/pod.yaml")
-	pod.Metadata.UID = uuid.NewV4().String()
+	pod.Metadata.UID = uidutil.New()
 	createAct := entity.PodUpdate{
 		Action: entity.CreateAction,
 		Target: *pod,
@@ -91,7 +91,7 @@ func TestParse(t *testing.T) {
 
 func TestCreatePodWithoutSpecifiedPort(t *testing.T) {
 	pod := readPod("../../test/testPodWithoutSpecifiedPort.yaml")
-	pod.Metadata.UID = uuid.NewV4().String()
+	pod.Metadata.UID = uidutil.New()
 	createAct := entity.PodUpdate{
 		Action: entity.CreateAction,
 		Target: *pod,
@@ -108,7 +108,7 @@ func TestCreatePodWithoutSpecifiedPort(t *testing.T) {
 
 	//deleteMsg, err := json.Marshal(deleteAct)
 	//if err != nil {
-	//	fmt.Println(err.PodError())
+	//	fmt.Println(err.Error())
 	//}
 	hostname, _ := os.Hostname()
 	topic := topicutil.PodUpdateTopic(hostname)

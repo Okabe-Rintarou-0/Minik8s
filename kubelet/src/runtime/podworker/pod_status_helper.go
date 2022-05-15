@@ -17,6 +17,12 @@ func (w *podWorker) pod2PodStatus(pod *apiObject.Pod) *entity.PodStatus {
 	}
 }
 
+func (w *podWorker) created(pod *apiObject.Pod) {
+	podStatus := w.pod2PodStatus(pod)
+	podStatus.Lifecycle = entity.PodCreated
+	publishPodStatus(podStatus)
+}
+
 func (w *podWorker) running(pod *apiObject.Pod) {
 	podStatus := w.pod2PodStatus(pod)
 	podStatus.Lifecycle = entity.PodRunning

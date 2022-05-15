@@ -4,11 +4,11 @@ import (
 	"github.com/docker/go-connections/nat"
 	"minik8s/apiObject"
 	"minik8s/apiObject/types"
-	"minik8s/kubelet/src/netutil"
 	"minik8s/kubelet/src/podutil"
 	"minik8s/kubelet/src/runtime/container"
 	"minik8s/kubelet/src/runtime/image"
 	"minik8s/util/logger"
+	"minik8s/util/netutil"
 	"strconv"
 	"time"
 )
@@ -401,7 +401,7 @@ func (rm *runtimeManager) getAllPodContainers() map[types.UID][]*container.Statu
 				logger.Error(err.Error())
 				continue
 			}
-			//fmt.Println("Got ru: ", cs.ResourcesUsage)
+			//log("Got ru: ", cs.ResourcesUsage)
 			containerStatuses[podUID] = append(containerStatuses[podUID], cs)
 		} else {
 			panic("It's impossible!")

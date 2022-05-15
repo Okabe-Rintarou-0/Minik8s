@@ -4,12 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/go-redis/redis/v8"
-	"minik8s/apiObject"
+	"minik8s/apiserver/src/url"
 	"minik8s/entity"
 	"minik8s/listwatch"
 	"minik8s/scheduler/src/selector"
+	"minik8s/util/httputil"
 	"minik8s/util/topicutil"
-	"os"
 )
 
 type Scheduler interface {
@@ -25,22 +25,14 @@ type scheduler struct {
 	selector selector.Selector
 }
 
-func getTestNodes() []*apiObject.Node {
-	var nodes []*apiObject.Node
-	node := &apiObject.Node{}
-	node.ApiVersion = "v1"
-	node.Kind = "Node"
-	hostname, _ := os.Hostname()
-	node.Metadata.Name = hostname
-	node.Metadata.Namespace = "default"
-	nodes = append(nodes, node)
-	return nodes
+// getNodesFromApiServer get nodes from api-server
+func (s *scheduler) getNodesFromApiServer() (nodes []*entity.NodeStatus) {
+	_ = httputil.GetAndUnmarshal(url.Prefix+url.NodeURL, &nodes)
+	return
 }
 
-// getNodes should get nodes from api server
-func (s *scheduler) getNodes() []*apiObject.Node {
-	// for test now
-	return getTestNodes()
+func (s *scheduler) getNodes() []*entity.NodeStatus {
+	return s.getNodesFromApiServer()
 }
 
 func (s *scheduler) Schedule(podUpdate *entity.PodUpdate) error {
@@ -59,7 +51,7 @@ func (s *scheduler) Schedule(podUpdate *entity.PodUpdate) error {
 	}
 
 	// Step 3: Prepare for the message
-	nodeName := node.Metadata.Name
+	nodeName := node.Hostname
 	topic := topicutil.PodUpdateTopic(nodeName)
 	updateMsg, err := json.Marshal(podUpdate)
 	if err != nil {

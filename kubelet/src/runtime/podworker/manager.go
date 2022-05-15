@@ -41,9 +41,10 @@ func (m *manager) newWorker() *podWorker {
 
 func (m *manager) UpdatePod(newPod *apiObject.Pod) {
 	podUID := newPod.UID()
-	worker := m.workers[podUID]
-	worker.AddWork(newPodDeleteWork(newPod))
-	worker.AddWork(newPodCreateWork(newPod))
+	if worker, stillWorking := m.workers[podUID]; stillWorking {
+		worker.AddWork(newPodDeleteWork(newPod))
+		worker.AddWork(newPodCreateWork(newPod))
+	}
 }
 
 func (m *manager) SyncPod(event *pleg.PodLifecycleEvent) {
@@ -73,11 +74,11 @@ func (m *manager) AddPod(pod *apiObject.Pod) {
 func (m *manager) DeletePod(pod *apiObject.Pod) {
 	log("Delete pod[ID = %s]", pod.UID())
 	podUID := pod.UID()
-	worker := m.workers[podUID]
-	log("worker != nil: %v", worker != nil)
-	worker.AddWork(newPodDeleteWork(pod))
-	delete(m.workers, podUID)
-	worker.Done()
+	if worker, stillWorking := m.workers[podUID]; stillWorking {
+		worker.AddWork(newPodDeleteWork(pod))
+		worker.Done()
+		delete(m.workers, podUID)
+	}
 }
 
 func NewPodWorkerManager(podCreateFn PodCreateFn, podDeleteFn PodDeleteFn, podContainerCreateAndStartFn PodContainerCreateAndStartFn,
