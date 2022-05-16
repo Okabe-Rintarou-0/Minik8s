@@ -1,13 +1,13 @@
 package image
 
 import (
-	"bufio"
-	"fmt"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
-	"io"
 	"minik8s/kubelet/src/runtime/docker"
+	"minik8s/util/logger"
 )
+
+var log = logger.Log("Image puller")
 
 type Summary = types.ImageSummary
 
@@ -44,25 +44,14 @@ func (is *imageManager) ListImagesByName(name string, config *ImageListConfig) (
 }
 
 func (is *imageManager) PullImage(name string, config *ImagePullConfig) error {
-	resp, err := docker.Client.ImagePull(docker.Ctx, name, types.ImagePullOptions{
+	events, err := docker.Client.ImagePull(docker.Ctx, name, types.ImagePullOptions{
 		All: config.All,
 	})
 	if err != nil {
 		return err
 	}
-	defer resp.Close()
 	if config.Verbose {
-		r := bufio.NewReader(resp)
-		for {
-			row, err := r.ReadString('\n')
-			if err != nil {
-				if err == io.EOF {
-					return nil
-				}
-				return err
-			}
-			fmt.Print(row)
-		}
+		parseAndPrintPullEvents(events, name)
 	}
 	return nil
 }

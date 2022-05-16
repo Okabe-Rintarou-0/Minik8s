@@ -15,7 +15,7 @@ func podStatusTbl() table.Table {
 	headerFmt := color.New(color.FgGreen, color.Underline).SprintfFunc()
 	columnFmt := color.New(color.FgYellow).SprintfFunc()
 
-	tbl := table.New("Name", "UID", "Status", "Last Sync Time", "Error")
+	tbl := table.New("Name", "UID", "Status", "Cpu", "Memory", "Last Sync Time", "Error")
 	tbl.WithHeaderFormatter(headerFmt).WithFirstColumnFormatter(columnFmt)
 	return tbl
 }
@@ -38,8 +38,10 @@ func podStatusLogTbl() table.Table {
 	return tbl
 }
 
-func getPodFromApiServer(name string) (pod *entity.PodStatus, err error) {
-	err = httputil.GetAndUnmarshal(url.Prefix+url.PodURL+name, &pod)
+func getPodFromApiServer(fullName string) (pod *entity.PodStatus, err error) {
+	namespace, name := parseName(fullName)
+	URL := url.Prefix + path.Join(url.PodURL, "status", namespace, name)
+	err = httputil.GetAndUnmarshal(URL, &pod)
 	return
 }
 
@@ -55,7 +57,7 @@ func getNodesFromApiServer() (nodes []*entity.NodeStatus, err error) {
 
 func getNodeFromApiServer(fullName string) (node *entity.NodeStatus, err error) {
 	namespace, name := parseName(fullName)
-	URL := url.Prefix + path.Join(url.NodeURL, namespace, "status", name)
+	URL := url.Prefix + path.Join(url.NodeURL, "status", namespace, name)
 	err = httputil.GetAndUnmarshal(URL, &node)
 	return
 }
@@ -70,7 +72,16 @@ func printSpecifiedPodStatus(name string) error {
 	}
 
 	tbl := podStatusTbl()
-	tbl.AddRow(podStatus.Name, podStatus.ID, podStatus.Lifecycle.String(), podStatus.SyncTime.Format(time.RFC3339), podStatus.Error)
+	fullName := path.Join(podStatus.Namespace, podStatus.Name)
+	tbl.AddRow(
+		fullName,
+		podStatus.ID,
+		podStatus.Lifecycle.String(),
+		podStatus.CpuPercent,
+		podStatus.MemPercent,
+		podStatus.SyncTime.Format(time.RFC3339),
+		podStatus.Error,
+	)
 	tbl.Print()
 	return nil
 }
@@ -95,7 +106,8 @@ func printSpecifiedPodDescription(name string) error {
 	fmt.Println("Current status:")
 	podStatus := podDesc.CurrentStatus
 	tbl = podStatusTbl()
-	tbl.AddRow(podStatus.Name, podStatus.ID, podStatus.Lifecycle.String(), podStatus.SyncTime.Format(time.RFC3339), podStatus.Error)
+	fullName := path.Join(podStatus.Namespace, podStatus.Name)
+	tbl.AddRow(fullName, podStatus.ID, podStatus.Lifecycle.String(), podStatus.SyncTime.Format(time.RFC3339), podStatus.Error)
 	tbl.Print()
 
 	return nil
@@ -134,7 +146,16 @@ func printPodStatuses() error {
 
 	tbl := podStatusTbl()
 	for _, podStatus := range podStatuses {
-		tbl.AddRow(podStatus.Name, podStatus.ID, podStatus.Lifecycle.String(), podStatus.SyncTime.Format(time.RFC3339), podStatus.Error)
+		fullName := path.Join(podStatus.Namespace, podStatus.Name)
+		tbl.AddRow(
+			fullName,
+			podStatus.ID,
+			podStatus.Lifecycle.String(),
+			podStatus.CpuPercent,
+			podStatus.MemPercent,
+			podStatus.SyncTime.Format(time.RFC3339),
+			podStatus.Error,
+		)
 	}
 	tbl.Print()
 	return nil

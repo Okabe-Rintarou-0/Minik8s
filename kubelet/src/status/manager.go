@@ -61,7 +61,7 @@ func (m *manager) publishPodStatus(podStatuses runtime.PodStatuses) {
 	topic := topicutil.PodStatusTopic()
 	for _, podStatus := range podStatuses {
 		e := podStatus.ToEntity()
-		m.addLabels(e)
+		m.addInfo(e)
 		log("Publish Pod[ID = %v, cpu = %v, mem = %v]", e.ID, e.CpuPercent, e.MemPercent)
 		listwatch.Publish(topic, parseutil.MarshalAny(e))
 	}
@@ -72,6 +72,7 @@ func (m *manager) publishNodeStatus(podStatuses runtime.PodStatuses) {
 	cpu, mem := utility.GetCpuAndMemoryUsage()
 	nodeStatus := &entity.NodeStatus{
 		Hostname:   hostname,
+		Namespace:  "default",
 		Lifecycle:  entity.NodeReady,
 		Error:      "",
 		CpuPercent: cpu,
@@ -90,12 +91,15 @@ func (m *manager) syncWithApiServer(podStatuses runtime.PodStatuses) error {
 	return nil
 }
 
-func (m *manager) addLabels(podStatus *entity.PodStatus) {
+func (m *manager) addInfo(podStatus *entity.PodStatus) {
 	v := m.podCache.Get(podStatus.ID)
 	if v == nil {
 		return
 	}
-	podStatus.Labels = v.(*apiObject.Pod).Labels().DeepCopy()
+	pod := v.(*apiObject.Pod)
+	podStatus.Labels = pod.Labels().DeepCopy()
+	podStatus.Name = pod.Name()
+	podStatus.Namespace = pod.Namespace()
 }
 
 func (m *manager) syncLoopIteration() {

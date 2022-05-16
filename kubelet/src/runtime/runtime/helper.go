@@ -238,16 +238,16 @@ func (rm *runtimeManager) startPauseContainer(pod *apiObject.Pod) error {
 
 	// Step 2: If needed, pull the image for the given container
 	if !exists {
-		//fmt.Println("Need to pull image", pauseImage)
+		log("Pulling image[Name = %s]", pauseImage)
 		err = rm.im.PullImage(pauseImage, &image.ImagePullConfig{
-			Verbose: false,
+			Verbose: true,
 			All:     false,
 		})
 		if err != nil {
 			return err
 		}
 	} else {
-		//fmt.Printf("No need to pull image %s, continue\n", pauseImage)
+		log("No need to pull image %s, continue", pauseImage)
 	}
 
 	// Prepare
@@ -255,7 +255,7 @@ func (rm *runtimeManager) startPauseContainer(pod *apiObject.Pod) error {
 	podUID := pod.UID()
 
 	// Step 3: Create a container
-	//fmt.Println("Now create the container")
+	//log("Now create the container")
 
 	containerFullName := rm.pauseContainerFullName(podFullName, podUID)
 
@@ -338,7 +338,7 @@ func (rm *runtimeManager) startCommonContainer(pod *apiObject.Pod, c *apiObject.
 	if needPull {
 		log("Pulling image[Name = %s]", c.Image)
 		err = rm.im.PullImage(c.Image, &image.ImagePullConfig{
-			Verbose: false,
+			Verbose: true,
 			All:     false,
 		})
 		if err != nil {

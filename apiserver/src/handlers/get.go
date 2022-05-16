@@ -3,81 +3,80 @@ package handlers
 import (
 	"encoding/json"
 	"github.com/gin-gonic/gin"
+	"minik8s/apiObject"
 	"minik8s/apiserver/src/etcd"
 	"minik8s/apiserver/src/url"
 	"minik8s/entity"
-	"minik8s/util/uidutil"
+	"minik8s/util/logger"
 	"net/http"
-	"os"
 	"path"
 	"time"
 )
 
-// For test only
-func getTestNodes() []*entity.NodeStatus {
-	var nodes []*entity.NodeStatus
-	node := &entity.NodeStatus{}
-	node.Ip = "192.168.1.103"
-	hostname, _ := os.Hostname()
-	node.Hostname = hostname
-	node.SyncTime = time.Now()
-
-	node2 := &entity.NodeStatus{}
-	node2.Ip = "192.168.1.103"
-	node2.Hostname = "example"
-	node2.SyncTime = time.Now()
-
-	nodes = append(nodes, node)
-	nodes = append(nodes, node2)
-	return nodes
+func getNodeStatusesFromEtcd() (nodes []*entity.NodeStatus) {
+	etcdURL := path.Join(url.NodeURL, "status")
+	raws, err := etcd.GetAll(etcdURL)
+	for _, raw := range raws {
+		node := &entity.NodeStatus{}
+		if err = json.Unmarshal([]byte(raw), &node); err == nil {
+			nodes = append(nodes, node)
+		}
+	}
+	return
 }
 
-func getNodeFromEtcd(namespace, name string) (node *entity.NodeStatus) {
-	etcdURL := path.Join(url.NodeURL, namespace, "status", name)
-	log(etcdURL)
+func getNodeStatusFromEtcd(namespace, name string) (node *entity.NodeStatus) {
+	etcdURL := path.Join(url.NodeURL, "status", namespace, name)
 	if raw, err := etcd.Get(etcdURL); err == nil {
-		if err = json.Unmarshal([]byte(raw), node); err == nil {
+		if err = json.Unmarshal([]byte(raw), &node); err == nil {
 			return node
 		}
+		logger.Error(err.Error())
 	}
 	return nil
 }
 
-func HandleGetNodes(c *gin.Context) {
-	c.JSON(http.StatusOK, getTestNodes())
-}
-
-func HandleGetNode(c *gin.Context) {
-	namespace := c.Param("namespace")
-	name := c.Param("name")
-	c.JSON(http.StatusOK, getNodeFromEtcd(namespace, name))
-}
-
-func podStatusForTest() *entity.PodStatus {
-	return &entity.PodStatus{
-		ID:        uidutil.New(),
-		Name:      "example",
-		Labels:    nil,
-		Namespace: "default",
-		Lifecycle: entity.PodContainerCreating,
-		SyncTime:  time.Now(),
+func getPodStatusFromEtcd(namespace, name string) (pod *entity.PodStatus) {
+	etcdURL := path.Join(url.PodURL, "status", namespace, name)
+	if raw, err := etcd.Get(etcdURL); err == nil {
+		if err = json.Unmarshal([]byte(raw), &pod); err == nil {
+			return pod
+		}
+		logger.Error(err.Error())
 	}
+	return nil
 }
 
-func getPodStatusesForTest() []*entity.PodStatus {
-	pod1 := podStatusForTest()
-	pod2 := podStatusForTest()
-	pod2.Name = "Example"
-	return []*entity.PodStatus{pod1, pod2}
+func getPodStatusesFromEtcd() (pods []*entity.PodStatus) {
+	etcdURL := path.Join(url.PodURL, "status")
+	raws, err := etcd.GetAll(etcdURL)
+	for _, raw := range raws {
+		pod := &entity.PodStatus{}
+		if err = json.Unmarshal([]byte(raw), &pod); err == nil {
+			pods = append(pods, pod)
+		}
+	}
+	return
 }
 
-func getPodStatusForTest(name string) *entity.PodStatus {
-	for _, pod := range getPodStatusesForTest() {
-		if pod.Name == name {
+func getPodApiObjectFromEtcd(namespace, name string) (pod *apiObject.Pod) {
+	etcdURL := path.Join(url.PodURL, namespace, name)
+	if raw, err := etcd.Get(etcdURL); err == nil {
+		if err = json.Unmarshal([]byte(raw), &pod); err == nil {
 			return pod
 		}
 	}
 	return nil
+}
+
+func HandleGetNodeStatuses(c *gin.Context) {
+	c.JSON(http.StatusOK, getNodeStatusesFromEtcd())
+}
+
+func HandleGetNodeStatus(c *gin.Context) {
+	namespace := c.Param("namespace")
+	name := c.Param("name")
+	c.JSON(http.StatusOK, getNodeStatusFromEtcd(namespace, name))
 }
 
 func getPodDescriptionForTest(name string) *entity.PodDescription {
@@ -102,16 +101,23 @@ func getPodDescriptionForTest(name string) *entity.PodDescription {
 	}
 }
 
-func HandleGetPods(c *gin.Context) {
-	c.JSON(http.StatusOK, getPodStatusesForTest())
+func HandleGetPodStatuses(c *gin.Context) {
+	c.JSON(http.StatusOK, getPodStatusesFromEtcd())
 }
 
-func HandleGetPod(c *gin.Context) {
+func HandleGetPodStatus(c *gin.Context) {
+	namespace := c.Param("namespace")
 	name := c.Param("name")
-	c.JSON(http.StatusOK, getPodStatusForTest(name))
+	c.JSON(http.StatusOK, getPodStatusFromEtcd(namespace, name))
 }
 
 func HandleDescribePod(c *gin.Context) {
 	name := c.Param("name")
 	c.JSON(http.StatusOK, getPodDescriptionForTest(name))
+}
+
+func HandleGetPod(c *gin.Context) {
+	namespace := c.Param("namespace")
+	name := c.Param("name")
+	c.JSON(http.StatusOK, getPodApiObjectFromEtcd(namespace, name))
 }

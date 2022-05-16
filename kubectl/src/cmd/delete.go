@@ -5,6 +5,7 @@ import (
 	"github.com/spf13/cobra"
 	"minik8s/apiserver/src/url"
 	"minik8s/util/httputil"
+	"path"
 	"strings"
 )
 
@@ -16,28 +17,29 @@ var deleteCmd = &cobra.Command{
 	Run:   del,
 }
 
-func deleteSpecifiedPod(name string) error {
-	resp := httputil.DeleteWithoutBody(url.Prefix + url.PodURL + name)
+func deleteSpecifiedPod(namespace, name string) error {
+	resp := httputil.DeleteWithoutBody(url.Prefix + path.Join(url.PodURL, namespace, name))
 	fmt.Println(resp)
 	return nil
 }
 
-func deleteSpecifiedNode(name string) error {
-	resp := httputil.DeleteWithoutBody(url.Prefix + url.PodURL + name)
+func deleteSpecifiedNode(namespace, name string) error {
+	resp := httputil.DeleteWithoutBody(url.Prefix + path.Join(url.NodeURL, namespace, name))
 	fmt.Println(resp)
 	return nil
 }
 
 func del(cmd *cobra.Command, args []string) {
 	apiObjectType := args[0]
-	name := args[1]
+	target := args[1]
+	namespace, name := parseName(target)
 	apiObjectType = strings.ToLower(apiObjectType)
 	var err error
 	switch apiObjectType {
 	case "node":
-		err = deleteSpecifiedNode(name)
+		err = deleteSpecifiedNode(namespace, name)
 	case "pod":
-		err = deleteSpecifiedPod(name)
+		err = deleteSpecifiedPod(namespace, name)
 	default:
 		err = fmt.Errorf("invalid api object type \"%s\", acceptable api object type is pod, service, etc", apiObjectType)
 	}

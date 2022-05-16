@@ -14,6 +14,7 @@ const (
 	PodError
 	PodRunning
 	PodDeleted
+	PodUnknown
 )
 
 func (pl *PodLifecycle) String() string {

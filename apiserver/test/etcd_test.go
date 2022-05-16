@@ -1,6 +1,7 @@
 package test
 
 import (
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"minik8s/apiserver/src/etcd"
 	"testing"
@@ -23,4 +24,8 @@ func TestEtcd(t *testing.T) {
 	assert.Nil(t, err)
 	value, err = etcd.Get("22")
 	assert.Equal(t, "", value)
+
+	_ = etcd.Put("/test/1", "123")
+	_ = etcd.Put("/test/2", "233")
+	fmt.Println(etcd.GetAll("/test/"))
 }

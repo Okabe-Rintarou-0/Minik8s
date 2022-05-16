@@ -4,6 +4,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"log"
 	"minik8s/apiserver/src/etcd"
+	"minik8s/listwatch"
+	"minik8s/util/topicutil"
 )
 
 type ApiServer interface {
@@ -39,6 +41,9 @@ func (api *apiServer) bindHandlers() {
 }
 
 func (api *apiServer) Run() {
+	go listwatch.Watch(topicutil.NodeStatusTopic(), syncNodeStatus)
+	go listwatch.Watch(topicutil.PodStatusTopic(), syncPodStatus)
+
 	etcd.Start()
 	api.bindHandlers()
 	log.Fatal(api.httpServer.Run())

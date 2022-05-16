@@ -70,3 +70,19 @@ func Delete(key string) (err error) {
 	_, err = cli.Delete(ctx, key)
 	return err
 }
+
+func GetAll(keyPrefix string) (values []string, err error) {
+	if err = checkAndStartClient(); err != nil {
+		return nil, err
+	}
+	var resp *clientv3.GetResponse
+	resp, err = cli.Get(ctx, keyPrefix, clientv3.WithPrefix())
+	if err != nil {
+		return nil, err
+	}
+
+	for _, kv := range resp.Kvs {
+		values = append(values, string(kv.Value))
+	}
+	return values, nil
+}

@@ -32,6 +32,7 @@ func (nl *NodeLifecycle) String() string {
 
 type NodeStatus struct {
 	Hostname   string
+	Namespace  string
 	Ip         string
 	Labels     apiObject.Labels
 	Lifecycle  NodeLifecycle

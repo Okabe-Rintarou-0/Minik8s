@@ -214,7 +214,6 @@ func (rm *runtimeManager) GetPodStatuses() (PodStatuses, error) {
 	allContainerStatuses := rm.getAllPodContainers()
 	podStatuses := make(PodStatuses)
 	for podUID, cs := range allContainerStatuses {
-		/// TODO name?
 		podStatuses[podUID] = &PodStatus{
 			ID:                podUID,
 			ContainerStatuses: cs,

@@ -37,7 +37,6 @@ func addHPA(hpa *apiObject.HorizontalPodAutoscaler) (err error) {
 	if !existsTarget(hpa.Target()) {
 		return fmt.Errorf("target %s/%s does not exits", hpa.TargetMetadata().Namespace, hpa.TargetMetadata().UID)
 	}
-	log("Exits")
 
 	var hpaJson []byte
 	if hpaJson, err = json.Marshal(hpa); err != nil {

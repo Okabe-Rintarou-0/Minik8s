@@ -27,15 +27,18 @@ var postTable = map[string]Handler{
 
 var getTable = map[string]Handler{
 	// kubectl get nodes & kubectl get node hostname
-	url.NodeURL:                        handlers.HandleGetNodes,
-	url.NodeStatusURLWithSpecifiedName: handlers.HandleGetNode,
+	url.NodeURL:                        handlers.HandleGetNodeStatuses,
+	url.NodeStatusURLWithSpecifiedName: handlers.HandleGetNodeStatus,
 
 	// kubectl get pods & kubectl get pod pod_name
-	url.PodURL:                  handlers.HandleGetPods,
-	url.PodURLWithSpecifiedName: handlers.HandleGetPod,
+	url.PodURL:                        handlers.HandleGetPodStatuses,
+	url.PodStatusURLWithSpecifiedName: handlers.HandleGetPodStatus,
 
 	// kubectl describe pod pod_name
 	url.PodDescriptionURLWithSpecifiedName: handlers.HandleDescribePod,
+
+	// get apiObject.xxx
+	url.PodURLWithSpecifiedName: handlers.HandleGetPod,
 }
 
 var putTable = map[string]Handler{}

@@ -1,15 +1,13 @@
 package replicaSet
 
 import (
-	"encoding/json"
 	"minik8s/apiObject"
-	"minik8s/apiObject/types"
+	"minik8s/apiserver/src/url"
 	"minik8s/controller/src/cache"
 	"minik8s/entity"
 	"minik8s/kubelet/src/runtime/runtime"
-	"minik8s/listwatch"
+	"minik8s/util/httputil"
 	"minik8s/util/logger"
-	"minik8s/util/topicutil"
 	"minik8s/util/uidutil"
 	"time"
 )
@@ -41,53 +39,25 @@ func (w *worker) SyncChannel() chan<- struct{} {
 	return w.syncCh
 }
 
-/// TODO replace it with api-server, urgent!
-// testMap is just for *TEST*, do not use it.
-// We have to save pod into map, because we don't have an api-server now
-// All we can do is to *Mock*
-var testMap = map[types.UID]*apiObject.Pod{}
-
-func (w *worker) addPodToApiServerForTest() {
+func (w *worker) addPodToApiServer() {
 	podTemplate := w.target.Template()
 	pod := podTemplate.ToPod()
-	pod.Metadata.Name = w.target.Name()
+	pod.Metadata.Name = "ReplicaSet-" + w.target.Name() + "-" + uidutil.New()
 	pod.Metadata.Namespace = w.target.Namespace()
-	topic := topicutil.SchedulerPodUpdateTopic()
-	pod.Metadata.UID = uidutil.New()
 	pod.AddLabel(runtime.KubernetesReplicaSetUIDLabel, w.target.UID())
-	msg, _ := json.Marshal(entity.PodUpdate{
-		Action: entity.CreateAction,
-		Target: *pod,
-	})
-	testMap[pod.UID()] = pod
-	listwatch.Publish(topic, msg)
+
+	URL := url.Prefix + url.PodURL
+	if _, err := httputil.PostJson(URL, pod); err != nil {
+		logger.Error(err.Error())
+	}
 }
 
 func (w *worker) addPod() {
-	// Add two, so we can test the case that the number of existent pods is more than replicas
-	// just for test now
-	w.addPodToApiServerForTest()
-
-	// for test:
-	//w.addPodToApiServerForTest()
-	//w.addPodToApiServerForTest()
-	//w.addPodToApiServerForTest()
+	w.addPodToApiServer()
 }
 
-func (w *worker) deletePodToApiServerForTest(podUID types.UID) {
-	pod2Delete := testMap[podUID]
-	logWorker("Pod to delete is Pod[ID = %v]", pod2Delete.UID())
-	topic := topicutil.SchedulerPodUpdateTopic()
-	msg, _ := json.Marshal(entity.PodUpdate{
-		Action: entity.DeleteAction,
-		Target: *pod2Delete,
-	})
-	listwatch.Publish(topic, msg)
-}
-
-func (w *worker) deletePod(podUID types.UID) {
-	// just for test now
-	w.deletePodToApiServerForTest(podUID)
+func (w *worker) deletePod(namespace, name string) {
+	deletePodToApiServer(namespace, name)
 }
 
 func (w *worker) numRunningPods(podStatuses []*entity.PodStatus) int {
@@ -113,9 +83,9 @@ func (w *worker) syncLoopIteration() bool {
 	if diff == 0 {
 		w.ready(cpu, mem)
 	} else if diff > 0 {
-		podUID := podStatuses[0].ID
+		podToDelete := podStatuses[0]
 		w.scaling(numRunningPods, cpu, mem)
-		go w.deletePod(podUID)
+		go w.deletePod(podToDelete.Namespace, podToDelete.Name)
 	} else {
 		w.scaling(numRunningPods, cpu, mem)
 		go w.addPod()

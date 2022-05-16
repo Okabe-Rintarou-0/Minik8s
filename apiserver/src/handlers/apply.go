@@ -63,7 +63,7 @@ func HandleApplyNode(c *gin.Context) {
 		return
 	}
 
-	etcdNodeStatusURL := path.Join(url.NodeURL, node.Namespace(), "status", node.Name())
+	etcdNodeStatusURL := path.Join(url.NodeURL, "status", node.Namespace(), node.Name())
 	var nodeStatusJson []byte
 	if nodeStatusJson, err = json.Marshal(entity.NodeStatus{
 		Hostname:   node.Name(),
@@ -75,7 +75,7 @@ func HandleApplyNode(c *gin.Context) {
 		MemPercent: 0,
 		NumPods:    0,
 		SyncTime:   time.Now(),
-	}); err != nil {
+	}); err == nil {
 		_ = etcd.Put(etcdNodeStatusURL, string(nodeStatusJson))
 	}
 
@@ -98,18 +98,34 @@ func HandleApplyPod(c *gin.Context) {
 	}
 
 	// exists?
-	etcdURL := path.Join(url.PodURL, pod.Namespace(), pod.Name())
-	if podJsonStr, err := etcd.Get(etcdURL); err == nil {
+	etcdPodURL := path.Join(url.PodURL, pod.Namespace(), pod.Name())
+	if podJsonStr, err := etcd.Get(etcdPodURL); err == nil {
 		getPod := &apiObject.Pod{}
 		if err = json.Unmarshal([]byte(podJsonStr), getPod); err == nil {
-			c.String(http.StatusOK, fmt.Sprintf("replicaSet %s/%s already exists", getPod.Namespace(), getPod.Name()))
+			c.String(http.StatusOK, fmt.Sprintf("pod %s/%s already exists", getPod.Namespace(), getPod.Name()))
 			return
 		}
 	}
 
-	if err = etcd.Put(etcdURL, string(podJson)); err != nil {
+	if err = etcd.Put(etcdPodURL, string(podJson)); err != nil {
 		c.String(http.StatusOK, err.Error())
 		return
+	}
+
+	etcdPodStatusURL := path.Join(url.PodURL, "status", pod.Namespace(), pod.Name())
+	var podStatusJson []byte
+	if podStatusJson, err = json.Marshal(entity.PodStatus{
+		ID:         pod.UID(),
+		Name:       pod.Name(),
+		Namespace:  pod.Namespace(),
+		Labels:     pod.Labels(),
+		Lifecycle:  entity.PodUnknown,
+		CpuPercent: 0,
+		MemPercent: 0,
+		Error:      "",
+		SyncTime:   time.Now(),
+	}); err == nil {
+		_ = etcd.Put(etcdPodStatusURL, string(podStatusJson))
 	}
 
 	podUpdateMsg, _ := json.Marshal(entity.PodUpdate{

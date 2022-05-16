@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: pod
-  namespace: test
+  namespace: default
   labels:
     app: myApp
 spec:

@@ -45,19 +45,11 @@ func (c *controller) AddReplicaSet(rs *apiObject.ReplicaSet) {
 	go worker.Run()
 }
 
-///TODO just for test now, should replace with api-server later
 func (c *controller) deleteReplicaSetPods(rs *apiObject.ReplicaSet) {
 	logManager("Not delete the pods of rs: %s-%s", rs.FullName(), rs.UID())
 	podStatuses := c.cacheManager.GetReplicaSetPodStatuses(rs.UID())
 	for _, podStatus := range podStatuses {
-		pod2Delete := testMap[podStatus.ID]
-		logManager("Pod to delete is Pod[ID = %v]", pod2Delete.UID())
-		topic := topicutil.SchedulerPodUpdateTopic()
-		msg, _ := json.Marshal(entity.PodUpdate{
-			Action: entity.DeleteAction,
-			Target: *pod2Delete,
-		})
-		listwatch.Publish(topic, msg)
+		deletePodToApiServer(podStatus.Namespace, podStatus.Name)
 	}
 }
 
