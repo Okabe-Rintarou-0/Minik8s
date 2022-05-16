@@ -17,9 +17,9 @@ type ServiceStatus struct {
 }
 
 type Service struct {
-	ApiObjectBase `yaml:",inline"`
-	Spec          ServiceSpec   `yaml:"spec"`
-	Status        ServiceStatus `yaml:"status,omitempty"`
+	Base   `yaml:",inline"`
+	Spec   ServiceSpec   `yaml:"spec"`
+	Status ServiceStatus `yaml:"status,omitempty"`
 }
 
 func (service *Service) FullName() string {

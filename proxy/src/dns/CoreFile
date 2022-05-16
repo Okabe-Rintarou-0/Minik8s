@@ -1,0 +1,9 @@
+.:1053 {
+    hosts hosts {
+        fallthrough
+    }
+    reload 6s
+    forward . 114.114.114.114
+    log
+    errors
+}

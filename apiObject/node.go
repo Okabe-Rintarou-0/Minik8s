@@ -3,8 +3,8 @@ package apiObject
 import "minik8s/apiObject/types"
 
 type Node struct {
-	ApiObjectBase `yaml:",inline"`
-	Ip            string `yaml:"ip,omitempty"`
+	Base `yaml:",inline"`
+	Ip   string `yaml:"ip,omitempty"`
 }
 
 func (node *Node) UID() types.UID {

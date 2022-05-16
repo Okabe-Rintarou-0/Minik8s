@@ -23,7 +23,7 @@ func HandleAutoscale(c *gin.Context) {
 	}
 
 	hpa := &apiObject.HorizontalPodAutoscaler{
-		ApiObjectBase: apiObject.ApiObjectBase{
+		Base: apiObject.Base{
 			ApiVersion: "autoscaling/v1",
 			Kind:       "HorizontalPodAutoscaler",
 			Metadata: apiObject.Metadata{

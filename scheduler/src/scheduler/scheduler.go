@@ -7,6 +7,7 @@ import (
 	"minik8s/apiserver/src/url"
 	"minik8s/entity"
 	"minik8s/listwatch"
+	"minik8s/scheduler/src/filter"
 	"minik8s/scheduler/src/selector"
 	"minik8s/util/httputil"
 	"minik8s/util/topicutil"
@@ -18,10 +19,14 @@ type Scheduler interface {
 }
 
 func New() Scheduler {
-	return &scheduler{selector.New()}
+	return &scheduler{
+		filter.Default(),
+		selector.DefaultFactory.NewSelector(selector.Random),
+	}
 }
 
 type scheduler struct {
+	filter   filter.Filter
 	selector selector.Selector
 }
 
@@ -36,7 +41,6 @@ func (s *scheduler) getNodes() []*entity.NodeStatus {
 }
 
 func (s *scheduler) Schedule(podUpdate *entity.PodUpdate) error {
-	//fmt.Printf("Schedule %v\n", podUpdate)
 	// Step 1: Get nodes from api-server
 	nodes := s.getNodes()
 
@@ -44,13 +48,19 @@ func (s *scheduler) Schedule(podUpdate *entity.PodUpdate) error {
 		return fmt.Errorf("no available node now")
 	}
 
-	// Step 2: Select one node
-	node := s.selector.Select(nodes)
+	// Step 2: Preliminary Filter
+	filtered := s.filter.Filter(&podUpdate.Target, nodes)
+	if len(filtered) == 0 {
+		return fmt.Errorf("no suitable node now")
+	}
+
+	// Step 3: Select one node
+	node := s.selector.Select(filtered)
 	if node == nil {
 		return fmt.Errorf("no suitable node now")
 	}
 
-	// Step 3: Prepare for the message
+	// Step 4: Prepare for the message
 	nodeName := node.Hostname
 	topic := topicutil.PodUpdateTopic(nodeName)
 	updateMsg, err := json.Marshal(podUpdate)
@@ -58,7 +68,7 @@ func (s *scheduler) Schedule(podUpdate *entity.PodUpdate) error {
 		return err
 	}
 
-	// Step 4: Send msg to such node
+	// Step 5: Send msg to such node
 	fmt.Printf("Send msg to %s: [%v]%v\n", topic, podUpdate.Action.String(), podUpdate.Target.Name())
 	listwatch.Publish(topic, updateMsg)
 

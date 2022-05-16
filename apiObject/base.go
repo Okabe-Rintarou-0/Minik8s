@@ -7,7 +7,7 @@ type Metadata struct {
 	Labels      Labels      `yaml:"labels"`
 	Annotations Annotations `yaml:"annotations"`
 }
-type ApiObjectBase struct {
+type Base struct {
 	ApiVersion string   `yaml:"apiVersion"`
 	Kind       string   `yaml:"kind"`
 	Metadata   Metadata `yaml:"metadata"`
