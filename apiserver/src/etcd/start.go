@@ -20,7 +20,7 @@ var (
 
 func pullImage() {
 	if exists, err := im.ExistsImage(etcdImage); !exists && err == nil {
-		err := im.PullImage(etcdImage, &image.ImagePullConfig{All: false, Verbose: true})
+		err := im.PullImage(etcdImage, &image.PullConfig{All: false, Verbose: true})
 		if err != nil {
 			log.Print(err.Error())
 			return
@@ -76,7 +76,7 @@ func createContainer() string {
 }
 
 func startContainer(ID string) {
-	err := cm.StartContainer(ID, &container.ContainerStartConfig{})
+	err := cm.StartContainer(ID, &container.StartConfig{})
 	if err != nil {
 		log.Print(err.Error())
 		return

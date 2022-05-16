@@ -13,7 +13,7 @@ import (
 func registerNode() {
 	hostname, _ := os.Hostname()
 	node := apiObject.Node{
-		ApiObjectBase: apiObject.ApiObjectBase{
+		Base: apiObject.Base{
 			ApiVersion: "v1",
 			Kind:       "Node",
 			Metadata: apiObject.Metadata{

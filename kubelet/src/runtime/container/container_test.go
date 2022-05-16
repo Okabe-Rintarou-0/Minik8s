@@ -10,7 +10,7 @@ import (
 
 func TestListContainer(t *testing.T) {
 	cm := NewContainerManager()
-	containers, err := cm.ListContainers(&ContainerListConfig{
+	containers, err := cm.ListContainers(&ListConfig{
 		All: true,
 	})
 	if err != nil {
@@ -37,7 +37,7 @@ func TestCreateStartAndRemoveContainer(t *testing.T) {
 	testImage := "nginx:latest"
 	if exists, err := im.ExistsImage(testImage); !exists && err == nil {
 		fmt.Printf("Image %s does not exist, so try to pull it\n", testImage)
-		assert.Nil(t, im.PullImage(testImage, &image.ImagePullConfig{
+		assert.Nil(t, im.PullImage(testImage, &image.PullConfig{
 			Verbose: true,
 			All:     false,
 		}))
@@ -72,21 +72,21 @@ func TestCreateStartAndRemoveContainer(t *testing.T) {
 	assert.Nil(t, err)
 
 	fmt.Printf("Now start the container with ID %s\n", ID)
-	err = cm.StartContainer(ID, &ContainerStartConfig{})
+	err = cm.StartContainer(ID, &StartConfig{})
 	if err != nil {
 		fmt.Println(err.Error())
 	}
 	assert.Nil(t, err)
 
 	fmt.Printf("Now stop the container with ID %s\n", ID)
-	err = cm.StopContainer(ID, &ContainerStopConfig{timeout: time.Second})
+	err = cm.StopContainer(ID, &StopConfig{timeout: time.Second})
 	if err != nil {
 		fmt.Println(err.Error())
 	}
 	assert.Nil(t, err)
 
 	fmt.Printf("Now remove the container with ID %s\n", ID)
-	err = cm.RemoveContainer(ID, &ContainerRemoveConfig{
+	err = cm.RemoveContainer(ID, &RemoveConfig{
 		RemoveVolumes: true,
 		RemoveLinks:   false,
 		Force:         false,

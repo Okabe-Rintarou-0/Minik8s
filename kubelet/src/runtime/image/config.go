@@ -2,18 +2,18 @@ package image
 
 import "github.com/docker/docker/api/types"
 
-type ImagePullConfig struct {
+type PullConfig struct {
 	Verbose bool
 	All     bool
 }
 
-type ImageListConfig struct {
+type ListConfig struct {
 	All bool
 }
-type ImageRemoveConfig = types.ImageRemoveOptions
+type RemoveConfig = types.ImageRemoveOptions
 
-type ImageDeletedItem = types.ImageDeleteResponseItem
+type DeletedItem = types.ImageDeleteResponseItem
 
-type ImageRemoveResponse struct {
-	DeletedItems []ImageDeletedItem
+type RemoveResponse struct {
+	DeletedItems []DeletedItem
 }

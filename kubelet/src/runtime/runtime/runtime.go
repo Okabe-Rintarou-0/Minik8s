@@ -128,7 +128,7 @@ func (rm *runtimeManager) PodCreateAndStartContainer(pod *apiObject.Pod, target 
 }
 
 func (rm *runtimeManager) PodStartContainer(podUID types.UID, ID container.ID) error {
-	return rm.cm.StartContainer(ID, &container.ContainerStartConfig{})
+	return rm.cm.StartContainer(ID, &container.StartConfig{})
 }
 
 func (rm *runtimeManager) PodRestartContainer(pod *apiObject.Pod, containerID container.ID, fullName string) error {
@@ -143,11 +143,11 @@ func (rm *runtimeManager) PodRestartContainer(pod *apiObject.Pod, containerID co
 		return err
 	}
 
-	return rm.cm.StartContainer(containerID, &container.ContainerStartConfig{})
+	return rm.cm.StartContainer(containerID, &container.StartConfig{})
 }
 
 func (rm *runtimeManager) PodRemoveContainer(podUID types.UID, ID container.ID) error {
-	return rm.cm.RemoveContainer(ID, &container.ContainerRemoveConfig{})
+	return rm.cm.RemoveContainer(ID, &container.RemoveConfig{})
 }
 
 // DeletePod deletes a pod according to the given api object

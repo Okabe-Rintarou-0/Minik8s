@@ -97,7 +97,7 @@ func TestStartContainer(t *testing.T) {
 	}
 	assert.Nil(t, err)
 
-	containers, err := rm.cm.ListContainers(&container.ContainerListConfig{
+	containers, err := rm.cm.ListContainers(&container.ListConfig{
 		Quiet:  false,
 		Size:   false,
 		All:    true,

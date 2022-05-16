@@ -8,7 +8,7 @@ import (
 
 func TestImageService_ListImages(t *testing.T) {
 	im := NewImageManager()
-	images, err := im.ListImages(&ImageListConfig{All: true})
+	images, err := im.ListImages(&ListConfig{All: true})
 	if err != nil {
 		fmt.Println(err.Error())
 	}
@@ -21,7 +21,7 @@ func TestImageService_ListImages(t *testing.T) {
 
 func TestImageService_ListImagesByName(t *testing.T) {
 	im := NewImageManager()
-	images, err := im.ListImagesByName("nginx:latest", &ImageListConfig{All: true})
+	images, err := im.ListImagesByName("nginx:latest", &ListConfig{All: true})
 	if err != nil {
 		fmt.Println(err.Error())
 	}
@@ -34,20 +34,20 @@ func TestImageService_ListImagesByName(t *testing.T) {
 
 func TestImageService_PullAndRemoveImage(t *testing.T) {
 	im := NewImageManager()
-	err := im.PullImage("nginx:latest", &ImagePullConfig{All: false, Verbose: true})
+	err := im.PullImage("nginx:latest", &PullConfig{All: false, Verbose: true})
 	if err != nil {
 		fmt.Println(err.Error())
 	}
 	assert.Nil(t, err)
 
-	images, err := im.ListImagesByName("nginx:latest", &ImageListConfig{All: true})
+	images, err := im.ListImagesByName("nginx:latest", &ListConfig{All: true})
 	if err != nil {
 		fmt.Println(err.Error())
 	}
 	assert.Nil(t, err)
 	fmt.Println("Now remove image with ID", images[0].ID)
 
-	resp, err := im.RemoveImage(images[0].ID, &ImageRemoveConfig{
+	resp, err := im.RemoveImage(images[0].ID, &RemoveConfig{
 		Force:         false,
 		PruneChildren: false,
 	})

@@ -163,7 +163,7 @@ func (rm *runtimeManager) getCommonContainerCreateConfig(pod *apiObject.Pod, c *
 	}
 }
 
-func (rm *runtimeManager) inspectionToContainerStatus(inspection *container.ContainerInspectInfo) (*container.Status, error) {
+func (rm *runtimeManager) inspectionToContainerStatus(inspection *container.InspectInfo) (*container.Status, error) {
 	state := container.StateUnknown
 	switch inspection.State.Status {
 	case "running":
@@ -204,7 +204,7 @@ func (rm *runtimeManager) inspectionToContainerStatus(inspection *container.Cont
 }
 
 func (rm *runtimeManager) getPodContainerStatuses(pod *apiObject.Pod) ([]*container.Status, error) {
-	containers, err := rm.cm.ListContainers(&container.ContainerListConfig{
+	containers, err := rm.cm.ListContainers(&container.ListConfig{
 		All: true,
 		LabelSelector: container.LabelSelector{
 			KubernetesPodUIDLabel: pod.UID(),
@@ -239,7 +239,7 @@ func (rm *runtimeManager) startPauseContainer(pod *apiObject.Pod) error {
 	// Step 2: If needed, pull the image for the given container
 	if !exists {
 		log("Pulling image[Name = %s]", pauseImage)
-		err = rm.im.PullImage(pauseImage, &image.ImagePullConfig{
+		err = rm.im.PullImage(pauseImage, &image.PullConfig{
 			Verbose: true,
 			All:     false,
 		})
@@ -275,7 +275,7 @@ func (rm *runtimeManager) startPauseContainer(pod *apiObject.Pod) error {
 
 	// Step 4: Start this container
 	//fmt.Println("Now start the container with ID", ID)
-	err = rm.cm.StartContainer(ID, &container.ContainerStartConfig{})
+	err = rm.cm.StartContainer(ID, &container.StartConfig{})
 	return err
 }
 
@@ -286,16 +286,16 @@ func (rm *runtimeManager) removePauseContainer(pod *apiObject.Pod) error {
 	podUID := pod.UID()
 
 	containerFullName := rm.pauseContainerFullName(podFullName, podUID)
-	err := rm.cm.StopContainer(containerFullName, &container.ContainerStopConfig{})
+	err := rm.cm.StopContainer(containerFullName, &container.StopConfig{})
 	if err != nil {
 		return err
 	}
-	return rm.cm.RemoveContainer(containerFullName, &container.ContainerRemoveConfig{})
+	return rm.cm.RemoveContainer(containerFullName, &container.RemoveConfig{})
 }
 
 func (rm *runtimeManager) removePodCommonContainers(pod *apiObject.Pod) error {
 	// Prepare
-	containers, err := rm.cm.ListContainers(&container.ContainerListConfig{
+	containers, err := rm.cm.ListContainers(&container.ListConfig{
 		All: true,
 		LabelSelector: container.LabelSelector{
 			KubernetesPodUIDLabel: pod.UID(),
@@ -313,12 +313,12 @@ func (rm *runtimeManager) removePodCommonContainers(pod *apiObject.Pod) error {
 		if c.Name == pauseContainerFullName {
 			continue
 		}
-		err = rm.cm.StopContainer(c.ID, &container.ContainerStopConfig{})
+		err = rm.cm.StopContainer(c.ID, &container.StopConfig{})
 		if err != nil {
 			return err
 		}
 
-		err = rm.cm.RemoveContainer(c.ID, &container.ContainerRemoveConfig{})
+		err = rm.cm.RemoveContainer(c.ID, &container.RemoveConfig{})
 		if err != nil {
 			return err
 		}
@@ -337,7 +337,7 @@ func (rm *runtimeManager) startCommonContainer(pod *apiObject.Pod, c *apiObject.
 	// Step 2: If needed, pull the image for the given container
 	if needPull {
 		log("Pulling image[Name = %s]", c.Image)
-		err = rm.im.PullImage(c.Image, &image.ImagePullConfig{
+		err = rm.im.PullImage(c.Image, &image.PullConfig{
 			Verbose: true,
 			All:     false,
 		})
@@ -366,12 +366,12 @@ func (rm *runtimeManager) startCommonContainer(pod *apiObject.Pod, c *apiObject.
 
 	// Step 4: Start this container
 	//fmt.Println("Now start the container with ID", ID)
-	err = rm.cm.StartContainer(ID, &container.ContainerStartConfig{})
+	err = rm.cm.StartContainer(ID, &container.StartConfig{})
 	return err
 }
 
 func (rm *runtimeManager) getAllPodContainers() map[types.UID][]*container.Status {
-	containers, err := rm.cm.ListContainers(&container.ContainerListConfig{
+	containers, err := rm.cm.ListContainers(&container.ListConfig{
 		All: true,
 		LabelSelector: container.LabelSelector{
 			KubernetesPodUIDLabel: "",
@@ -383,7 +383,7 @@ func (rm *runtimeManager) getAllPodContainers() map[types.UID][]*container.Statu
 
 	containerStatuses := make(map[types.UID][]*container.Status)
 	for _, c := range containers {
-		var inspection container.ContainerInspectInfo
+		var inspection container.InspectInfo
 		inspection, err = rm.cm.InspectContainer(c.ID)
 		if err != nil {
 			continue

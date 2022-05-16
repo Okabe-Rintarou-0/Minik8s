@@ -37,11 +37,11 @@ type PortSet = nat.PortSet
 
 type PortBindings = nat.PortMap
 
-type ContainerRemoveConfig = types.ContainerRemoveOptions
+type RemoveConfig = types.ContainerRemoveOptions
 
 type LabelSelector = map[string]string
 
-type ContainerListConfig struct {
+type ListConfig struct {
 	Quiet         bool
 	Size          bool
 	All           bool
@@ -52,10 +52,10 @@ type ContainerListConfig struct {
 	LabelSelector LabelSelector
 }
 
-type ContainerStartConfig = types.ContainerStartOptions
+type StartConfig = types.ContainerStartOptions
 
-type ContainerInspectInfo = types.ContainerJSON
+type InspectInfo = types.ContainerJSON
 
-type ContainerStopConfig struct {
+type StopConfig struct {
 	timeout time.Duration
 }

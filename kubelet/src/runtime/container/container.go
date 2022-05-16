@@ -67,14 +67,14 @@ type ResourcesUsage struct {
 }
 
 type Manager interface {
-	ListContainers(config *ContainerListConfig) ([]*Container, error)
+	ListContainers(config *ListConfig) ([]*Container, error)
 	CreateContainer(name string, config *ContainerCreateConfig) (string, error)
-	RemoveContainer(ID ID, config *ContainerRemoveConfig) error
-	StartContainer(ID ID, config *ContainerStartConfig) error
+	RemoveContainer(ID ID, config *RemoveConfig) error
+	StartContainer(ID ID, config *StartConfig) error
 	RenameContainer(ID ID, newName string) error
-	StopContainer(ID ID, config *ContainerStopConfig) error
+	StopContainer(ID ID, config *StopConfig) error
 	GetContainerStats(ID ID) (ResourcesUsage, error)
-	InspectContainer(ID ID) (ContainerInspectInfo, error)
+	InspectContainer(ID ID) (InspectInfo, error)
 }
 
 func NewContainerManager() Manager {
@@ -115,7 +115,7 @@ func (cm *containerManager) RenameContainer(ID ID, newName string) error {
 	return docker.Client.ContainerRename(docker.Ctx, ID, newName)
 }
 
-func (cm *containerManager) ListContainers(config *ContainerListConfig) ([]*Container, error) {
+func (cm *containerManager) ListContainers(config *ListConfig) ([]*Container, error) {
 	filter := filters.NewArgs()
 	for name, value := range config.LabelSelector {
 		if len(name) == 0 {
@@ -181,22 +181,22 @@ func (cm *containerManager) CreateContainer(name string, config *ContainerCreate
 	return res.ID, err
 }
 
-func (cm *containerManager) RemoveContainerByName(name string, config *ContainerRemoveConfig) error {
+func (cm *containerManager) RemoveContainerByName(name string, config *RemoveConfig) error {
 	return docker.Client.ContainerRemove(docker.Ctx, name, *config)
 }
 
-func (cm *containerManager) RemoveContainer(ID ID, config *ContainerRemoveConfig) error {
+func (cm *containerManager) RemoveContainer(ID ID, config *RemoveConfig) error {
 	return docker.Client.ContainerRemove(docker.Ctx, ID, *config)
 }
 
-func (cm *containerManager) StartContainer(ID ID, config *ContainerStartConfig) error {
+func (cm *containerManager) StartContainer(ID ID, config *StartConfig) error {
 	return docker.Client.ContainerStart(docker.Ctx, ID, *config)
 }
 
-func (cm *containerManager) StopContainer(ID ID, config *ContainerStopConfig) error {
+func (cm *containerManager) StopContainer(ID ID, config *StopConfig) error {
 	return docker.Client.ContainerStop(docker.Ctx, ID, &config.timeout)
 }
 
-func (cm *containerManager) InspectContainer(ID ID) (ContainerInspectInfo, error) {
+func (cm *containerManager) InspectContainer(ID ID) (InspectInfo, error) {
 	return docker.Client.ContainerInspect(docker.Ctx, ID)
 }
