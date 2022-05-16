@@ -10,6 +10,7 @@ type Handler = gin.HandlerFunc
 
 var postTable = map[string]Handler{
 	// kubectl apply -f xxx.yaml
+	url.NodeURL:       handlers.HandleApplyNode,
 	url.PodURL:        handlers.HandleApplyPod,
 	url.ReplicaSetURL: handlers.HandleApplyReplicaSet,
 	url.HPAURL:        handlers.HandleApplyHPA,
@@ -26,8 +27,8 @@ var postTable = map[string]Handler{
 
 var getTable = map[string]Handler{
 	// kubectl get nodes & kubectl get node hostname
-	url.NodeURL:                  handlers.HandleGetNodes,
-	url.NodeURLWithSpecifiedName: handlers.HandleGetNode,
+	url.NodeURL:                        handlers.HandleGetNodes,
+	url.NodeStatusURLWithSpecifiedName: handlers.HandleGetNode,
 
 	// kubectl get pods & kubectl get pod pod_name
 	url.PodURL:                  handlers.HandleGetPods,
@@ -41,5 +42,6 @@ var putTable = map[string]Handler{}
 
 var deleteTable = map[string]Handler{
 	// kubectl delete pod pod_name
-	url.PodURLWithSpecifiedName: handlers.HandleDeletePod,
+	url.PodURLWithSpecifiedName:  handlers.HandleDeletePod,
+	url.NodeURLWithSpecifiedName: handlers.HandleDeleteNode,
 }

@@ -1,11 +1,15 @@
 package handlers
 
 import (
+	"encoding/json"
 	"github.com/gin-gonic/gin"
+	"minik8s/apiserver/src/etcd"
+	"minik8s/apiserver/src/url"
 	"minik8s/entity"
 	"minik8s/util/uidutil"
 	"net/http"
 	"os"
+	"path"
 	"time"
 )
 
@@ -28,10 +32,11 @@ func getTestNodes() []*entity.NodeStatus {
 	return nodes
 }
 
-// For test only
-func getTestNode(name string) *entity.NodeStatus {
-	for _, node := range getTestNodes() {
-		if node.Hostname == name {
+func getNodeFromEtcd(namespace, name string) (node *entity.NodeStatus) {
+	etcdURL := path.Join(url.NodeURL, namespace, "status", name)
+	log(etcdURL)
+	if raw, err := etcd.Get(etcdURL); err == nil {
+		if err = json.Unmarshal([]byte(raw), node); err == nil {
 			return node
 		}
 	}
@@ -43,8 +48,9 @@ func HandleGetNodes(c *gin.Context) {
 }
 
 func HandleGetNode(c *gin.Context) {
+	namespace := c.Param("namespace")
 	name := c.Param("name")
-	c.JSON(http.StatusOK, getTestNode(name))
+	c.JSON(http.StatusOK, getNodeFromEtcd(namespace, name))
 }
 
 func podStatusForTest() *entity.PodStatus {

@@ -2,7 +2,7 @@ package apiObject
 
 import "minik8s/apiObject/types"
 
-type ScaleTargetRef = ApiObjectBase
+type ScaleTargetRef ApiObjectBase
 
 type Metrics struct {
 	CPUUtilizationPercentage float64 `yaml:"CPUUtilizationPercentage"`

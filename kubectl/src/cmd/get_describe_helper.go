@@ -7,6 +7,7 @@ import (
 	"minik8s/apiserver/src/url"
 	"minik8s/entity"
 	"minik8s/util/httputil"
+	"path"
 	"time"
 )
 
@@ -52,8 +53,10 @@ func getNodesFromApiServer() (nodes []*entity.NodeStatus, err error) {
 	return
 }
 
-func getNodeFromApiServer(name string) (node *entity.NodeStatus, err error) {
-	err = httputil.GetAndUnmarshal(url.Prefix+url.NodeURL+name, &node)
+func getNodeFromApiServer(fullName string) (node *entity.NodeStatus, err error) {
+	namespace, name := parseName(fullName)
+	URL := url.Prefix + path.Join(url.NodeURL, namespace, "status", name)
+	err = httputil.GetAndUnmarshal(URL, &node)
 	return
 }
 

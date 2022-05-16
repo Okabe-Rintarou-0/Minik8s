@@ -16,7 +16,7 @@ import (
 func parseTargetName(targetName string) (namespace, name string) {
 	parts := strings.Split(targetName, "/")
 	numParts := len(parts)
-	if numParts == 0 {
+	if numParts == 1 {
 		return "default", targetName
 	} else {
 		return parts[0], strings.Join(parts[1:], "/")

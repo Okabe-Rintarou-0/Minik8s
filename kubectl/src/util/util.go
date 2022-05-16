@@ -55,6 +55,8 @@ func parseType(content []byte) ApiObjectType {
 	}
 	kind := string(content[startIdx:endIdx])
 	switch kind {
+	case "Node":
+		return Node
 	case "Pod":
 		return Pod
 	case "ReplicaSet":

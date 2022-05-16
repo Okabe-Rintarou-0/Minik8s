@@ -3,12 +3,12 @@ package cmd
 import (
 	"fmt"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v3"
 	"io/ioutil"
 	"minik8s/apiObject"
 	"minik8s/apiserver/src/url"
 	"minik8s/kubectl/src/util"
 	"minik8s/util/httputil"
-	"minik8s/util/parseutil"
 )
 
 var applyCmd = &cobra.Command{
@@ -18,30 +18,8 @@ var applyCmd = &cobra.Command{
 	Run:   apply,
 }
 
-func applyPodToApiServer(pod *apiObject.Pod) {
-	resp, err := httputil.PostJson(url.Prefix+url.PodURL, pod)
-	if err != nil {
-		fmt.Println(err.Error())
-		return
-	}
-	respBody, _ := ioutil.ReadAll(resp.Body)
-	defer resp.Body.Close()
-	fmt.Println(string(respBody))
-}
-
-func applyReplicaSetToApiServer(rs *apiObject.ReplicaSet) {
-	resp, err := httputil.PostJson(url.Prefix+url.ReplicaSetURL, rs)
-	if err != nil {
-		fmt.Println(err.Error())
-		return
-	}
-	respBody, _ := ioutil.ReadAll(resp.Body)
-	defer resp.Body.Close()
-	fmt.Println(string(respBody))
-}
-
-func applyHPAToApiServer(hpa *apiObject.HorizontalPodAutoscaler) {
-	resp, err := httputil.PostJson(url.Prefix+url.HPAURL, hpa)
+func applyApiObjectToApiServer(URL string, object interface{}) {
+	resp, err := httputil.PostJson(URL, object)
 	if err != nil {
 		fmt.Println(err.Error())
 		return
@@ -65,26 +43,37 @@ func apply(cmd *cobra.Command, args []string) {
 	}
 
 	switch tp {
+	case util.Node:
+		node := apiObject.Node{}
+		if err = yaml.Unmarshal(content, &node); err != nil {
+			fmt.Println(err.Error())
+			return
+		}
+		URL := url.Prefix + url.NodeURL
+		applyApiObjectToApiServer(URL, node)
 	case util.Pod:
-		pod, err := parseutil.ParsePod(content)
-		if err != nil {
+		pod := apiObject.Pod{}
+		if err = yaml.Unmarshal(content, &pod); err != nil {
 			fmt.Println(err.Error())
 			return
 		}
-		applyPodToApiServer(pod)
+		URL := url.Prefix + url.PodURL
+		applyApiObjectToApiServer(URL, pod)
 	case util.ReplicaSet:
-		rs, err := parseutil.ParseReplicaSet(content)
-		if err != nil {
+		rs := apiObject.ReplicaSet{}
+		if err = yaml.Unmarshal(content, &rs); err != nil {
 			fmt.Println(err.Error())
 			return
 		}
-		applyReplicaSetToApiServer(rs)
+		URL := url.Prefix + url.ReplicaSetURL
+		applyApiObjectToApiServer(URL, rs)
 	case util.HorizontalPodAutoscaler:
-		hpa, err := parseutil.ParseHPA(content)
-		if err != nil {
+		hpa := apiObject.HorizontalPodAutoscaler{}
+		if err = yaml.Unmarshal(content, &hpa); err != nil {
 			fmt.Println(err.Error())
 			return
 		}
-		applyHPAToApiServer(hpa)
+		URL := url.Prefix + url.HPAURL
+		applyApiObjectToApiServer(URL, hpa)
 	}
 }

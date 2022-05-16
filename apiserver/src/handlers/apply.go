@@ -16,6 +16,7 @@ import (
 	"minik8s/util/uidutil"
 	"net/http"
 	"path"
+	"time"
 )
 
 var log = logger.Log("Api-server")
@@ -30,6 +31,55 @@ func readAndUnmarshal(body io.ReadCloser, target interface{}) error {
 		return err
 	}
 	return nil
+}
+
+func HandleApplyNode(c *gin.Context) {
+	node := apiObject.Node{}
+	err := readAndUnmarshal(c.Request.Body, &node)
+	if err != nil {
+		c.String(http.StatusOK, err.Error())
+	}
+	node.Metadata.UID = uidutil.New()
+	log("receive node[ID = %v]: %v", node.UID(), node)
+
+	var nodeJson []byte
+	if nodeJson, err = json.Marshal(node); err != nil {
+		c.String(http.StatusOK, err.Error())
+		return
+	}
+
+	// exists?
+	etcdNodeURL := path.Join(url.NodeURL, node.Namespace(), node.Name())
+	if podJsonStr, err := etcd.Get(etcdNodeURL); err == nil {
+		getNode := &apiObject.Node{}
+		if err = json.Unmarshal([]byte(podJsonStr), getNode); err == nil {
+			c.String(http.StatusOK, fmt.Sprintf("Node %s/%s already exists", getNode.Namespace(), getNode.Name()))
+			return
+		}
+	}
+
+	if err = etcd.Put(etcdNodeURL, string(nodeJson)); err != nil {
+		c.String(http.StatusOK, err.Error())
+		return
+	}
+
+	etcdNodeStatusURL := path.Join(url.NodeURL, node.Namespace(), "status", node.Name())
+	var nodeStatusJson []byte
+	if nodeStatusJson, err = json.Marshal(entity.NodeStatus{
+		Hostname:   node.Name(),
+		Ip:         "",
+		Labels:     node.Labels(),
+		Lifecycle:  entity.NodeUnknown,
+		Error:      "",
+		CpuPercent: 0,
+		MemPercent: 0,
+		NumPods:    0,
+		SyncTime:   time.Now(),
+	}); err != nil {
+		_ = etcd.Put(etcdNodeStatusURL, string(nodeStatusJson))
+	}
+
+	c.String(http.StatusOK, "Apply successfully!")
 }
 
 func HandleApplyPod(c *gin.Context) {

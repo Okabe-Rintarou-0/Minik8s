@@ -12,9 +12,9 @@ const (
 	PodURLWithSpecifiedName            = "/api/v1/pods/:name"
 
 	NodeURL                        = "/api/v1/nodes/"
-	NodeURLWithSpecifiedName       = "/api/v1/nodes/:name"
-	NodeStatusURLWithSpecifiedName = "/api/v1/nodes/:name/status"
-	NodeLabelsURLWithSpecifiedName = "/api/v1/nodes/:name/labels"
+	NodeURLWithSpecifiedName       = "/api/v1/nodes/:namespace/:name"
+	NodeStatusURLWithSpecifiedName = "/api/v1/nodes/:namespace/status/:name/"
+	NodeLabelsURLWithSpecifiedName = "/api/v1/nodes/:namespace/:name/labels"
 
 	ReplicaSetURL = "/api/v1/replicaSet/"
 

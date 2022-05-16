@@ -22,12 +22,20 @@ func deleteSpecifiedPod(name string) error {
 	return nil
 }
 
+func deleteSpecifiedNode(name string) error {
+	resp := httputil.DeleteWithoutBody(url.Prefix + url.PodURL + name)
+	fmt.Println(resp)
+	return nil
+}
+
 func del(cmd *cobra.Command, args []string) {
 	apiObjectType := args[0]
 	name := args[1]
 	apiObjectType = strings.ToLower(apiObjectType)
 	var err error
 	switch apiObjectType {
+	case "node":
+		err = deleteSpecifiedNode(name)
 	case "pod":
 		err = deleteSpecifiedPod(name)
 	default:
