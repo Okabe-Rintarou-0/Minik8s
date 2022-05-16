@@ -31,13 +31,14 @@ func configHPAToApiServer(name string) {
 	fmt.Printf("Metrics: cpu %v, memory %v\n", cpuPercent, memPercent)
 	fmt.Printf("Replicas: min %d, max %d\n", minReplicas, maxReplicas)
 
-	httputil.PostForm(url.Prefix+url.AutoscaleURL+name, map[string]string{
+	resp := httputil.PostForm(url.Prefix+url.AutoscaleURL+name, map[string]string{
 		"target": target,
 		"cpu":    strconv.FormatFloat(cpuPercent, 'f', 4, 64),
 		"mem":    strconv.FormatFloat(memPercent, 'f', 4, 64),
 		"min":    strconv.FormatInt(int64(minReplicas), 10),
 		"max":    strconv.FormatInt(int64(maxReplicas), 10),
 	})
+	fmt.Println(resp)
 }
 
 func autoscale(cmd *cobra.Command, args []string) {

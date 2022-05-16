@@ -3,6 +3,7 @@ package apiserver
 import (
 	"github.com/gin-gonic/gin"
 	"log"
+	"minik8s/apiserver/src/etcd"
 )
 
 type ApiServer interface {
@@ -38,6 +39,7 @@ func (api *apiServer) bindHandlers() {
 }
 
 func (api *apiServer) Run() {
+	etcd.Start()
 	api.bindHandlers()
 	log.Fatal(api.httpServer.Run())
 }
