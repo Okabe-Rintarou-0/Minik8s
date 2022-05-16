@@ -10,68 +10,63 @@ import (
 var (
 	ctx    = context.Background()
 	config clientv3.Config
-	//cli    *clientv3.Client
+	cli    *clientv3.Client
 	//kv     clientv3.KV
 	//err    error
 )
 
+func startClient() (err error) {
+	cli, err = clientv3.New(config)
+	return
+}
+
 func init() {
-	Start()
 	config = clientv3.Config{
 		Endpoints:            []string{"localhost:2379"},
 		DialTimeout:          30 * time.Second,
 		DialKeepAliveTimeout: 30 * time.Second,
 	}
-
-	cli, err := clientv3.New(config)
-	defer cli.Close()
-	if err != nil {
-		log.Printf("[etcd] Connect to etcd failed, err:%v\n", err)
-	}
-	log.Printf("[etcd] Connect to etcd success\n")
 }
 
-func Put(key, value string) {
-	cli, err := clientv3.New(config)
-	defer cli.Close()
-	if err != nil {
-		log.Printf("[etcd] connect to etcd failed, err:%v\n", err)
+func checkAndStartClient() error {
+	if cli == nil {
+		err := startClient()
+		if err != nil {
+			log.Printf("[etcd] Connect to etcd failed, err:%v\n", err)
+		}
 	}
-
-	if _, err := cli.Put(ctx, key, value); err != nil {
-		log.Fatal(err)
-	}
+	return nil
 }
 
-func Get(key string) string {
-	cli, err := clientv3.New(config)
-	defer cli.Close()
-	if err != nil {
-		log.Printf("[etcd] connect to etcd failed, err:%v\n", err)
+func Put(key, value string) (err error) {
+	if err = checkAndStartClient(); err != nil {
+		return err
 	}
-	resp, err := cli.Get(ctx, key)
+	_, err = cli.Put(ctx, key, value)
+	return err
+}
+
+func Get(key string) (value string, err error) {
+	if err = checkAndStartClient(); err != nil {
+		return "", err
+	}
+	var resp *clientv3.GetResponse
+	resp, err = cli.Get(ctx, key)
 	if err != nil {
-		log.Fatal(err)
+		return "", err
 	}
 
 	if len(resp.Kvs) > 0 {
-		return string(resp.Kvs[0].Value)
+		return string(resp.Kvs[0].Value), nil
 	} else {
-		return ""
+		return "", nil
 	}
 }
 
-func Delete(key string) {
-	cli, err := clientv3.New(config)
-	defer cli.Close()
-	if err != nil {
-		log.Printf("[etcd] connect to etcd failed, err:%v\n", err)
+func Delete(key string) (err error) {
+	if err = checkAndStartClient(); err != nil {
+		return err
 	}
 	_, err = cli.Delete(ctx, key)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	//log.Printf("Delete keys: %v\n", resp.Deleted)
-
+	return err
 }

@@ -11,6 +11,7 @@ import (
 func HandleAutoscale(c *gin.Context) {
 	name := c.Param("name")
 	target := c.PostForm("target")
+	targetNamespace, targetName := parseTargetName(target)
 	cpu, _ := strconv.ParseFloat(c.PostForm("cpu"), 64)
 	mem, _ := strconv.ParseFloat(c.PostForm("mem"), 64)
 	min, _ := strconv.Atoi(c.PostForm("min"))
@@ -38,8 +39,8 @@ func HandleAutoscale(c *gin.Context) {
 				ApiVersion: "v1",
 				Kind:       "ReplicaSet",
 				Metadata: apiObject.Metadata{
-					Name:      target,
-					Namespace: "default",
+					Name:      targetName,
+					Namespace: targetNamespace,
 				},
 			},
 			Metrics: &apiObject.Metrics{

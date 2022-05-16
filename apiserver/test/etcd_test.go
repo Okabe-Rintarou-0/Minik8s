@@ -1,17 +1,26 @@
 package test
 
 import (
-	"log"
+	"github.com/stretchr/testify/assert"
 	"minik8s/apiserver/src/etcd"
 	"testing"
 )
 
 func TestEtcd(t *testing.T) {
-	etcd.Put("22", "33")
-	etcd.Put("22", "1234")
-	log.Print("22:", etcd.Get("22"))
-	log.Print("33:", etcd.Get("33"))
+	err := etcd.Put("22", "33")
+	assert.Nil(t, err)
+	err = etcd.Put("22", "1234")
+	assert.Nil(t, err)
+	var value string
+	value, err = etcd.Get("22")
+	assert.NotEqual(t, "22", value)
+	value, err = etcd.Get("22")
+	assert.NotEqual(t, "33", value)
+	value, err = etcd.Get("22")
+	assert.Equal(t, "1234", value)
 
-	etcd.Delete("22")
-	log.Print("22:", etcd.Get("22"))
+	err = etcd.Delete("22")
+	assert.Nil(t, err)
+	value, err = etcd.Get("22")
+	assert.Equal(t, "", value)
 }
