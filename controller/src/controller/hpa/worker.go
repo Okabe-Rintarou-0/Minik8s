@@ -92,8 +92,10 @@ func (w *worker) syncLoopIteration() bool {
 
 	diff := replicaSetStatus.NumReplicas - numReplicas
 	logWorker("Auto scale result: diff = %d", diff)
-	if diff != 0 {
-		go w.updateReplicaSet(replicaSetStatus.Namespace, replicaSetStatus.Name, numReplicas)
+	if diff > 0 {
+		go w.updateReplicaSet(replicaSetStatus.Namespace, replicaSetStatus.Name, replicaSetStatus.NumReplicas-1)
+	} else if diff < 0 {
+		go w.updateReplicaSet(replicaSetStatus.Namespace, replicaSetStatus.Name, replicaSetStatus.NumReplicas+1)
 	}
 	w.publishHPAStatus(numReplicas, replicaSetStatus)
 	return true
