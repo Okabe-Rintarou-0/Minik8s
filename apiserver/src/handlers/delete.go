@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"minik8s/apiObject"
 	"minik8s/apiserver/src/etcd"
@@ -36,7 +37,7 @@ func deleteSpecifiedPod(namespace, name string) (pod *apiObject.Pod, err error) 
 	}
 
 	if err = json.Unmarshal([]byte(raw), &pod); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("no such pod %s/%s", namespace, name)
 	}
 
 	err = etcd.Delete(etcdPodURL)
@@ -56,7 +57,7 @@ func deleteSpecifiedReplicaSet(namespace, name string) (rs *apiObject.ReplicaSet
 	}
 
 	if err = json.Unmarshal([]byte(raw), &rs); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("no such replicaSet %s/%s", namespace, name)
 	}
 
 	err = etcd.Delete(etcdReplicaSetURL)

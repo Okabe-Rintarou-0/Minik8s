@@ -55,3 +55,27 @@ func syncPodStatus(msg *redis.Message) {
 		}
 	}
 }
+
+func syncReplicaSetStatus(msg *redis.Message) {
+	replicaSetStatus := &entity.ReplicaSetStatus{}
+	err := json.Unmarshal([]byte(msg.Payload), replicaSetStatus)
+	if err != nil {
+		logger.Error(err.Error())
+		return
+	}
+
+	if replicaSetStatus.Lifecycle == entity.ReplicaSetDeleted {
+		return
+	}
+
+	logApiServer("Received status %s of Rs[name = %s, id = %v]", replicaSetStatus.Lifecycle.String(), replicaSetStatus.Name, replicaSetStatus.ID)
+
+	var replicaSetStatusJson []byte
+	if replicaSetStatusJson, err = json.Marshal(replicaSetStatus); err == nil {
+		etcdURL := path.Join(url.ReplicaSetURL, "status", replicaSetStatus.Namespace, replicaSetStatus.Name)
+		err = etcd.Put(etcdURL, string(replicaSetStatusJson))
+		if err != nil {
+			logger.Error(err.Error())
+		}
+	}
+}

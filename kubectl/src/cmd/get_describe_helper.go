@@ -8,6 +8,7 @@ import (
 	"minik8s/entity"
 	"minik8s/util/httputil"
 	"path"
+	"strconv"
 	"time"
 )
 
@@ -16,6 +17,15 @@ func podStatusTbl() table.Table {
 	columnFmt := color.New(color.FgYellow).SprintfFunc()
 
 	tbl := table.New("Name", "UID", "Status", "Cpu", "Memory", "Last Sync Time", "Error")
+	tbl.WithHeaderFormatter(headerFmt).WithFirstColumnFormatter(columnFmt)
+	return tbl
+}
+
+func replicaSetStatusTbl() table.Table {
+	headerFmt := color.New(color.FgGreen, color.Underline).SprintfFunc()
+	columnFmt := color.New(color.FgYellow).SprintfFunc()
+
+	tbl := table.New("Name", "UID", "Status", "Replicas", "Cpu", "Mem", "Last Sync Time", "Error")
 	tbl.WithHeaderFormatter(headerFmt).WithFirstColumnFormatter(columnFmt)
 	return tbl
 }
@@ -59,6 +69,18 @@ func getNodeFromApiServer(fullName string) (node *entity.NodeStatus, err error) 
 	namespace, name := parseName(fullName)
 	URL := url.Prefix + path.Join(url.NodeURL, "status", namespace, name)
 	err = httputil.GetAndUnmarshal(URL, &node)
+	return
+}
+
+func getReplicaSetsFromApiServer() (replicaSets []*entity.ReplicaSetStatus, err error) {
+	err = httputil.GetAndUnmarshal(url.Prefix+url.ReplicaSetURL, &replicaSets)
+	return
+}
+
+func getReplicaSetFromApiServer(fullName string) (replicaSet *entity.ReplicaSetStatus, err error) {
+	namespace, name := parseName(fullName)
+	URL := url.Prefix + path.Join(url.ReplicaSetURL, "status", namespace, name)
+	err = httputil.GetAndUnmarshal(URL, &replicaSet)
 	return
 }
 
@@ -179,6 +201,57 @@ func printNodeStatuses() error {
 			nodeStatus.Error,
 		)
 	}
+	tbl.Print()
+	return nil
+}
+
+func printReplicaSetStatuses() error {
+	replicaSetStatuses, err := getReplicaSetsFromApiServer()
+	if err != nil {
+		return err
+	}
+
+	tbl := replicaSetStatusTbl()
+	for _, replicaSetStatus := range replicaSetStatuses {
+		fullName := path.Join(replicaSetStatus.Namespace, replicaSetStatus.Name)
+		replicas := strconv.Itoa(replicaSetStatus.NumReady) + "/" + strconv.Itoa(replicaSetStatus.NumReplicas)
+		tbl.AddRow(
+			fullName,
+			replicaSetStatus.ID,
+			replicaSetStatus.Lifecycle.String(),
+			replicas,
+			replicaSetStatus.CpuPercent,
+			replicaSetStatus.MemPercent,
+			replicaSetStatus.SyncTime.Format(time.RFC3339),
+			replicaSetStatus.Error,
+		)
+	}
+	tbl.Print()
+	return nil
+}
+
+func printSpecifiedReplicaSetStatus(name string) error {
+	replicaSetStatus, err := getReplicaSetFromApiServer(name)
+	if err != nil {
+		return err
+	}
+	if replicaSetStatus == nil {
+		return fmt.Errorf("no such replicaSet")
+	}
+
+	tbl := replicaSetStatusTbl()
+	fullName := path.Join(replicaSetStatus.Namespace, replicaSetStatus.Name)
+	replicas := strconv.Itoa(replicaSetStatus.NumReady) + "/" + strconv.Itoa(replicaSetStatus.NumReplicas)
+	tbl.AddRow(
+		fullName,
+		replicaSetStatus.ID,
+		replicaSetStatus.Lifecycle.String(),
+		replicas,
+		replicaSetStatus.CpuPercent,
+		replicaSetStatus.MemPercent,
+		replicaSetStatus.SyncTime.Format(time.RFC3339),
+		replicaSetStatus.Error,
+	)
 	tbl.Print()
 	return nil
 }

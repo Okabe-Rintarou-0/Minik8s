@@ -166,7 +166,7 @@ func HandleApplyReplicaSet(c *gin.Context) {
 		return
 	}
 
-	etcdReplicaSetStatusURL := path.Join(url.PodURL, "status", rs.Namespace(), rs.Name())
+	etcdReplicaSetStatusURL := path.Join(url.ReplicaSetURL, "status", rs.Namespace(), rs.Name())
 	var replicaSetStatusJson []byte
 	if replicaSetStatusJson, err = json.Marshal(entity.ReplicaSetStatus{
 		ID:         rs.UID(),

@@ -40,11 +40,15 @@ func (api *apiServer) bindHandlers() {
 	}
 }
 
-func (api *apiServer) Run() {
+func (api *apiServer) watch() {
 	go listwatch.Watch(topicutil.NodeStatusTopic(), syncNodeStatus)
 	go listwatch.Watch(topicutil.PodStatusTopic(), syncPodStatus)
+	go listwatch.Watch(topicutil.ReplicaSetStatusTopic(), syncReplicaSetStatus)
+}
 
+func (api *apiServer) Run() {
 	etcd.Start()
+	api.watch()
 	api.bindHandlers()
 	log.Fatal(api.httpServer.Run())
 }

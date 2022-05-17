@@ -46,7 +46,7 @@ func (c *controller) AddReplicaSet(rs *apiObject.ReplicaSet) {
 }
 
 func (c *controller) deleteReplicaSetPods(rs *apiObject.ReplicaSet) {
-	logManager("Not delete the pods of rs: %s-%s", rs.FullName(), rs.UID())
+	logManager("Now delete the pods of rs: %s-%s", rs.FullName(), rs.UID())
 	podStatuses := c.cacheManager.GetReplicaSetPodStatuses(rs.UID())
 	for _, podStatus := range podStatuses {
 		deletePodToApiServer(podStatus.Namespace, podStatus.Name)

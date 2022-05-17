@@ -34,18 +34,22 @@ var getTable = map[string]Handler{
 	url.PodURL:                        handlers.HandleGetPodStatuses,
 	url.PodStatusURLWithSpecifiedName: handlers.HandleGetPodStatus,
 
+	// kubectl get replicaSets && kubectl get replicaSet replicaSet_name
+	url.ReplicaSetURL:                        handlers.HandleGetReplicaSetStatuses,
+	url.ReplicaSetStatusURLWithSpecifiedName: handlers.HandleGetReplicaSetStatus,
+
 	// kubectl describe pod pod_name
 	url.PodDescriptionURLWithSpecifiedName: handlers.HandleDescribePod,
 
 	// get apiObject.xxx
-	url.PodURLWithSpecifiedName: handlers.HandleGetPod,
+	url.PodURLWithSpecifiedName: handlers.HandleGetPodApiObject,
 }
 
 var putTable = map[string]Handler{}
 
 var deleteTable = map[string]Handler{
 	// kubectl delete pod pod_name
-	url.PodURLWithSpecifiedName:  handlers.HandleDeletePod,
-	url.NodeURLWithSpecifiedName: handlers.HandleDeleteNode,
-	url.ReplicaSetURL:            handlers.HandleDeleteReplicaSet,
+	url.PodURLWithSpecifiedName:        handlers.HandleDeletePod,
+	url.NodeURLWithSpecifiedName:       handlers.HandleDeleteNode,
+	url.ReplicaSetURLWithSpecifiedName: handlers.HandleDeleteReplicaSet,
 }

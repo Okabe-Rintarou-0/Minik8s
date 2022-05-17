@@ -17,14 +17,20 @@ var deleteCmd = &cobra.Command{
 	Run:   del,
 }
 
+func deleteSpecifiedNode(namespace, name string) error {
+	resp := httputil.DeleteWithoutBody(url.Prefix + path.Join(url.NodeURL, namespace, name))
+	fmt.Println(resp)
+	return nil
+}
+
 func deleteSpecifiedPod(namespace, name string) error {
 	resp := httputil.DeleteWithoutBody(url.Prefix + path.Join(url.PodURL, namespace, name))
 	fmt.Println(resp)
 	return nil
 }
 
-func deleteSpecifiedNode(namespace, name string) error {
-	resp := httputil.DeleteWithoutBody(url.Prefix + path.Join(url.NodeURL, namespace, name))
+func deleteSpecifiedReplicaSet(namespace, name string) error {
+	resp := httputil.DeleteWithoutBody(url.Prefix + path.Join(url.ReplicaSetURL, namespace, name))
 	fmt.Println(resp)
 	return nil
 }
@@ -40,6 +46,8 @@ func del(cmd *cobra.Command, args []string) {
 		err = deleteSpecifiedNode(namespace, name)
 	case "pod":
 		err = deleteSpecifiedPod(namespace, name)
+	case "replicaset":
+		err = deleteSpecifiedReplicaSet(namespace, name)
 	default:
 		err = fmt.Errorf("invalid api object type \"%s\", acceptable api object type is pod, service, etc", apiObjectType)
 	}
