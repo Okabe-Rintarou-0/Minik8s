@@ -11,6 +11,7 @@ type ReplicaSetLifecycle byte
 const (
 	ReplicaSetScaling ReplicaSetLifecycle = iota
 	ReplicaSetReady
+	ReplicaSetUnknown
 	ReplicaSetError
 	ReplicaSetDeleted
 )

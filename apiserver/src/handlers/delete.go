@@ -25,12 +25,12 @@ func deleteSpecifiedNode(namespace, name string) (err error) {
 
 func deleteSpecifiedPod(namespace, name string) (pod *apiObject.Pod, err error) {
 	log("Pod to delete is %s/%s", namespace, name)
-	etcdPodURL := path.Join(url.PodURL, namespace, name)
 
 	etcdPodStatusURL := path.Join(url.PodURL, "status", namespace, name)
 	_ = etcd.Delete(etcdPodStatusURL)
 
 	var raw string
+	etcdPodURL := path.Join(url.PodURL, namespace, name)
 	if raw, err = etcd.Get(etcdPodURL); err != nil {
 		return nil, err
 	}
@@ -40,6 +40,26 @@ func deleteSpecifiedPod(namespace, name string) (pod *apiObject.Pod, err error) 
 	}
 
 	err = etcd.Delete(etcdPodURL)
+	return
+}
+
+func deleteSpecifiedReplicaSet(namespace, name string) (rs *apiObject.ReplicaSet, err error) {
+	log("Rs to delete is %s/%s", namespace, name)
+
+	etcdReplicaSetStatusURL := path.Join(url.ReplicaSetURL, "status", namespace, name)
+	_ = etcd.Delete(etcdReplicaSetStatusURL)
+
+	var raw string
+	etcdReplicaSetURL := path.Join(url.ReplicaSetURL, namespace, name)
+	if raw, err = etcd.Get(etcdReplicaSetURL); err != nil {
+		return nil, err
+	}
+
+	if err = json.Unmarshal([]byte(raw), &rs); err != nil {
+		return nil, err
+	}
+
+	err = etcd.Delete(etcdReplicaSetURL)
 	return
 }
 
@@ -65,6 +85,23 @@ func HandleDeletePod(c *gin.Context) {
 			Target: *podToDelete,
 		})
 		listwatch.Publish(topicutil.SchedulerPodUpdateTopic(), podDeleteMsg)
+	}
+	c.String(http.StatusOK, "Delete successfully")
+}
+
+func HandleDeleteReplicaSet(c *gin.Context) {
+	namespace := c.Param("namespace")
+	name := c.Param("name")
+
+	if replicaSetToDelete, err := deleteSpecifiedReplicaSet(namespace, name); err != nil {
+		c.String(http.StatusOK, err.Error())
+		return
+	} else {
+		replicaSetDeleteMsg, _ := json.Marshal(entity.ReplicaSetUpdate{
+			Action: entity.DeleteAction,
+			Target: *replicaSetToDelete,
+		})
+		listwatch.Publish(topicutil.ReplicaSetUpdateTopic(), replicaSetDeleteMsg)
 	}
 	c.String(http.StatusOK, "Delete successfully")
 }

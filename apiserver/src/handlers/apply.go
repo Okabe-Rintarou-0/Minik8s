@@ -152,8 +152,8 @@ func HandleApplyReplicaSet(c *gin.Context) {
 	}
 
 	// exists?
-	etcdURL := path.Join(url.ReplicaSetURL, rs.Namespace(), rs.Name())
-	if rsJsonStr, err := etcd.Get(etcdURL); err == nil {
+	etcdReplicaSetURL := path.Join(url.ReplicaSetURL, rs.Namespace(), rs.Name())
+	if rsJsonStr, err := etcd.Get(etcdReplicaSetURL); err == nil {
 		getRs := &apiObject.ReplicaSet{}
 		if err = json.Unmarshal([]byte(rsJsonStr), getRs); err == nil {
 			c.String(http.StatusOK, fmt.Sprintf("replicaSet %s/%s already exists", getRs.Namespace(), getRs.Name()))
@@ -161,9 +161,25 @@ func HandleApplyReplicaSet(c *gin.Context) {
 		}
 	}
 
-	if err = etcd.Put(etcdURL, string(rsJson)); err != nil {
+	if err = etcd.Put(etcdReplicaSetURL, string(rsJson)); err != nil {
 		c.String(http.StatusOK, err.Error())
 		return
+	}
+
+	etcdReplicaSetStatusURL := path.Join(url.PodURL, "status", rs.Namespace(), rs.Name())
+	var replicaSetStatusJson []byte
+	if replicaSetStatusJson, err = json.Marshal(entity.ReplicaSetStatus{
+		ID:         rs.UID(),
+		Name:       rs.Name(),
+		Namespace:  rs.Namespace(),
+		Labels:     rs.Labels(),
+		Lifecycle:  entity.ReplicaSetUnknown,
+		CpuPercent: 0,
+		MemPercent: 0,
+		Error:      "",
+		SyncTime:   time.Now(),
+	}); err == nil {
+		_ = etcd.Put(etcdReplicaSetStatusURL, string(replicaSetStatusJson))
 	}
 
 	replicaSetUpdateMsg, _ := json.Marshal(entity.ReplicaSetUpdate{

@@ -47,4 +47,5 @@ var deleteTable = map[string]Handler{
 	// kubectl delete pod pod_name
 	url.PodURLWithSpecifiedName:  handlers.HandleDeletePod,
 	url.NodeURLWithSpecifiedName: handlers.HandleDeleteNode,
+	url.ReplicaSetURL:            handlers.HandleDeleteReplicaSet,
 }
