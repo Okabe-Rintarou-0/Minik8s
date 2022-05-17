@@ -8,6 +8,7 @@ import (
 	"minik8s/kubelet/src/runtime/container"
 	"minik8s/kubelet/src/runtime/image"
 	"minik8s/util/logger"
+	"os"
 	"strconv"
 	"time"
 )
@@ -36,12 +37,12 @@ type PodStatus struct {
 }
 
 func (podStatus *PodStatus) ToEntity() *entity.PodStatus {
+	hostname, _ := os.Hostname()
 	cpuPercent, memPercent := calcMetrics(podStatus.ContainerStatuses)
 	return &entity.PodStatus{
-		ID:   podStatus.ID,
-		Name: podStatus.Name,
-		/// TODO what about the labels?
-		//Labels:     podStatus.Labels,
+		ID:         podStatus.ID,
+		Name:       podStatus.Name,
+		Node:       hostname,
 		Namespace:  podStatus.Namespace,
 		Lifecycle:  entity.PodRunning,
 		CpuPercent: cpuPercent,

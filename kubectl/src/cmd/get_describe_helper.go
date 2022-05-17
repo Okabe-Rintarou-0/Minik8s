@@ -16,7 +16,7 @@ func podStatusTbl() table.Table {
 	headerFmt := color.New(color.FgGreen, color.Underline).SprintfFunc()
 	columnFmt := color.New(color.FgYellow).SprintfFunc()
 
-	tbl := table.New("Name", "UID", "Status", "Cpu", "Memory", "Last Sync Time", "Error")
+	tbl := table.New("Name", "UID", "Status", "Node", "Cpu", "Memory", "Last Sync Time", "Error")
 	tbl.WithHeaderFormatter(headerFmt).WithFirstColumnFormatter(columnFmt)
 	return tbl
 }
@@ -25,7 +25,16 @@ func replicaSetStatusTbl() table.Table {
 	headerFmt := color.New(color.FgGreen, color.Underline).SprintfFunc()
 	columnFmt := color.New(color.FgYellow).SprintfFunc()
 
-	tbl := table.New("Name", "UID", "Status", "Replicas", "Cpu", "Mem", "Last Sync Time", "Error")
+	tbl := table.New("Name", "UID", "Status", "Replicas", "Cpu", "Memory", "Last Sync Time", "Error")
+	tbl.WithHeaderFormatter(headerFmt).WithFirstColumnFormatter(columnFmt)
+	return tbl
+}
+
+func hpaStatusTbl() table.Table {
+	headerFmt := color.New(color.FgGreen, color.Underline).SprintfFunc()
+	columnFmt := color.New(color.FgYellow).SprintfFunc()
+
+	tbl := table.New("Name", "UID", "Status", "Min Replicas", "Max Replicas", "Current", "Metrics", "Benchmark", "Last Sync Time", "Error")
 	tbl.WithHeaderFormatter(headerFmt).WithFirstColumnFormatter(columnFmt)
 	return tbl
 }
@@ -84,6 +93,18 @@ func getReplicaSetFromApiServer(fullName string) (replicaSet *entity.ReplicaSetS
 	return
 }
 
+func getHPAsFromApiServer() (hpas []*entity.HPAStatus, err error) {
+	err = httputil.GetAndUnmarshal(url.Prefix+url.HPAURL, &hpas)
+	return
+}
+
+func getHPAFromApiServer(fullName string) (hpa *entity.HPAStatus, err error) {
+	namespace, name := parseName(fullName)
+	URL := url.Prefix + path.Join(url.HPAURL, "status", namespace, name)
+	err = httputil.GetAndUnmarshal(URL, &hpa)
+	return
+}
+
 func printSpecifiedPodStatus(name string) error {
 	podStatus, err := getPodFromApiServer(name)
 	if err != nil {
@@ -99,6 +120,7 @@ func printSpecifiedPodStatus(name string) error {
 		fullName,
 		podStatus.ID,
 		podStatus.Lifecycle.String(),
+		podStatus.Node,
 		podStatus.CpuPercent,
 		podStatus.MemPercent,
 		podStatus.SyncTime.Format(time.RFC3339),
@@ -173,6 +195,7 @@ func printPodStatuses() error {
 			fullName,
 			podStatus.ID,
 			podStatus.Lifecycle.String(),
+			podStatus.Node,
 			podStatus.CpuPercent,
 			podStatus.MemPercent,
 			podStatus.SyncTime.Format(time.RFC3339),
@@ -251,6 +274,61 @@ func printSpecifiedReplicaSetStatus(name string) error {
 		replicaSetStatus.MemPercent,
 		replicaSetStatus.SyncTime.Format(time.RFC3339),
 		replicaSetStatus.Error,
+	)
+	tbl.Print()
+	return nil
+}
+
+func printHPAStatuses() error {
+	hpaStatuses, err := getHPAsFromApiServer()
+	if err != nil {
+		return err
+	}
+
+	tbl := hpaStatusTbl()
+	for _, hpaStatus := range hpaStatuses {
+		fullName := path.Join(hpaStatus.Namespace, hpaStatus.Name)
+		replicas := strconv.Itoa(hpaStatus.NumReady) + "/" + strconv.Itoa(hpaStatus.NumTarget)
+		tbl.AddRow(
+			fullName,
+			hpaStatus.ID,
+			hpaStatus.Lifecycle.String(),
+			hpaStatus.MinReplicas,
+			hpaStatus.MaxReplicas,
+			replicas,
+			hpaStatus.Metrics,
+			hpaStatus.Benchmark,
+			hpaStatus.SyncTime.Format(time.RFC3339),
+			hpaStatus.Error,
+		)
+	}
+	tbl.Print()
+	return nil
+}
+
+func printSpecifiedHPAStatus(name string) error {
+	hpaStatus, err := getHPAFromApiServer(name)
+	if err != nil {
+		return err
+	}
+	if hpaStatus == nil {
+		return fmt.Errorf("no such hpa")
+	}
+
+	tbl := hpaStatusTbl()
+	fullName := path.Join(hpaStatus.Namespace, hpaStatus.Name)
+	replicas := strconv.Itoa(hpaStatus.NumReady) + "/" + strconv.Itoa(hpaStatus.NumTarget)
+	tbl.AddRow(
+		fullName,
+		hpaStatus.ID,
+		hpaStatus.Lifecycle.String(),
+		hpaStatus.MinReplicas,
+		hpaStatus.MaxReplicas,
+		replicas,
+		hpaStatus.Metrics,
+		hpaStatus.Benchmark,
+		hpaStatus.SyncTime.Format(time.RFC3339),
+		hpaStatus.Error,
 	)
 	tbl.Print()
 	return nil

@@ -64,6 +64,26 @@ func deleteSpecifiedReplicaSet(namespace, name string) (rs *apiObject.ReplicaSet
 	return
 }
 
+func deleteSpecifiedHPA(namespace, name string) (hpa *apiObject.HorizontalPodAutoscaler, err error) {
+	log("hpa to delete is %s/%s", namespace, name)
+
+	etcdHPAStatusURL := path.Join(url.HPAURL, "status", namespace, name)
+	_ = etcd.Delete(etcdHPAStatusURL)
+
+	var raw string
+	etcdHPAURL := path.Join(url.HPAURL, namespace, name)
+	if raw, err = etcd.Get(etcdHPAURL); err != nil {
+		return nil, err
+	}
+
+	if err = json.Unmarshal([]byte(raw), &hpa); err != nil {
+		return nil, fmt.Errorf("no such hpa %s/%s", namespace, name)
+	}
+
+	err = etcd.Delete(etcdHPAURL)
+	return
+}
+
 func HandleDeleteNode(c *gin.Context) {
 	namespace := c.Param("namespace")
 	name := c.Param("name")
@@ -105,4 +125,29 @@ func HandleDeleteReplicaSet(c *gin.Context) {
 		listwatch.Publish(topicutil.ReplicaSetUpdateTopic(), replicaSetDeleteMsg)
 	}
 	c.String(http.StatusOK, "Delete successfully")
+}
+
+func HandleDeleteHPA(c *gin.Context) {
+	namespace := c.Param("namespace")
+	name := c.Param("name")
+
+	if hpaToDelete, err := deleteSpecifiedHPA(namespace, name); err != nil {
+		c.String(http.StatusOK, err.Error())
+		return
+	} else {
+		hpaDeleteMsg, _ := json.Marshal(entity.HPAUpdate{
+			Action: entity.DeleteAction,
+			Target: *hpaToDelete,
+		})
+		listwatch.Publish(topicutil.HPAUpdateTopic(), hpaDeleteMsg)
+	}
+	c.String(http.StatusOK, "Delete successfully")
+}
+
+func HandleReset(c *gin.Context) {
+	if err := etcd.DeleteAllKeys(); err != nil {
+		c.String(http.StatusOK, err.Error())
+		return
+	}
+	c.String(http.StatusOK, "OK")
 }

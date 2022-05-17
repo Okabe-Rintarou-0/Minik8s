@@ -15,6 +15,14 @@ func (labels Labels) DeepCopy() Labels {
 	return cpy
 }
 
+func (annotations Annotations) DeepCopy() Annotations {
+	cpy := make(Annotations)
+	for key, value := range annotations {
+		cpy[key] = value
+	}
+	return cpy
+}
+
 type ContainerPort struct {
 	Name          string `yaml:"name"`
 	HostPort      string `yaml:"hostPort"`

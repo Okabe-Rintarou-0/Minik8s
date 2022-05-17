@@ -22,6 +22,10 @@ const (
 	ReplicaSetStatusURLWithSpecifiedName = "/api/v1/replicaSets/status/:namespace/:name"
 
 	HPAURL                        = "/api/v1/hpa/"
+	HPAURLWithSpecifiedName       = "/api/v1/hpa/:namespace/:name"
+	HPAStatusURLWithSpecifiedName = "/api/v1/hpa/status/:namespace/:name"
 	AutoscaleURL                  = "/autoscaling/v1/"
-	AutoscaleURLWithSpecifiedName = "/autoscaling/v1/:name"
+	AutoscaleURLWithSpecifiedName = "/autoscaling/v1/:namespace/:name"
+
+	ResetURL = "/reset"
 )

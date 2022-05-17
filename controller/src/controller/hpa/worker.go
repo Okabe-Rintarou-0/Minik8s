@@ -4,17 +4,19 @@ import (
 	"context"
 	"encoding/json"
 	"minik8s/apiObject"
+	"minik8s/apiserver/src/url"
 	"minik8s/controller/src/cache"
 	"minik8s/entity"
 	"minik8s/listwatch"
+	"minik8s/util/httputil"
 	"minik8s/util/logger"
 	"minik8s/util/topicutil"
+	"path"
+	"strconv"
 	"time"
 )
 
 var logWorker = logger.Log("HPA worker")
-
-const syncPeriodSeconds = 30
 
 type Worker interface {
 	Run()
@@ -34,40 +36,45 @@ func (w *worker) SetTarget(hpa *apiObject.HorizontalPodAutoscaler) {
 	}
 }
 
-// testMap is just for *TEST*, do not use it.
-// We have to save pod into map, because we don't have an api-server now
-// All we can do is to *Mock*
-var testMap = map[string]*apiObject.ReplicaSet{}
-
-// AddRsForTest TODO just for test
-func AddRsForTest(rs *apiObject.ReplicaSet) {
-	testMap[rs.FullName()] = rs
-}
-
 // getReplicaSetStatus get rs status from cache
 func (w *worker) getReplicaSetStatus() *entity.ReplicaSetStatus {
 	targetReplicaSet := w.target.Target()
-	fullName := targetReplicaSet.FullName()
-	//w.cacheManager.RefreshReplicaSetStatus(fullName)
-	return w.cacheManager.GetReplicaSetStatus(fullName)
+	UID := targetReplicaSet.UID()
+	return w.cacheManager.GetReplicaSetStatus(UID)
 }
 
-func (w *worker) updateReplicaSetToApiServerForTest(fullName string, numReplicas int) {
-	rs := testMap[fullName]
-	rs.SetReplicas(numReplicas)
-	logWorker("Update rs test rs[ID = %s]", rs.UID())
-	msg, _ := json.Marshal(entity.ReplicaSetUpdate{
-		Action: entity.UpdateAction,
-		Target: *rs,
+func (w *worker) updateReplicaSetToApiServer(namespace, name string, numReplicas int) {
+	URL := url.Prefix + path.Join(url.ReplicaSetURL, namespace, name)
+	resp := httputil.PutForm(URL, map[string]string{
+		"replicas": strconv.Itoa(numReplicas),
 	})
-	topic := topicutil.ReplicaSetUpdateTopic()
-	listwatch.Publish(topic, msg)
+	logWorker("update rs and get resp: %s", resp)
 }
 
-func (w *worker) updateReplicaSet(fullName string, numReplicas int) {
-	// Add two, so we can test the case that the number of existent pods is more than replicas
-	// just for test now
-	w.updateReplicaSetToApiServerForTest(fullName, numReplicas)
+func (w *worker) updateReplicaSet(namespace, name string, numReplicas int) {
+	w.updateReplicaSetToApiServer(namespace, name, numReplicas)
+}
+
+func (w *worker) publishHPAStatus(targetReplicas int, targetStatus *entity.ReplicaSetStatus) {
+	hpaStatus := &entity.HPAStatus{
+		ID:          w.target.UID(),
+		Name:        w.target.Name(),
+		Namespace:   w.target.Namespace(),
+		Labels:      w.target.Labels(),
+		Lifecycle:   entity.HPAReady,
+		MinReplicas: w.target.MinReplicas(),
+		MaxReplicas: w.target.MaxReplicas(),
+		Metrics:     w.scaleJudge.Metrics(),
+		Benchmark:   w.scaleJudge.Benchmark(),
+		NumReady:    targetStatus.NumReady,
+		NumTarget:   targetReplicas,
+		Error:       "",
+		SyncTime:    time.Now(),
+	}
+
+	hpaStatusJson, _ := json.Marshal(hpaStatus)
+	logWorker("Publish hpaStatus %v[ID = %s]", hpaStatus.Lifecycle.String(), hpaStatus.ID)
+	listwatch.Publish(topicutil.HPAStatusTopic(), hpaStatusJson)
 }
 
 func (w *worker) syncLoopIteration() bool {
@@ -86,13 +93,16 @@ func (w *worker) syncLoopIteration() bool {
 	diff := replicaSetStatus.NumReplicas - numReplicas
 	logWorker("Auto scale result: diff = %d", diff)
 	if diff != 0 {
-		go w.updateReplicaSet(replicaSetStatus.FullName(), numReplicas)
+		go w.updateReplicaSet(replicaSetStatus.Namespace, replicaSetStatus.Name, numReplicas)
 	}
+	w.publishHPAStatus(numReplicas, replicaSetStatus)
 	return true
 }
 
 func (w *worker) syncLoop() {
-	tick := time.Tick(time.Second * syncPeriodSeconds)
+	period := time.Second * time.Duration(w.target.ScaleInterval())
+	logWorker("Scale interval is %d", w.target.ScaleInterval())
+	tick := time.Tick(period)
 	for w.syncLoopIteration() {
 		select {
 		case <-tick:

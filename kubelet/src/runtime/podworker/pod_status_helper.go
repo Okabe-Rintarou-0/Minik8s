@@ -6,11 +6,14 @@ import (
 	"minik8s/entity"
 	"minik8s/listwatch"
 	"minik8s/util/topicutil"
+	"os"
 )
 
 func (w *podWorker) pod2PodStatus(pod *apiObject.Pod) *entity.PodStatus {
+	hostname, _ := os.Hostname()
 	return &entity.PodStatus{
 		ID:        pod.UID(),
+		Node:      hostname,
 		Name:      pod.Name(),
 		Labels:    pod.Labels(),
 		Namespace: pod.Namespace(),

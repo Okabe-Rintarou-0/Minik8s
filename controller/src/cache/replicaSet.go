@@ -15,15 +15,15 @@ func (m *manager) updateReplicaSetStatus(msg *redis.Message) {
 		log(err.Error())
 		return
 	}
-	log("Received status %s of ReplicaSet[ID = %s]", replicaSetStatus.Lifecycle.String(), replicaSetStatus.ID)
+	UID := replicaSetStatus.ID
+	log("Received status %s of ReplicaSet[ID = %s]", replicaSetStatus.Lifecycle.String(), UID)
 	if replicaSetStatus.Lifecycle == entity.ReplicaSetDeleted {
-		m.replicaSetStatusCache.Delete(replicaSetStatus.FullName())
+		m.replicaSetStatusCache.Delete(UID)
 	} else {
-		fullName := replicaSetStatus.FullName()
-		if m.replicaSetStatusCache.Exists(fullName) {
-			m.replicaSetStatusCache.Update(fullName, replicaSetStatus)
+		if m.replicaSetStatusCache.Exists(UID) {
+			m.replicaSetStatusCache.Update(UID, replicaSetStatus)
 		} else {
-			m.replicaSetStatusCache.Add(fullName, replicaSetStatus)
+			m.replicaSetStatusCache.Add(UID, replicaSetStatus)
 		}
 	}
 	//m.replicaSetStatusUpdateHook(replicaSetStatus)

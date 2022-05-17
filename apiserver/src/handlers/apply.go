@@ -116,6 +116,7 @@ func HandleApplyPod(c *gin.Context) {
 	var podStatusJson []byte
 	if podStatusJson, err = json.Marshal(entity.PodStatus{
 		ID:         pod.UID(),
+		Node:       "Unknown",
 		Name:       pod.Name(),
 		Namespace:  pod.Namespace(),
 		Labels:     pod.Labels(),
@@ -197,7 +198,7 @@ func HandleApplyHPA(c *gin.Context) {
 	if err != nil {
 		c.String(http.StatusOK, err.Error())
 	}
-	hpa.Metadata.UID = uidutil.New()
+
 	log("receive hpa[ID = %v]: %v", hpa.UID(), hpa)
 
 	if err = addHPA(&hpa); err != nil {

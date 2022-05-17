@@ -81,11 +81,44 @@ func getReplicaSetStatusesFromEtcd() (replicaSets []*entity.ReplicaSetStatus) {
 	return
 }
 
+func getHPAStatusFromEtcd(namespace, name string) (hpa *entity.HPAStatus) {
+	etcdURL := path.Join(url.HPAURL, "status", namespace, name)
+	if raw, err := etcd.Get(etcdURL); err == nil {
+		if err = json.Unmarshal([]byte(raw), &hpa); err == nil {
+			return hpa
+		}
+		logger.Error(err.Error())
+	}
+	return nil
+}
+
+func getHPAStatusesFromEtcd() (hpas []*entity.HPAStatus) {
+	etcdURL := path.Join(url.HPAURL, "status")
+	raws, err := etcd.GetAll(etcdURL)
+	for _, raw := range raws {
+		hpa := &entity.HPAStatus{}
+		if err = json.Unmarshal([]byte(raw), &hpa); err == nil {
+			hpas = append(hpas, hpa)
+		}
+	}
+	return
+}
+
 func getPodApiObjectFromEtcd(namespace, name string) (pod *apiObject.Pod) {
 	etcdURL := path.Join(url.PodURL, namespace, name)
 	if raw, err := etcd.Get(etcdURL); err == nil {
 		if err = json.Unmarshal([]byte(raw), &pod); err == nil {
 			return pod
+		}
+	}
+	return nil
+}
+
+func getReplicaSetApiObjectFromEtcd(namespace, name string) (replicaSet *apiObject.ReplicaSet) {
+	etcdURL := path.Join(url.ReplicaSetURL, namespace, name)
+	if raw, err := etcd.Get(etcdURL); err == nil {
+		if err = json.Unmarshal([]byte(raw), &replicaSet); err == nil {
+			return replicaSet
 		}
 	}
 	return nil
@@ -130,4 +163,20 @@ func HandleGetPodApiObject(c *gin.Context) {
 	namespace := c.Param("namespace")
 	name := c.Param("name")
 	c.JSON(http.StatusOK, getPodApiObjectFromEtcd(namespace, name))
+}
+
+func HandleGetReplicaSetApiObject(c *gin.Context) {
+	namespace := c.Param("namespace")
+	name := c.Param("name")
+	c.JSON(http.StatusOK, getReplicaSetApiObjectFromEtcd(namespace, name))
+}
+
+func HandleGetHPAStatus(c *gin.Context) {
+	namespace := c.Param("namespace")
+	name := c.Param("name")
+	c.JSON(http.StatusOK, getHPAStatusFromEtcd(namespace, name))
+}
+
+func HandleGetHPAStatuses(c *gin.Context) {
+	c.JSON(http.StatusOK, getHPAStatusesFromEtcd())
 }

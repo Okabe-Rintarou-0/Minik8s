@@ -10,6 +10,8 @@ import (
 type ScaleJudge interface {
 	// Judge returns the number of replicas according to given status and metrics
 	Judge(status *entity.ReplicaSetStatus) int
+	Metrics() entity.HPAMetrics
+	Benchmark() float64
 }
 
 func NewCpuScaleJudge(benchmark float64, minReplicas int, maxReplicas int) ScaleJudge {
@@ -39,6 +41,14 @@ type cpuScaleJudge struct {
 	maxReplicas int
 }
 
+func (c *cpuScaleJudge) Metrics() entity.HPAMetrics {
+	return entity.CpuMetrics
+}
+
+func (c *cpuScaleJudge) Benchmark() float64 {
+	return c.benchmark
+}
+
 func (c *cpuScaleJudge) Judge(status *entity.ReplicaSetStatus) int {
 	cpuPercent := status.CpuPercent
 	ratio := c.benchmark / cpuPercent
@@ -53,6 +63,14 @@ type memScaleJudge struct {
 	maxReplicas int
 }
 
+func (m *memScaleJudge) Metrics() entity.HPAMetrics {
+	return entity.MemoryMetrics
+}
+
+func (m *memScaleJudge) Benchmark() float64 {
+	return m.benchmark
+}
+
 func (m *memScaleJudge) Judge(status *entity.ReplicaSetStatus) int {
 	memPercent := status.MemPercent
 	ratio := memPercent / m.benchmark
@@ -62,6 +80,14 @@ func (m *memScaleJudge) Judge(status *entity.ReplicaSetStatus) int {
 }
 
 type fakeScaleJudge struct {
+}
+
+func (f *fakeScaleJudge) Metrics() entity.HPAMetrics {
+	return entity.UnknownMetrics
+}
+
+func (f *fakeScaleJudge) Benchmark() float64 {
+	return 0
 }
 
 func (f *fakeScaleJudge) Judge(status *entity.ReplicaSetStatus) int {
