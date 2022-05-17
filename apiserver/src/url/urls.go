@@ -17,11 +17,15 @@ const (
 	NodeStatusURLWithSpecifiedName = "/api/v1/nodes/status/:namespace/:name/"
 	NodeLabelsURLWithSpecifiedName = "/api/v1/nodes/:namespace/:name/labels"
 
-	ReplicaSetURL                        = "/api/v1/replicaSet/"
-	ReplicaSetURLWithSpecifiedName       = "/api/v1/replicaSet/:namespace/:name"
-	ReplicaSetStatusURLWithSpecifiedName = "/api/v1/replicaSet/status/:namespace/:name"
+	ReplicaSetURL                        = "/api/v1/replicaSets/"
+	ReplicaSetURLWithSpecifiedName       = "/api/v1/replicaSets/:namespace/:name"
+	ReplicaSetStatusURLWithSpecifiedName = "/api/v1/replicaSets/status/:namespace/:name"
 
 	HPAURL                        = "/api/v1/hpa/"
+	HPAURLWithSpecifiedName       = "/api/v1/hpa/:namespace/:name"
+	HPAStatusURLWithSpecifiedName = "/api/v1/hpa/status/:namespace/:name"
 	AutoscaleURL                  = "/autoscaling/v1/"
-	AutoscaleURLWithSpecifiedName = "/autoscaling/v1/:name"
+	AutoscaleURLWithSpecifiedName = "/autoscaling/v1/:namespace/:name"
+
+	ResetURL = "/reset"
 )

@@ -71,6 +71,18 @@ func Delete(key string) (err error) {
 	return err
 }
 
+func DeleteAll(key string) (err error) {
+	if err = checkAndStartClient(); err != nil {
+		return err
+	}
+	_, err = cli.Delete(ctx, key, clientv3.WithPrefix())
+	return err
+}
+
+func DeleteAllKeys() error {
+	return DeleteAll("")
+}
+
 func GetAll(keyPrefix string) (values []string, err error) {
 	if err = checkAndStartClient(); err != nil {
 		return nil, err

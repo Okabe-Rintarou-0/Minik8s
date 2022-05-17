@@ -35,6 +35,7 @@ func (pl *PodLifecycle) String() string {
 
 type PodStatus struct {
 	ID         types.UID
+	Node       string
 	Name       string
 	Namespace  string
 	Labels     apiObject.Labels

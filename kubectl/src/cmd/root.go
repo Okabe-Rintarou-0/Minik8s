@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"github.com/spf13/cobra"
+	"minik8s/controller/src/controller/hpa"
 )
 
 func Execute() {
@@ -21,6 +22,7 @@ func init() {
 	autoscaleCmd.Flags().Float64VarP(&memPercent, "mem", "m", 0.0, "memory utilization percent metric")
 	autoscaleCmd.Flags().IntVarP(&minReplicas, "min", "", 1, "min replicas")
 	autoscaleCmd.Flags().IntVarP(&maxReplicas, "max", "", 1, "max replicas")
+	autoscaleCmd.Flags().IntVarP(&scaleInterval, "interval", "i", hpa.DefaultScaleInterval, "scale interval")
 
 	labelCmd.Flags().BoolVarP(&overwrite, "overwrite", "o", false, "overwrite labels")
 
@@ -30,6 +32,7 @@ func init() {
 	rootCmd.AddCommand(autoscaleCmd)
 	rootCmd.AddCommand(deleteCmd)
 	rootCmd.AddCommand(labelCmd)
+	rootCmd.AddCommand(resetCmd)
 }
 
 var rootCmd = &cobra.Command{

@@ -55,3 +55,51 @@ func syncPodStatus(msg *redis.Message) {
 		}
 	}
 }
+
+func syncReplicaSetStatus(msg *redis.Message) {
+	replicaSetStatus := &entity.ReplicaSetStatus{}
+	err := json.Unmarshal([]byte(msg.Payload), replicaSetStatus)
+	if err != nil {
+		logger.Error(err.Error())
+		return
+	}
+
+	if replicaSetStatus.Lifecycle == entity.ReplicaSetDeleted {
+		return
+	}
+
+	logApiServer("Received status %s of Rs[name = %s, id = %v]", replicaSetStatus.Lifecycle.String(), replicaSetStatus.Name, replicaSetStatus.ID)
+
+	var replicaSetStatusJson []byte
+	if replicaSetStatusJson, err = json.Marshal(replicaSetStatus); err == nil {
+		etcdURL := path.Join(url.ReplicaSetURL, "status", replicaSetStatus.Namespace, replicaSetStatus.Name)
+		err = etcd.Put(etcdURL, string(replicaSetStatusJson))
+		if err != nil {
+			logger.Error(err.Error())
+		}
+	}
+}
+
+func syncHPAStatus(msg *redis.Message) {
+	hpaStatus := &entity.HPAStatus{}
+	err := json.Unmarshal([]byte(msg.Payload), hpaStatus)
+	if err != nil {
+		logger.Error(err.Error())
+		return
+	}
+
+	if hpaStatus.Lifecycle == entity.HPADeleted {
+		return
+	}
+
+	logApiServer("Received status %s of HPA[name = %s, id = %v]", hpaStatus.Lifecycle.String(), hpaStatus.Name, hpaStatus.ID)
+
+	var hpaStatusJson []byte
+	if hpaStatusJson, err = json.Marshal(hpaStatus); err == nil {
+		etcdURL := path.Join(url.HPAURL, "status", hpaStatus.Namespace, hpaStatus.Name)
+		err = etcd.Put(etcdURL, string(hpaStatusJson))
+		if err != nil {
+			logger.Error(err.Error())
+		}
+	}
+}

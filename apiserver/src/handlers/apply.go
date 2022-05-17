@@ -116,6 +116,7 @@ func HandleApplyPod(c *gin.Context) {
 	var podStatusJson []byte
 	if podStatusJson, err = json.Marshal(entity.PodStatus{
 		ID:         pod.UID(),
+		Node:       "Unknown",
 		Name:       pod.Name(),
 		Namespace:  pod.Namespace(),
 		Labels:     pod.Labels(),
@@ -166,7 +167,7 @@ func HandleApplyReplicaSet(c *gin.Context) {
 		return
 	}
 
-	etcdReplicaSetStatusURL := path.Join(url.PodURL, "status", rs.Namespace(), rs.Name())
+	etcdReplicaSetStatusURL := path.Join(url.ReplicaSetURL, "status", rs.Namespace(), rs.Name())
 	var replicaSetStatusJson []byte
 	if replicaSetStatusJson, err = json.Marshal(entity.ReplicaSetStatus{
 		ID:         rs.UID(),
@@ -197,7 +198,7 @@ func HandleApplyHPA(c *gin.Context) {
 	if err != nil {
 		c.String(http.StatusOK, err.Error())
 	}
-	hpa.Metadata.UID = uidutil.New()
+
 	log("receive hpa[ID = %v]: %v", hpa.UID(), hpa)
 
 	if err = addHPA(&hpa); err != nil {

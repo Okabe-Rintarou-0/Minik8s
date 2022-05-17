@@ -2,6 +2,7 @@ package topicutil
 
 const podUpdateTopic = "PodUpdate"
 const hpaUpdateTopic = "HPAUpdate"
+const hpaStatusTopic = "HPAStatus"
 const podStatusTopic = "PodStatus"
 const nodeStatusTopic = "NodeStatus"
 const replicaSetStatusTopic = "ReplicaSetStatus"
@@ -34,6 +35,10 @@ func ReplicaSetStatusTopic() string {
 
 func HPAUpdateTopic() string {
 	return hpaUpdateTopic
+}
+
+func HPAStatusTopic() string {
+	return hpaStatusTopic
 }
 
 func TestTopic() string {

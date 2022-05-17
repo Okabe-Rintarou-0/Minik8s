@@ -14,3 +14,4 @@ spec:
       namespace: test
   metrics:
     CPUUtilizationPercentage: 90
+  scaleInterval: 15

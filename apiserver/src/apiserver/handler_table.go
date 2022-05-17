@@ -20,9 +20,6 @@ var postTable = map[string]Handler{
 
 	// kubectl label nodes node_name os=linux --overwrite
 	url.NodeLabelsURLWithSpecifiedName: handlers.HandleLabelNode,
-
-	// Set Node Status
-	url.NodeStatusURLWithSpecifiedName: handlers.HandleSetNodeStatus,
 }
 
 var getTable = map[string]Handler{
@@ -34,18 +31,35 @@ var getTable = map[string]Handler{
 	url.PodURL:                        handlers.HandleGetPodStatuses,
 	url.PodStatusURLWithSpecifiedName: handlers.HandleGetPodStatus,
 
+	// kubectl get replicaSets && kubectl get replicaSet replicaSet_name
+	url.ReplicaSetURL:                        handlers.HandleGetReplicaSetStatuses,
+	url.ReplicaSetStatusURLWithSpecifiedName: handlers.HandleGetReplicaSetStatus,
+
+	// kubectl get hpa && kubectl get hpa hpa_name
+	url.HPAURL:                        handlers.HandleGetHPAStatuses,
+	url.HPAStatusURLWithSpecifiedName: handlers.HandleGetHPAStatus,
+
 	// kubectl describe pod pod_name
 	url.PodDescriptionURLWithSpecifiedName: handlers.HandleDescribePod,
 
 	// get apiObject.xxx
-	url.PodURLWithSpecifiedName: handlers.HandleGetPod,
+	url.PodURLWithSpecifiedName:        handlers.HandleGetPodApiObject,
+	url.ReplicaSetURLWithSpecifiedName: handlers.HandleGetReplicaSetApiObject,
 }
 
-var putTable = map[string]Handler{}
+var putTable = map[string]Handler{
+	// Set Node Status
+	url.NodeStatusURLWithSpecifiedName: handlers.HandleSetNodeStatus,
+	url.ReplicaSetURLWithSpecifiedName: handlers.HandleSetReplicaSet,
+}
 
 var deleteTable = map[string]Handler{
-	// kubectl delete pod pod_name
-	url.PodURLWithSpecifiedName:  handlers.HandleDeletePod,
-	url.NodeURLWithSpecifiedName: handlers.HandleDeleteNode,
-	url.ReplicaSetURL:            handlers.HandleDeleteReplicaSet,
+	// kubectl delete apiObjectType apiObjectName
+	url.PodURLWithSpecifiedName:        handlers.HandleDeletePod,
+	url.NodeURLWithSpecifiedName:       handlers.HandleDeleteNode,
+	url.ReplicaSetURLWithSpecifiedName: handlers.HandleDeleteReplicaSet,
+	url.HPAURLWithSpecifiedName:        handlers.HandleDeleteHPA,
+
+	// kubectl reset
+	url.ResetURL: handlers.HandleReset,
 }

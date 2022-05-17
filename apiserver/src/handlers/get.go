@@ -10,7 +10,6 @@ import (
 	"minik8s/util/logger"
 	"net/http"
 	"path"
-	"time"
 )
 
 func getNodeStatusesFromEtcd() (nodes []*entity.NodeStatus) {
@@ -59,6 +58,52 @@ func getPodStatusesFromEtcd() (pods []*entity.PodStatus) {
 	return
 }
 
+func getReplicaSetStatusFromEtcd(namespace, name string) (replicaSet *entity.ReplicaSetStatus) {
+	etcdURL := path.Join(url.ReplicaSetURL, "status", namespace, name)
+	if raw, err := etcd.Get(etcdURL); err == nil {
+		if err = json.Unmarshal([]byte(raw), &replicaSet); err == nil {
+			return replicaSet
+		}
+		logger.Error(err.Error())
+	}
+	return nil
+}
+
+func getReplicaSetStatusesFromEtcd() (replicaSets []*entity.ReplicaSetStatus) {
+	etcdURL := path.Join(url.ReplicaSetURL, "status")
+	raws, err := etcd.GetAll(etcdURL)
+	for _, raw := range raws {
+		replicaSet := &entity.ReplicaSetStatus{}
+		if err = json.Unmarshal([]byte(raw), &replicaSet); err == nil {
+			replicaSets = append(replicaSets, replicaSet)
+		}
+	}
+	return
+}
+
+func getHPAStatusFromEtcd(namespace, name string) (hpa *entity.HPAStatus) {
+	etcdURL := path.Join(url.HPAURL, "status", namespace, name)
+	if raw, err := etcd.Get(etcdURL); err == nil {
+		if err = json.Unmarshal([]byte(raw), &hpa); err == nil {
+			return hpa
+		}
+		logger.Error(err.Error())
+	}
+	return nil
+}
+
+func getHPAStatusesFromEtcd() (hpas []*entity.HPAStatus) {
+	etcdURL := path.Join(url.HPAURL, "status")
+	raws, err := etcd.GetAll(etcdURL)
+	for _, raw := range raws {
+		hpa := &entity.HPAStatus{}
+		if err = json.Unmarshal([]byte(raw), &hpa); err == nil {
+			hpas = append(hpas, hpa)
+		}
+	}
+	return
+}
+
 func getPodApiObjectFromEtcd(namespace, name string) (pod *apiObject.Pod) {
 	etcdURL := path.Join(url.PodURL, namespace, name)
 	if raw, err := etcd.Get(etcdURL); err == nil {
@@ -69,8 +114,14 @@ func getPodApiObjectFromEtcd(namespace, name string) (pod *apiObject.Pod) {
 	return nil
 }
 
-func HandleGetNodeStatuses(c *gin.Context) {
-	c.JSON(http.StatusOK, getNodeStatusesFromEtcd())
+func getReplicaSetApiObjectFromEtcd(namespace, name string) (replicaSet *apiObject.ReplicaSet) {
+	etcdURL := path.Join(url.ReplicaSetURL, namespace, name)
+	if raw, err := etcd.Get(etcdURL); err == nil {
+		if err = json.Unmarshal([]byte(raw), &replicaSet); err == nil {
+			return replicaSet
+		}
+	}
+	return nil
 }
 
 func HandleGetNodeStatus(c *gin.Context) {
@@ -79,30 +130,8 @@ func HandleGetNodeStatus(c *gin.Context) {
 	c.JSON(http.StatusOK, getNodeStatusFromEtcd(namespace, name))
 }
 
-func getPodDescriptionForTest(name string) *entity.PodDescription {
-	var logs []entity.PodStatusLogEntry
-
-	podStatus := podStatusForTest()
-	logs = append(logs, entity.PodStatusLogEntry{
-		Status: podStatus.Lifecycle,
-		Time:   podStatus.SyncTime,
-		Error:  podStatus.Error,
-	})
-
-	logs = append(logs, entity.PodStatusLogEntry{
-		Status: entity.PodRunning,
-		Time:   time.Now().Add(time.Minute * 30),
-		Error:  "",
-	})
-
-	return &entity.PodDescription{
-		CurrentStatus: *podStatusForTest(),
-		Logs:          logs,
-	}
-}
-
-func HandleGetPodStatuses(c *gin.Context) {
-	c.JSON(http.StatusOK, getPodStatusesFromEtcd())
+func HandleGetNodeStatuses(c *gin.Context) {
+	c.JSON(http.StatusOK, getNodeStatusesFromEtcd())
 }
 
 func HandleGetPodStatus(c *gin.Context) {
@@ -111,13 +140,43 @@ func HandleGetPodStatus(c *gin.Context) {
 	c.JSON(http.StatusOK, getPodStatusFromEtcd(namespace, name))
 }
 
+func HandleGetPodStatuses(c *gin.Context) {
+	c.JSON(http.StatusOK, getPodStatusesFromEtcd())
+}
+
+func HandleGetReplicaSetStatus(c *gin.Context) {
+	namespace := c.Param("namespace")
+	name := c.Param("name")
+	c.JSON(http.StatusOK, getReplicaSetStatusFromEtcd(namespace, name))
+}
+
+func HandleGetReplicaSetStatuses(c *gin.Context) {
+	c.JSON(http.StatusOK, getReplicaSetStatusesFromEtcd())
+}
+
 func HandleDescribePod(c *gin.Context) {
 	name := c.Param("name")
 	c.JSON(http.StatusOK, getPodDescriptionForTest(name))
 }
 
-func HandleGetPod(c *gin.Context) {
+func HandleGetPodApiObject(c *gin.Context) {
 	namespace := c.Param("namespace")
 	name := c.Param("name")
 	c.JSON(http.StatusOK, getPodApiObjectFromEtcd(namespace, name))
+}
+
+func HandleGetReplicaSetApiObject(c *gin.Context) {
+	namespace := c.Param("namespace")
+	name := c.Param("name")
+	c.JSON(http.StatusOK, getReplicaSetApiObjectFromEtcd(namespace, name))
+}
+
+func HandleGetHPAStatus(c *gin.Context) {
+	namespace := c.Param("namespace")
+	name := c.Param("name")
+	c.JSON(http.StatusOK, getHPAStatusFromEtcd(namespace, name))
+}
+
+func HandleGetHPAStatuses(c *gin.Context) {
+	c.JSON(http.StatusOK, getHPAStatusesFromEtcd())
 }

@@ -62,6 +62,10 @@ func (rs *ReplicaSet) Labels() Labels {
 	return rs.Metadata.Labels
 }
 
+func (rs *ReplicaSet) Annotations() Annotations {
+	return rs.Metadata.Annotations
+}
+
 func (rs *ReplicaSet) FullName() string {
 	return rs.Metadata.Name + "_" + rs.Metadata.Namespace
 }

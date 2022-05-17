@@ -21,7 +21,6 @@ type ReplicaSetStatusUpdateHook func(replicaSetStatus *entity.ReplicaSetStatus)
 
 type Manager interface {
 	Start()
-	RefreshReplicaSetStatus(fullName string)
 	GetReplicaSetStatus(fullName string) *entity.ReplicaSetStatus
 	GetReplicaSetPodStatuses(rsUID types.UID) []*entity.PodStatus
 	GetNodeStatuses() []*entity.NodeStatus
@@ -72,17 +71,8 @@ func (m *manager) calcMetrics(podStatuses []*entity.PodStatus) (cpuPercent, memP
 	return
 }
 
-// RefreshReplicaSetStatus TODO deprecate it
-func (m *manager) RefreshReplicaSetStatus(fullName string) {
-	if v := m.replicaSetStatusCache.Get(fullName); v != nil {
-		replicaSetStatus := v.(*entity.ReplicaSetStatus)
-		podStatuses := m.GetReplicaSetPodStatuses(replicaSetStatus.ID)
-		replicaSetStatus.CpuPercent, replicaSetStatus.MemPercent = m.calcMetrics(podStatuses)
-	}
-}
-
-func (m *manager) GetReplicaSetStatus(fullName string) *entity.ReplicaSetStatus {
-	if v := m.replicaSetStatusCache.Get(fullName); v != nil {
+func (m *manager) GetReplicaSetStatus(UID types.UID) *entity.ReplicaSetStatus {
+	if v := m.replicaSetStatusCache.Get(UID); v != nil {
 		return v.(*entity.ReplicaSetStatus)
 	}
 	return nil

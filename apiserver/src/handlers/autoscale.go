@@ -9,6 +9,7 @@ import (
 )
 
 func HandleAutoscale(c *gin.Context) {
+	namespace := c.Param("namespace")
 	name := c.Param("name")
 	target := c.PostForm("target")
 	targetNamespace, targetName := parseTargetName(target)
@@ -16,10 +17,12 @@ func HandleAutoscale(c *gin.Context) {
 	mem, _ := strconv.ParseFloat(c.PostForm("mem"), 64)
 	min, _ := strconv.Atoi(c.PostForm("min"))
 	max, _ := strconv.Atoi(c.PostForm("max"))
-	log("Read hpa params: cpu = %v, mem = %v, min = %v, max = %v", cpu, mem, min, max)
+	interval, _ := strconv.Atoi(c.PostForm("interval"))
+	log("Read hpa %s/%s params: cpu = %v, mem = %v, min = %v, max = %v", namespace, name, cpu, mem, min, max)
 
+	uid := uidutil.New()
 	if name == "" {
-		name = "hpa-" + uidutil.New()
+		name = "hpa-" + uid
 	}
 
 	hpa := &apiObject.HorizontalPodAutoscaler{
@@ -28,8 +31,8 @@ func HandleAutoscale(c *gin.Context) {
 			Kind:       "HorizontalPodAutoscaler",
 			Metadata: apiObject.Metadata{
 				Name:      name,
-				Namespace: "default",
-				UID:       uidutil.New(),
+				Namespace: namespace,
+				UID:       uid,
 			},
 		},
 		Spec: apiObject.HPASpec{
@@ -43,10 +46,11 @@ func HandleAutoscale(c *gin.Context) {
 					Namespace: targetNamespace,
 				},
 			},
-			Metrics: &apiObject.Metrics{
+			Metrics: apiObject.Metrics{
 				CPUUtilizationPercentage: cpu,
 				MemUtilizationPercentage: mem,
 			},
+			ScaleInterval: interval,
 		},
 	}
 

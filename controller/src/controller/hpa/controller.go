@@ -14,6 +14,8 @@ import (
 	"minik8s/util/topicutil"
 )
 
+const DefaultScaleInterval = 15
+
 var bgCtx = context.Background()
 var logManager = logger.Log("HPA manager")
 
@@ -25,7 +27,7 @@ type controller struct {
 
 func (c *controller) AddHpa(hpa *apiObject.HorizontalPodAutoscaler) {
 	UID := hpa.UID()
-	logManager("Add hpa: %s_%s", hpa.Name(), hpa.UID())
+	logManager("Add hpa: %s_%s", hpa.Name(), UID)
 	ctx, cancelFunc := context.WithCancel(bgCtx)
 	worker := NewWorker(ctx, hpa, c.cacheManager)
 	c.cancelFuncs[UID] = cancelFunc
