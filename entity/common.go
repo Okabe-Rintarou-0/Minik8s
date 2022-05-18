@@ -24,5 +24,6 @@ type ApiObjectUpdateAction byte
 
 type PodUpdate struct {
 	Action ApiObjectUpdateAction
+	Node   string
 	Target apiObject.Pod
 }

@@ -7,6 +7,7 @@ import (
 	"minik8s/util/httputil"
 	"minik8s/util/logger"
 	"minik8s/util/wait"
+	"path"
 	"strconv"
 	"strings"
 	"time"
@@ -15,6 +16,7 @@ import (
 const syncPeriod = time.Second * 5
 const unhealthyTime = time.Second * 40
 const unknownTime = time.Minute * 2
+const deleteTime = time.Minute * 4
 
 var log = logger.Log("Node Controller")
 
@@ -42,12 +44,19 @@ func (c *controller) syncNodeStatusWithApiServer(status *entity.NodeStatus) {
 		return
 	}
 
-	URL := url.Prefix + strings.Replace(url.NodeStatusURLWithSpecifiedName, ":name", status.Hostname, 1)
-	_ = httputil.PostForm(URL, map[string]string{
+	URL := url.Prefix + path.Join(url.NodeURL, "status", status.Namespace, status.Hostname)
+	_ = httputil.PutForm(URL, map[string]string{
 		"lifecycle": strconv.Itoa(int(lifecycle)),
 	})
 
 	//log("Sync with api-server and get resp: %s", resp)
+}
+
+func (c *controller) deleteNodeAndAllNodePods(node, namespace, name string) {
+	deleteNodeURL := url.Prefix + path.Join(url.NodeURL, namespace, name)
+	httputil.DeleteWithoutBody(deleteNodeURL)
+	deleteNodePodsURL := url.Prefix + strings.Replace(url.PodURLWithSpecifiedNode, ":node", node, 1)
+	httputil.DeleteWithoutBody(deleteNodePodsURL)
 }
 
 func (c *controller) syncLoopIteration() {
@@ -59,17 +68,22 @@ func (c *controller) syncLoopIteration() {
 		//log("Check node status[hostname = %v, lifecycle = %s]", nodeStatus.Hostname, nodeStatus.Lifecycle.String())
 		timeDelta := time.Now().Sub(nodeStatus.SyncTime)
 		//log("Time delta: %v", timeDelta.Seconds())
+		fullName := path.Join(nodeStatus.Namespace, nodeStatus.Hostname)
 		switch {
+		case timeDelta >= deleteTime:
+			log("Surpass delete time, should delete all the pods on the node %s", nodeStatus.Hostname)
+			c.deleteNodeAndAllNodePods(nodeStatus.Hostname, nodeStatus.Namespace, nodeStatus.Hostname)
+			c.cacheManager.DeleteNodeStatus(fullName)
 		case timeDelta >= unknownTime:
 			if nodeStatus.Lifecycle != entity.NodeUnknown {
 				nodeStatus.Lifecycle = entity.NodeUnknown
-				c.cacheManager.SetNodeStatus(nodeStatus.Hostname, nodeStatus)
+				c.cacheManager.SetNodeStatus(fullName, nodeStatus)
 				c.syncNodeStatusWithApiServer(nodeStatus)
 			}
 		case timeDelta >= unhealthyTime:
 			if nodeStatus.Lifecycle != entity.NodeNotReady {
 				nodeStatus.Lifecycle = entity.NodeNotReady
-				c.cacheManager.SetNodeStatus(nodeStatus.Hostname, nodeStatus)
+				c.cacheManager.SetNodeStatus(fullName, nodeStatus)
 				c.syncNodeStatusWithApiServer(nodeStatus)
 			}
 		}

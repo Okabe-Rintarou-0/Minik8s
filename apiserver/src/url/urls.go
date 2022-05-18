@@ -7,9 +7,11 @@ const (
 	Prefix     = HttpScheme + Hostname + Port
 
 	PodURL                             = "/api/v1/pods/"
+	PodURLWithSpecifiedNode            = "/api/v1/pods/nodes/:node"
 	PodDescriptionURL                  = "/api/v1/pods/description/"
 	PodDescriptionURLWithSpecifiedName = "/api/v1/pods/description/:name"
 	PodStatusURLWithSpecifiedName      = "/api/v1/pods/status/:namespace/:name"
+	PodURLWithSpecifiedNodeAndName     = "/api/v1/pods/nodes/:node/:namespace/:name"
 	PodURLWithSpecifiedName            = "/api/v1/pods/:namespace/:name"
 
 	NodeURL                        = "/api/v1/nodes/"

@@ -15,10 +15,13 @@ const (
 	PodRunning
 	PodDeleted
 	PodUnknown
+	PodScheduled
 )
 
 func (pl *PodLifecycle) String() string {
 	switch *pl {
+	case PodScheduled:
+		return "Scheduled"
 	case PodContainerCreating:
 		return "ContainerCreating"
 	case PodError:

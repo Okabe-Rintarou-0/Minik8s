@@ -4,13 +4,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/go-redis/redis/v8"
+	"minik8s/apiObject"
 	"minik8s/apiserver/src/url"
 	"minik8s/entity"
 	"minik8s/listwatch"
 	"minik8s/scheduler/src/filter"
 	"minik8s/scheduler/src/selector"
 	"minik8s/util/httputil"
+	"minik8s/util/logger"
 	"minik8s/util/topicutil"
+	"strings"
 )
 
 type Scheduler interface {
@@ -38,6 +41,14 @@ func (s *scheduler) getNodesFromApiServer() (nodes []*entity.NodeStatus) {
 
 func (s *scheduler) getNodes() []*entity.NodeStatus {
 	return s.getNodesFromApiServer()
+}
+
+func (s *scheduler) sendScheduleInfoToApiServer(node string, pod *apiObject.Pod) {
+	URL := url.Prefix + strings.Replace(url.PodURLWithSpecifiedNode, ":node", node, 1)
+	_, err := httputil.PostJson(URL, pod)
+	if err != nil {
+		logger.Error(err.Error())
+	}
 }
 
 func (s *scheduler) Schedule(podUpdate *entity.PodUpdate) error {
@@ -68,10 +79,12 @@ func (s *scheduler) Schedule(podUpdate *entity.PodUpdate) error {
 		return err
 	}
 
-	// Step 5: Send msg to such node
-	fmt.Printf("Send msg to %s: [%v]%v\n", topic, podUpdate.Action.String(), podUpdate.Target.Name())
-	listwatch.Publish(topic, updateMsg)
+	// Step 5: Send schedule info to api-server
+	s.sendScheduleInfoToApiServer(nodeName, &podUpdate.Target)
 
+	// Step 6: Send msg to such node
+	fmt.Printf("Send msg %s: [%v]%v to %s\n", topic, podUpdate.Action.String(), podUpdate.Target.Name(), nodeName)
+	listwatch.Publish(topic, updateMsg)
 	return nil
 }
 
@@ -83,9 +96,15 @@ func (s *scheduler) parseAndSchedule(msg *redis.Message) {
 		fmt.Println(err.Error())
 		return
 	}
-
-	if err = s.Schedule(podUpdate); err != nil {
-		fmt.Println(err.Error())
+	if podUpdate.Action == entity.CreateAction {
+		if err = s.Schedule(podUpdate); err != nil {
+			fmt.Println(err.Error())
+		}
+	} else {
+		topic := topicutil.PodUpdateTopic(podUpdate.Node)
+		fmt.Printf("Send msg %s: [%v]%v to %s\n", topic, podUpdate.Action.String(), podUpdate.Target.Name(), podUpdate.Node)
+		updateMsg, _ := json.Marshal(podUpdate)
+		listwatch.Publish(topic, updateMsg)
 	}
 }
 

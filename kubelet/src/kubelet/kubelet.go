@@ -30,8 +30,6 @@ func New() *Kubelet {
 		runtimeManager: runtime.NewPodManager(),
 		updates:        make(chan *entity.PodUpdate, 20),
 	}
-	kl.statusManager = status.NewStatusManager(kl.runtimeManager)
-	kl.plegManager = pleg.NewPlegManager(kl.statusManager)
 	kl.podWorkerManager = podworker.NewPodWorkerManager(
 		kl.runtimeManager.CreatePod,
 		kl.runtimeManager.DeletePod,
@@ -40,6 +38,12 @@ func New() *Kubelet {
 		kl.runtimeManager.PodRemoveContainer,
 		kl.runtimeManager.PodRestartContainer,
 	)
+	kl.statusManager = status.NewStatusManager(
+		kl.runtimeManager,
+		kl.podWorkerManager.AddPod,
+		kl.podWorkerManager.DeletePod,
+	)
+	kl.plegManager = pleg.NewPlegManager(kl.statusManager)
 	return kl
 }
 
@@ -74,7 +78,6 @@ func (kl *Kubelet) Run() {
 
 func (kl *Kubelet) syncLoop(updates <-chan *entity.PodUpdate) {
 	for kl.syncLoopIteration(updates) {
-
 	}
 }
 

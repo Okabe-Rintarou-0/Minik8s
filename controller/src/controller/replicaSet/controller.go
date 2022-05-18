@@ -19,6 +19,9 @@ var syncSignal = struct{}{}
 type Controller interface {
 	Run()
 	Sync(podStatus *entity.PodStatus)
+	AddReplicaSet(rs *apiObject.ReplicaSet)
+	DeleteReplicaSet(rs *apiObject.ReplicaSet)
+	UpdateReplicaSet(rs *apiObject.ReplicaSet)
 }
 
 type controller struct {
@@ -37,10 +40,13 @@ func (c *controller) Sync(podStatus *entity.PodStatus) {
 }
 
 func (c *controller) AddReplicaSet(rs *apiObject.ReplicaSet) {
-	logManager("Add replicaSet: %s_%s", rs.FullName(), rs.UID())
-	worker := NewWorker(rs, c.cacheManager)
-	c.workers[rs.UID()] = worker
-	go worker.Run()
+	UID := rs.UID()
+	logManager("Add replicaSet: %s_%s", rs.FullName(), UID)
+	if _, stillWorking := c.workers[UID]; !stillWorking {
+		worker := NewWorker(rs, c.cacheManager)
+		c.workers[UID] = worker
+		go worker.Run()
+	}
 }
 
 func (c *controller) deleteReplicaSetPods(rs *apiObject.ReplicaSet) {
@@ -52,17 +58,19 @@ func (c *controller) deleteReplicaSetPods(rs *apiObject.ReplicaSet) {
 }
 
 func (c *controller) DeleteReplicaSet(rs *apiObject.ReplicaSet) {
-	logManager("Delete replicaSet: %s_%s", rs.FullName(), rs.UID())
-	if worker, exists := c.workers[rs.UID()]; exists {
-		delete(c.workers, rs.UID())
+	UID := rs.UID()
+	logManager("Delete replicaSet: %s_%s", rs.FullName(), UID)
+	if worker, stillWorking := c.workers[UID]; stillWorking {
+		delete(c.workers, UID)
 		close(worker.SyncChannel())
 		c.deleteReplicaSetPods(rs)
 	}
 }
 
 func (c *controller) UpdateReplicaSet(rs *apiObject.ReplicaSet) {
-	logManager("Update replicaSet: %s_%s", rs.FullName(), rs.UID())
-	if worker, exists := c.workers[rs.UID()]; exists {
+	UID := rs.UID()
+	logManager("Update replicaSet: %s_%s", rs.FullName(), UID)
+	if worker, stillWorking := c.workers[UID]; stillWorking {
 		worker.SetTarget(rs)
 		// Sync immediately after update the rs.
 		worker.SyncChannel() <- syncSignal
