@@ -125,6 +125,16 @@ func getReplicaSetApiObjectFromEtcd(namespace, name string) (replicaSet *apiObje
 	return nil
 }
 
+func getHPAApiObjectFromEtcd(namespace, name string) (hpa *apiObject.HorizontalPodAutoscaler) {
+	etcdURL := path.Join(url.HPAURL, namespace, name)
+	if raw, err := etcd.Get(etcdURL); err == nil {
+		if err = json.Unmarshal([]byte(raw), &hpa); err == nil {
+			return hpa
+		}
+	}
+	return nil
+}
+
 func HandleGetNodeStatus(c *gin.Context) {
 	namespace := c.Param("namespace")
 	name := c.Param("name")
@@ -176,6 +186,12 @@ func HandleGetReplicaSetApiObject(c *gin.Context) {
 	namespace := c.Param("namespace")
 	name := c.Param("name")
 	c.JSON(http.StatusOK, getReplicaSetApiObjectFromEtcd(namespace, name))
+}
+
+func HandleGetHPAApiObject(c *gin.Context) {
+	namespace := c.Param("namespace")
+	name := c.Param("name")
+	c.JSON(http.StatusOK, getHPAApiObjectFromEtcd(namespace, name))
 }
 
 func HandleGetHPAStatus(c *gin.Context) {

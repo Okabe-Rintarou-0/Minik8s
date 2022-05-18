@@ -27,6 +27,11 @@ type controller struct {
 
 func (c *controller) AddHpa(hpa *apiObject.HorizontalPodAutoscaler) {
 	UID := hpa.UID()
+	_, cancelExists := c.cancelFuncs[UID]
+	_, workerExists := c.workers[UID]
+	if cancelExists && workerExists {
+		return
+	}
 	logManager("Add hpa: %s_%s", hpa.Name(), UID)
 	ctx, cancelFunc := context.WithCancel(bgCtx)
 	worker := NewWorker(ctx, hpa, c.cacheManager)
@@ -79,6 +84,9 @@ func (c *controller) Run() {
 
 type Controller interface {
 	Run()
+	AddHpa(hpa *apiObject.HorizontalPodAutoscaler)
+	UpdateHpa(hpa *apiObject.HorizontalPodAutoscaler)
+	DeleteHpa(hpa *apiObject.HorizontalPodAutoscaler)
 }
 
 func NewController(cacheManager cache.Manager) Controller {

@@ -32,7 +32,12 @@ func NewControllerManager() Manager {
 	m.cacheManager = cache.NewManager()
 	m.replicaSetController = replicaSet.NewController(m.cacheManager)
 	m.hpaController = hpa.NewController(m.cacheManager)
-	m.cacheManager.SetPodStatusUpdateHook(m.replicaSetController.Sync)
 	m.nodeController = node.NewController(m.cacheManager)
+
+	m.cacheManager.SetPodStatusUpdateHook(m.replicaSetController.Sync)
+	m.cacheManager.SetReplicaSetFullSyncAddHook(m.replicaSetController.AddReplicaSet)
+	m.cacheManager.SetReplicaSetFullSyncDeleteHook(m.replicaSetController.DeleteReplicaSet)
+	m.cacheManager.SetHPAFullSyncAddHook(m.hpaController.AddHpa)
+	m.cacheManager.SetHPAFullSyncDeleteHook(m.hpaController.DeleteHpa)
 	return m
 }

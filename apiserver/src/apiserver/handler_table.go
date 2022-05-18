@@ -48,6 +48,7 @@ var getTable = map[string]Handler{
 	// get apiObject.xxx
 	url.PodURLWithSpecifiedNodeAndName: handlers.HandleGetPodApiObject,
 	url.ReplicaSetURLWithSpecifiedName: handlers.HandleGetReplicaSetApiObject,
+	url.HPAURLWithSpecifiedName:        handlers.HandleGetHPAApiObject,
 	url.PodURLWithSpecifiedNode:        handlers.HandleGetPodsApiObject,
 }
 
