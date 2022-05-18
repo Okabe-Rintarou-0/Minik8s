@@ -4,10 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"io"
-	"io/ioutil"
 	"minik8s/apiObject"
 	"minik8s/apiserver/src/etcd"
+	"minik8s/apiserver/src/helper"
 	"minik8s/apiserver/src/url"
 	"minik8s/entity"
 	"minik8s/listwatch"
@@ -20,18 +19,6 @@ import (
 )
 
 var log = logger.Log("Api-server")
-
-func readAndUnmarshal(body io.ReadCloser, target interface{}) error {
-	content, err := ioutil.ReadAll(body)
-	defer body.Close()
-	if err != nil {
-		return err
-	}
-	if err = json.Unmarshal(content, target); err != nil {
-		return err
-	}
-	return nil
-}
 
 func HandleApplyNode(c *gin.Context) {
 	node := apiObject.Node{}
@@ -88,51 +75,21 @@ func HandleApplyPod(c *gin.Context) {
 	if err != nil {
 		c.String(http.StatusOK, err.Error())
 	}
+
+	if helper.ExistsPod(pod.Namespace(), pod.Name()) {
+		c.String(http.StatusOK, fmt.Sprintf("pod %s/%s already exists", pod.Namespace(), pod.Name()))
+		return
+	}
+
 	pod.Metadata.UID = uidutil.New()
-	log("receive pod[ID = %v]: %v", pod.UID(), pod)
+	log("receive pod %s/%s[ID = %v]", pod.Namespace(), pod.Name(), pod.UID())
 
-	var podJson []byte
-	if podJson, err = json.Marshal(pod); err != nil {
-		c.String(http.StatusOK, err.Error())
-		return
-	}
-
-	// exists?
-	etcdPodURL := path.Join(url.PodURL, pod.Namespace(), pod.Name())
-	if podJsonStr, err := etcd.Get(etcdPodURL); err == nil {
-		getPod := &apiObject.Pod{}
-		if err = json.Unmarshal([]byte(podJsonStr), getPod); err == nil {
-			c.String(http.StatusOK, fmt.Sprintf("pod %s/%s already exists", getPod.Namespace(), getPod.Name()))
-			return
-		}
-	}
-
-	if err = etcd.Put(etcdPodURL, string(podJson)); err != nil {
-		c.String(http.StatusOK, err.Error())
-		return
-	}
-
-	etcdPodStatusURL := path.Join(url.PodURL, "status", pod.Namespace(), pod.Name())
-	var podStatusJson []byte
-	if podStatusJson, err = json.Marshal(entity.PodStatus{
-		ID:         pod.UID(),
-		Node:       "Unknown",
-		Name:       pod.Name(),
-		Namespace:  pod.Namespace(),
-		Labels:     pod.Labels(),
-		Lifecycle:  entity.PodUnknown,
-		CpuPercent: 0,
-		MemPercent: 0,
-		Error:      "",
-		SyncTime:   time.Now(),
-	}); err == nil {
-		_ = etcd.Put(etcdPodStatusURL, string(podStatusJson))
-	}
-
+	// Schedule first, then put the data to url: PodURL/node/namespace/name
 	podUpdateMsg, _ := json.Marshal(entity.PodUpdate{
 		Action: entity.CreateAction,
 		Target: pod,
 	})
+
 	listwatch.Publish(topicutil.SchedulerPodUpdateTopic(), podUpdateMsg)
 	c.String(http.StatusOK, "Apply successfully!")
 }

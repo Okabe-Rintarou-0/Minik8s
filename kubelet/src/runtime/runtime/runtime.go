@@ -8,7 +8,7 @@ import (
 	"minik8s/kubelet/src/runtime/container"
 	"minik8s/kubelet/src/runtime/image"
 	"minik8s/util/logger"
-	"os"
+	"minik8s/util/netutil"
 	"strconv"
 	"time"
 )
@@ -37,7 +37,7 @@ type PodStatus struct {
 }
 
 func (podStatus *PodStatus) ToEntity() *entity.PodStatus {
-	hostname, _ := os.Hostname()
+	hostname := netutil.Hostname()
 	cpuPercent, memPercent := calcMetrics(podStatus.ContainerStatuses)
 	return &entity.PodStatus{
 		ID:         podStatus.ID,

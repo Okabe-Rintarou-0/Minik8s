@@ -21,10 +21,11 @@ type ReplicaSetStatusUpdateHook func(replicaSetStatus *entity.ReplicaSetStatus)
 
 type Manager interface {
 	Start()
-	GetReplicaSetStatus(fullName string) *entity.ReplicaSetStatus
-	GetReplicaSetPodStatuses(rsUID types.UID) []*entity.PodStatus
+	GetReplicaSetStatus(UID types.UID) *entity.ReplicaSetStatus
+	GetReplicaSetPodStatuses(UID types.UID) []*entity.PodStatus
 	GetNodeStatuses() []*entity.NodeStatus
-	SetNodeStatus(hostname string, newStatus *entity.NodeStatus)
+	SetNodeStatus(fullName string, newStatus *entity.NodeStatus)
+	DeleteNodeStatus(fullName string)
 	SetPodStatusUpdateHook(podStatusUpdateHook PodStatusUpdateHook)
 	SetReplicaSetStatusUpdateHook(replicaSetStatusUpdateHook ReplicaSetStatusUpdateHook)
 }
@@ -38,10 +39,16 @@ type manager struct {
 	replicaSetStatusUpdateHook ReplicaSetStatusUpdateHook
 }
 
-func (m *manager) SetNodeStatus(hostname string, newStatus *entity.NodeStatus) {
+func (m *manager) DeleteNodeStatus(fullName string) {
 	m.nodeStatusLock.Lock()
 	defer m.nodeStatusLock.Unlock()
-	m.nodeStatusCache.Update(hostname, newStatus)
+	m.nodeStatusCache.Delete(fullName)
+}
+
+func (m *manager) SetNodeStatus(fullName string, newStatus *entity.NodeStatus) {
+	m.nodeStatusLock.Lock()
+	defer m.nodeStatusLock.Unlock()
+	m.nodeStatusCache.Update(fullName, newStatus)
 }
 
 func (m *manager) getNodeStatusesInternal() []*entity.NodeStatus {

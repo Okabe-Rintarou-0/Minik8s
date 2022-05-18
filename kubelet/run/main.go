@@ -7,11 +7,12 @@ import (
 	"minik8s/apiserver/src/url"
 	"minik8s/kubelet/src/kubelet"
 	"minik8s/util/httputil"
+	"minik8s/util/netutil"
 	"os"
 )
 
 func registerNode() {
-	hostname, _ := os.Hostname()
+	hostname := netutil.Hostname()
 	node := apiObject.Node{
 		Base: apiObject.Base{
 			ApiVersion: "v1",

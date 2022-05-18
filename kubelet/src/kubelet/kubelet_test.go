@@ -9,9 +9,9 @@ import (
 	"minik8s/entity"
 	"minik8s/kubelet/src/podutil"
 	"minik8s/listwatch"
+	"minik8s/util/netutil"
 	"minik8s/util/topicutil"
 	"minik8s/util/uidutil"
-	"os"
 	"testing"
 	"time"
 )
@@ -55,7 +55,7 @@ func TestKubelet(t *testing.T) {
 	if err != nil {
 		fmt.Println(err.Error())
 	}
-	hostname, _ := os.Hostname()
+	hostname := netutil.Hostname()
 	topic := topicutil.PodUpdateTopic(hostname)
 	// after 5s, create the pod
 	// after 15s, update the pod
@@ -110,7 +110,7 @@ func TestCreatePodWithoutSpecifiedPort(t *testing.T) {
 	//if err != nil {
 	//	fmt.Println(err.Error())
 	//}
-	hostname, _ := os.Hostname()
+	hostname := netutil.Hostname()
 	topic := topicutil.PodUpdateTopic(hostname)
 	// after 5s, create the pod
 	// after 1min, delete the pod

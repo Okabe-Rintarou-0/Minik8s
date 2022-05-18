@@ -33,16 +33,16 @@ func (m *manager) syncNodeChange(cachedNodeStatuses, serverNodeStatuses []*entit
 	return
 }
 
-func (m *manager) dealWithToAdd(toAdd []*entity.NodeStatus) {
+func (m *manager) handleAdd(toAdd []*entity.NodeStatus) {
 	for _, ns := range toAdd {
 		m.nodeStatusCache.Add(ns.Hostname, ns)
 		//log("Add Node Status[host = %s]", ns.Hostname)
 	}
 }
 
-func (m *manager) dealWithToDelete(toDelete []*entity.NodeStatus) {
+func (m *manager) handleDelete(toDelete []*entity.NodeStatus) {
 	for _, ns := range toDelete {
-		m.nodeStatusCache.Add(ns.Hostname, ns)
+		m.nodeStatusCache.Delete(ns.Hostname)
 		//log("Add Node Status[host = %s]", ns.Hostname)
 	}
 }
@@ -68,7 +68,7 @@ func (m *manager) fullSyncNodeStatuses() {
 	// Step 4: Deal with toDelete & toAdd
 	log("To Delete: %v", toDelete)
 	log("To Add: %v", toAdd)
-	m.dealWithToAdd(toAdd)
-	m.dealWithToDelete(toDelete)
+	m.handleAdd(toAdd)
+	m.handleDelete(toDelete)
 	///TODO implement it
 }

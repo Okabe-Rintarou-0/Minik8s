@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"minik8s/apiObject"
 	"minik8s/apiserver/src/etcd"
+	"minik8s/apiserver/src/helper"
 	"minik8s/apiserver/src/url"
 	"minik8s/entity"
 	"minik8s/listwatch"
@@ -24,23 +25,28 @@ func deleteSpecifiedNode(namespace, name string) (err error) {
 	return
 }
 
-func deleteSpecifiedPod(namespace, name string) (pod *apiObject.Pod, err error) {
+func deleteSpecifiedPod(namespace, name string) (pod *apiObject.Pod, node string, err error) {
 	log("Pod to delete is %s/%s", namespace, name)
 
 	etcdPodStatusURL := path.Join(url.PodURL, "status", namespace, name)
 	_ = etcd.Delete(etcdPodStatusURL)
 
 	var raw string
-	etcdPodURL := path.Join(url.PodURL, namespace, name)
-	if raw, err = etcd.Get(etcdPodURL); err != nil {
-		return nil, err
+	nodes := helper.GetNodeHostnames()
+	for _, node = range nodes {
+		etcdPodURL := path.Join(url.PodURL, node, namespace, name)
+		raw, err = etcd.Get(etcdPodURL)
+		if err != nil || raw == "" {
+			continue
+		}
+		if err = json.Unmarshal([]byte(raw), &pod); err != nil {
+			return nil, "", err
+		}
+		if err = etcd.Delete(etcdPodURL); err == nil {
+			log("Delete pod %s/%s successfully", namespace, name)
+			break
+		}
 	}
-
-	if err = json.Unmarshal([]byte(raw), &pod); err != nil {
-		return nil, fmt.Errorf("no such pod %s/%s", namespace, name)
-	}
-
-	err = etcd.Delete(etcdPodURL)
 	return
 }
 
@@ -84,6 +90,14 @@ func deleteSpecifiedHPA(namespace, name string) (hpa *apiObject.HorizontalPodAut
 	return
 }
 
+func createAndPublishPodDeleteMsg(node string, pod *apiObject.Pod) {
+	podDeleteMsg, _ := json.Marshal(entity.PodUpdate{
+		Action: entity.DeleteAction,
+		Target: *pod,
+	})
+	listwatch.Publish(topicutil.PodUpdateTopic(node), podDeleteMsg)
+}
+
 func HandleDeleteNode(c *gin.Context) {
 	namespace := c.Param("namespace")
 	name := c.Param("name")
@@ -93,19 +107,21 @@ func HandleDeleteNode(c *gin.Context) {
 	c.String(http.StatusOK, "Delete successfully")
 }
 
+func deletePod(namespace, name string) error {
+	if podToDelete, node, err := deleteSpecifiedPod(namespace, name); err == nil {
+		createAndPublishPodDeleteMsg(node, podToDelete)
+		return nil
+	} else {
+		return err
+	}
+}
+
 func HandleDeletePod(c *gin.Context) {
 	namespace := c.Param("namespace")
 	name := c.Param("name")
 
-	if podToDelete, err := deleteSpecifiedPod(namespace, name); err != nil {
+	if err := deletePod(namespace, name); err != nil {
 		c.String(http.StatusOK, err.Error())
-		return
-	} else {
-		podDeleteMsg, _ := json.Marshal(entity.PodUpdate{
-			Action: entity.DeleteAction,
-			Target: *podToDelete,
-		})
-		listwatch.Publish(topicutil.SchedulerPodUpdateTopic(), podDeleteMsg)
 	}
 	c.String(http.StatusOK, "Delete successfully")
 }
@@ -150,4 +166,18 @@ func HandleReset(c *gin.Context) {
 		return
 	}
 	c.String(http.StatusOK, "OK")
+}
+
+func HandleDeleteNodePods(c *gin.Context) {
+	node := c.Param("node")
+	pods := helper.GetPodsApiObjectFromEtcd(node)
+	for _, pod := range pods {
+		etcdPodStatusURL := path.Join(url.PodURL, "status", pod.Namespace(), pod.Name())
+		_ = etcd.Delete(etcdPodStatusURL)
+
+		etcdPodURL := path.Join(url.PodURL, node, pod.Namespace(), pod.Name())
+		if err := etcd.Delete(etcdPodURL); err == nil {
+			createAndPublishPodDeleteMsg(node, pod)
+		}
+	}
 }

@@ -3,6 +3,7 @@ package netutil
 import (
 	"fmt"
 	"net"
+	"os"
 	"sync"
 )
 
@@ -53,4 +54,9 @@ func GetHostIp() {
 			}
 		}
 	}
+}
+
+func Hostname() string {
+	hostname, _ := os.Hostname()
+	return hostname
 }

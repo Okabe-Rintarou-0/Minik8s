@@ -15,6 +15,9 @@ var postTable = map[string]Handler{
 	url.ReplicaSetURL: handlers.HandleApplyReplicaSet,
 	url.HPAURL:        handlers.HandleApplyHPA,
 
+	// update pod after it's scheduled
+	url.PodURLWithSpecifiedNode: handlers.HandleSchedulePod,
+
 	// kubectl autoscale hpa_name -t target -c cpu -m memory --min=min_replicas --max=max_replicas
 	url.AutoscaleURLWithSpecifiedName: handlers.HandleAutoscale,
 
@@ -43,8 +46,9 @@ var getTable = map[string]Handler{
 	url.PodDescriptionURLWithSpecifiedName: handlers.HandleDescribePod,
 
 	// get apiObject.xxx
-	url.PodURLWithSpecifiedName:        handlers.HandleGetPodApiObject,
+	url.PodURLWithSpecifiedNodeAndName: handlers.HandleGetPodApiObject,
 	url.ReplicaSetURLWithSpecifiedName: handlers.HandleGetReplicaSetApiObject,
+	url.PodURLWithSpecifiedNode:        handlers.HandleGetPodsApiObject,
 }
 
 var putTable = map[string]Handler{
@@ -62,4 +66,7 @@ var deleteTable = map[string]Handler{
 
 	// kubectl reset
 	url.ResetURL: handlers.HandleReset,
+
+	// delete pods of a node
+	url.PodURLWithSpecifiedNode: handlers.HandleDeleteNodePods,
 }

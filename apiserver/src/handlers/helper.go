@@ -104,3 +104,15 @@ func getPutForm(body io.ReadCloser) (form map[string]string) {
 	}
 	return
 }
+
+func readAndUnmarshal(body io.ReadCloser, target interface{}) error {
+	content, err := ioutil.ReadAll(body)
+	defer body.Close()
+	if err != nil {
+		return err
+	}
+	if err = json.Unmarshal(content, target); err != nil {
+		return err
+	}
+	return nil
+}

@@ -5,6 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"minik8s/apiObject"
 	"minik8s/apiserver/src/etcd"
+	"minik8s/apiserver/src/helper"
 	"minik8s/apiserver/src/url"
 	"minik8s/entity"
 	"minik8s/util/logger"
@@ -104,8 +105,8 @@ func getHPAStatusesFromEtcd() (hpas []*entity.HPAStatus) {
 	return
 }
 
-func getPodApiObjectFromEtcd(namespace, name string) (pod *apiObject.Pod) {
-	etcdURL := path.Join(url.PodURL, namespace, name)
+func getPodApiObjectFromEtcd(node, namespace, name string) (pod *apiObject.Pod) {
+	etcdURL := path.Join(url.PodURL, node, namespace, name)
 	if raw, err := etcd.Get(etcdURL); err == nil {
 		if err = json.Unmarshal([]byte(raw), &pod); err == nil {
 			return pod
@@ -160,9 +161,15 @@ func HandleDescribePod(c *gin.Context) {
 }
 
 func HandleGetPodApiObject(c *gin.Context) {
+	node := c.Param("node")
 	namespace := c.Param("namespace")
 	name := c.Param("name")
-	c.JSON(http.StatusOK, getPodApiObjectFromEtcd(namespace, name))
+	c.JSON(http.StatusOK, getPodApiObjectFromEtcd(node, namespace, name))
+}
+
+func HandleGetPodsApiObject(c *gin.Context) {
+	node := c.Param("node")
+	c.JSON(http.StatusOK, helper.GetPodsApiObjectFromEtcd(node))
 }
 
 func HandleGetReplicaSetApiObject(c *gin.Context) {

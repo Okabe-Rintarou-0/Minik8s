@@ -3,23 +3,32 @@ package status
 import (
 	"minik8s/apiObject"
 	"minik8s/apiObject/types"
+	"minik8s/apiserver/src/url"
 	"minik8s/entity"
 	"minik8s/kubelet/src/runtime/runtime"
 	"minik8s/listwatch"
 	"minik8s/util/cache"
+	"minik8s/util/httputil"
 	"minik8s/util/logger"
+	"minik8s/util/netutil"
 	"minik8s/util/parseutil"
 	"minik8s/util/topicutil"
 	"minik8s/util/utility"
 	"minik8s/util/wait"
-	"os"
+	"strings"
 	"sync"
 	"time"
 )
 
 var log = logger.Log("Status Manager")
 
-const syncPeriod = 10 * time.Second
+const (
+	syncPeriod     = 10 * time.Second
+	fullSyncPeriod = 30 * time.Second
+)
+
+type FullSyncAddHook func(pod *apiObject.Pod)
+type FullSyncDeleteHook func(pod *apiObject.Pod)
 
 type Manager interface {
 	GetPod(podUID types.UID) *apiObject.Pod
@@ -31,10 +40,12 @@ type Manager interface {
 }
 
 type manager struct {
-	podCache        cache.Cache
-	podStatuses     runtime.PodStatuses
-	podStatusesLock sync.Mutex
-	runtimeManager  runtime.Manager
+	podCache           cache.Cache
+	podStatuses        runtime.PodStatuses
+	podStatusesLock    sync.Mutex
+	runtimeManager     runtime.Manager
+	fullSyncAddHook    FullSyncAddHook
+	fullSyncDeleteHook FullSyncDeleteHook
 }
 
 func (m *manager) AddPod(podUID types.UID, pod *apiObject.Pod) {
@@ -69,7 +80,7 @@ func (m *manager) publishPodStatus(podStatuses runtime.PodStatuses) {
 }
 
 func (m *manager) publishNodeStatus(podStatuses runtime.PodStatuses) {
-	hostname, _ := os.Hostname()
+	hostname := netutil.Hostname()
 	cpu, mem := utility.GetCpuAndMemoryUsage()
 	nodeStatus := &entity.NodeStatus{
 		Hostname:   hostname,
@@ -119,12 +130,58 @@ func (m *manager) syncLoopIteration() {
 	}
 }
 
+func (m *manager) computePodAction(cachedPodMap map[string]interface{}, pods []*apiObject.Pod) (toAdd, toDelete []*apiObject.Pod) {
+	for _, pod := range pods {
+		if _, exists := cachedPodMap[pod.UID()]; !exists {
+			toAdd = append(toAdd, pod)
+		} else {
+			delete(cachedPodMap, pod.UID())
+		}
+	}
+
+	for _, cached := range cachedPodMap {
+		toDelete = append(toDelete, cached.(*apiObject.Pod))
+	}
+
+	return
+}
+
+func (m *manager) handleAdd(toAdd []*apiObject.Pod) {
+	for _, podToAdd := range toAdd {
+		m.podCache.Add(podToAdd.UID(), podToAdd)
+		m.fullSyncAddHook(podToAdd)
+	}
+}
+
+func (m *manager) handleDelete(toDelete []*apiObject.Pod) {
+	for _, podToDelete := range toDelete {
+		m.podCache.Delete(podToDelete.UID())
+		m.fullSyncDeleteHook(podToDelete)
+	}
+}
+
+func (m *manager) fullSyncLoopIteration() {
+	log("Full sync pod apiObject")
+	URL := url.Prefix + strings.Replace(url.PodURLWithSpecifiedNode, ":node", netutil.Hostname(), 1)
+	var pods []*apiObject.Pod
+	if err := httputil.GetAndUnmarshal(URL, &pods); err == nil {
+		podMap := m.podCache.ToMap()
+		toAdd, toDelete := m.computePodAction(podMap, pods)
+
+		m.handleAdd(toAdd)
+		m.handleDelete(toDelete)
+	} else {
+		logger.Error(err.Error())
+	}
+}
+
 func (m *manager) syncLoop() {
-	wait.Period(syncPeriod, syncPeriod, m.syncLoopIteration)
+	go wait.Period(syncPeriod, syncPeriod, m.syncLoopIteration)
+	go wait.Period(fullSyncPeriod, fullSyncPeriod, m.fullSyncLoopIteration)
 }
 
 func (m *manager) Start() {
-	go m.syncLoop()
+	m.syncLoop()
 }
 
 func (m *manager) GetPodStatuses() runtime.PodStatuses {
@@ -133,9 +190,11 @@ func (m *manager) GetPodStatuses() runtime.PodStatuses {
 	return m.podStatuses
 }
 
-func NewStatusManager(runtimeManager runtime.Manager) Manager {
+func NewStatusManager(runtimeManager runtime.Manager, fullSyncAddHook FullSyncAddHook, fullSyncDeleteHook FullSyncDeleteHook) Manager {
 	return &manager{
-		podCache:       cache.Default(),
-		runtimeManager: runtimeManager,
+		podCache:           cache.Default(),
+		runtimeManager:     runtimeManager,
+		fullSyncAddHook:    fullSyncAddHook,
+		fullSyncDeleteHook: fullSyncDeleteHook,
 	}
 }

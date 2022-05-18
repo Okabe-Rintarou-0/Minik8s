@@ -11,11 +11,41 @@ type Cache interface {
 	Delete(key string)
 	Exists(key string) bool
 	Values() []interface{}
+	Keys() []string
+	ToMap() map[string]interface{}
 }
 
 type cache struct {
 	cacheLock sync.RWMutex
 	cache     map[string]interface{}
+}
+
+func (c *cache) toMapInternal() map[string]interface{} {
+	kvMap := make(map[string]interface{})
+	c.cacheLock.RLock()
+	defer c.cacheLock.RUnlock()
+	for key, value := range c.cache {
+		kvMap[key] = value
+	}
+	return kvMap
+}
+
+func (c *cache) ToMap() map[string]interface{} {
+	return c.toMapInternal()
+}
+
+func (c *cache) getKeysInternal() []string {
+	c.cacheLock.RLock()
+	defer c.cacheLock.RUnlock()
+	var keys []string
+	for key := range c.cache {
+		keys = append(keys, key)
+	}
+	return keys
+}
+
+func (c *cache) Keys() []string {
+	return c.getKeysInternal()
 }
 
 func (c *cache) Exists(key string) bool {

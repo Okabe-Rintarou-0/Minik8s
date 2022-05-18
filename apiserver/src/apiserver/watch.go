@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/go-redis/redis/v8"
 	"minik8s/apiserver/src/etcd"
+	"minik8s/apiserver/src/helper"
 	"minik8s/apiserver/src/url"
 	"minik8s/entity"
 	"minik8s/util/logger"
@@ -40,7 +41,7 @@ func syncPodStatus(msg *redis.Message) {
 		return
 	}
 
-	if podStatus.Lifecycle == entity.PodDeleted {
+	if podStatus.Lifecycle == entity.PodDeleted || !helper.ExistsPod(podStatus.Namespace, podStatus.Name) {
 		return
 	}
 
