@@ -109,8 +109,12 @@ func HandleDeleteNode(c *gin.Context) {
 
 func deletePod(namespace, name string) error {
 	if podToDelete, node, err := deleteSpecifiedPod(namespace, name); err == nil {
-		createAndPublishPodDeleteMsg(node, podToDelete)
-		return nil
+		if podToDelete != nil {
+			createAndPublishPodDeleteMsg(node, podToDelete)
+			return nil
+		} else {
+			return fmt.Errorf("no such pod %s/%s", namespace, name)
+		}
 	} else {
 		return err
 	}
@@ -122,6 +126,7 @@ func HandleDeletePod(c *gin.Context) {
 
 	if err := deletePod(namespace, name); err != nil {
 		c.String(http.StatusOK, err.Error())
+		return
 	}
 	c.String(http.StatusOK, "Delete successfully")
 }
