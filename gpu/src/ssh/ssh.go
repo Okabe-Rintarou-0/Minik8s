@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/melbahja/goph"
 	"github.com/spf13/cast"
+	"strconv"
 	"strings"
 )
 
@@ -36,22 +37,53 @@ type QueueInfo struct {
 }
 
 type Client interface {
+	Close()
+
 	GetQueueInfoByPartition(partition string) []*QueueInfo
 	GetAllQueueInfo() []*QueueInfo    //查看队列状态和信息
 	GetJobById(jobID string) *JobInfo //显示用户作业历史
 	//Sbatch() ([]byte, error)          //提交作业
 	//Scancel() ([]byte, error)         //取消指定作业
-	Close()
+	//Upload(localPath, remotePath string) error
+
+	Mkdir(dir string) (string, error)
+	CreateFile(filename string) (string, error)
+	WriteFile(filename, content string) (string, error)
+	ReadFile(filename string) (string, error)
 }
 type client struct {
 	sshCli *goph.Client
 }
 
-func (cli client) Close() {
+func (cli *client) Mkdir(dir string) (string, error) {
+	cmd := fmt.Sprintf("mkdir %s", dir)
+	resp, err := cli.sshCli.Run(cmd)
+	return string(resp), err
+}
+
+func (cli *client) CreateFile(filename string) (string, error) {
+	cmd := fmt.Sprintf("touch %s", filename)
+	resp, err := cli.sshCli.Run(cmd)
+	return string(resp), err
+}
+
+func (cli *client) WriteFile(filename, content string) (string, error) {
+	cmd := fmt.Sprintf("echo \"%s\" > %s", strconv.Quote(content), filename)
+	resp, err := cli.sshCli.Run(cmd)
+	return string(resp), err
+}
+
+func (cli *client) ReadFile(filename string) (string, error) {
+	cmd := fmt.Sprintf("cat %s", filename)
+	resp, err := cli.sshCli.Run(cmd)
+	return string(resp), err
+}
+
+func (cli *client) Close() {
 	cli.sshCli.Close()
 }
 
-func (cli client) GetJobById(jobID string) *JobInfo {
+func (cli *client) GetJobById(jobID string) *JobInfo {
 	cmd := fmt.Sprintf("sacct -j %s | tail -n +3 | awk '{print $1, $2, $3, $4, $5, $6, $7}'", jobID)
 	if raw, err := cli.sshCli.Run(cmd); err == nil {
 		resp := string(raw)
@@ -92,7 +124,7 @@ func parseQueueInfoTable(raw string) (infos []*QueueInfo) {
 	return
 }
 
-func (cli client) GetAllQueueInfo() (infos []*QueueInfo) {
+func (cli *client) GetAllQueueInfo() (infos []*QueueInfo) {
 	cmd := "sinfo | tail -n +2 | awk '{print $1, $2, $3, $4, $5, $6}'"
 	if raw, err := cli.sshCli.Run(cmd); err == nil {
 		return parseQueueInfoTable(string(raw))
@@ -100,7 +132,7 @@ func (cli client) GetAllQueueInfo() (infos []*QueueInfo) {
 	return nil
 }
 
-func (cli client) GetQueueInfoByPartition(partition string) (infos []*QueueInfo) {
+func (cli *client) GetQueueInfoByPartition(partition string) (infos []*QueueInfo) {
 	cmd := fmt.Sprintf("sinfo --partition=%s | tail -n +2 | awk '{print $1, $2, $3, $4, $5, $6}'", partition)
 	if raw, err := cli.sshCli.Run(cmd); err == nil {
 		return parseQueueInfoTable(string(raw))
@@ -108,8 +140,12 @@ func (cli client) GetQueueInfoByPartition(partition string) (infos []*QueueInfo)
 	return nil
 }
 
-func (cli client) Scancel() ([]byte, error) {
+func (cli *client) Scancel() ([]byte, error) {
 	return cli.sshCli.Run("scancel")
+}
+
+func (cli *client) Upload(localPath, remotePath string) error {
+	return cli.sshCli.Upload(localPath, remotePath)
 }
 
 func newSSHClient(username, password string) *goph.Client {
