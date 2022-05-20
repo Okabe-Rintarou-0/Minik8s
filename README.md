@@ -26,6 +26,14 @@ Because all these components are running in containers, so you can't access othe
 using `localhost`(Even if they are running in `host` network mode).
 Please use the ip instead.
 
+## GPU support
+
+See:
++ https://github.com/SJTU-HPC/docs.hpc.sjtu.edu.cn
++ https://docs.hpc.sjtu.edu.cn/index.html
++ https://docs.hpc.sjtu.edu.cn/job/slurm.html
++ https://studio.hpc.sjtu.edu.cn/
+
 ## Tools
 
 For `windows`, we have `Docker Desktop` to monitor the stats of all containers.

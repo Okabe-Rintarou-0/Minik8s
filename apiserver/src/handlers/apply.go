@@ -164,3 +164,21 @@ func HandleApplyHPA(c *gin.Context) {
 	}
 	c.String(http.StatusOK, "Apply successfully!")
 }
+
+func HandleApplyGpuJob(c *gin.Context) {
+	gpu := apiObject.GpuJob{}
+	err := readAndUnmarshal(c.Request.Body, &gpu)
+	if err != nil {
+		c.String(http.StatusOK, err.Error())
+	}
+	gpu.Metadata.UID = uidutil.New()
+	log("receive gpu job[ID = %v]: %v", gpu.UID(), gpu)
+
+	GpuUpdateMsg, _ := json.Marshal(entity.GpuUpdate{
+		Action: entity.CreateAction,
+		Target: gpu,
+	})
+
+	listwatch.Publish(topicutil.GpuJobUpdateTopic(), GpuUpdateMsg)
+	c.String(http.StatusOK, "Apply successfully!")
+}

@@ -8,7 +8,7 @@ import (
 )
 
 func TestSSH(t *testing.T) {
-	cli, err := goph.NewUnknown(gpuUser, gpuAddr, goph.Password(gpuPasswd))
+	cli, err := goph.NewUnknown(gpuUser, gpuLoginAddr, goph.Password(gpuPasswd))
 	defer cli.Close()
 	if err != nil {
 		fmt.Println("err!")

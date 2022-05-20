@@ -8,7 +8,7 @@ import (
 )
 
 func TestParseHPA(t *testing.T) {
-	file, _ := os.Open("../../apiObject/examples/hpa/hpa-example.yaml")
+	file, _ := os.Open("../../apiObject/cuda/hpa/hpa-example.yaml")
 	content, _ := ioutil.ReadAll(file)
 	hpa, err := ParseHPA(content)
 	if err != nil {

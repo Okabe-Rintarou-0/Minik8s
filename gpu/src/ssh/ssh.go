@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"github.com/melbahja/goph"
 	"github.com/spf13/cast"
+	"os/exec"
+	"runtime"
 	"strconv"
 	"strings"
 )
@@ -12,9 +14,11 @@ import (
 // https://docs.hpc.sjtu.edu.cn/job/slurm.html
 
 const (
-	gpuUser   = "stu633"
-	gpuPasswd = "8uhlGet%"
-	gpuAddr   = "login.hpc.sjtu.edu.cn"
+	gpuUser      = "stu633"
+	gpuPasswd    = "8uhlGet%"
+	gpuLoginAddr = "login.hpc.sjtu.edu.cn"
+	gpuDataAddr  = "data.hpc.sjtu.edu.cn"
+	accountType  = "acct-stu"
 )
 
 type JobInfo struct {
@@ -40,19 +44,65 @@ type Client interface {
 	Close()
 
 	GetQueueInfoByPartition(partition string) []*QueueInfo
-	GetAllQueueInfo() []*QueueInfo    //查看队列状态和信息
-	GetJobById(jobID string) *JobInfo //显示用户作业历史
-	//Sbatch() ([]byte, error)          //提交作业
+	GetAllQueueInfo() []*QueueInfo                  //Sinfo
+	GetJobById(jobID string) *JobInfo               //Squeue
+	SubmitScript(scriptPath string) (string, error) //Sbatch
 	//Scancel() ([]byte, error)         //取消指定作业
-	//Upload(localPath, remotePath string) error
+
+	Compile(cmd string) (string, error)
+
+	Scp(localPath, remotePath string) error
+	Rsync(localPath, remotePath string) error
 
 	Mkdir(dir string) (string, error)
 	CreateFile(filename string) (string, error)
 	WriteFile(filename, content string) (string, error)
 	ReadFile(filename string) (string, error)
 }
+
 type client struct {
-	sshCli *goph.Client
+	username string
+	password string
+	sshCli   *goph.Client
+}
+
+func (cli *client) Compile(cmd string) (string, error) {
+	if resp, err := cli.loadCuda(); err != nil {
+		return resp, err
+	}
+
+	resp, err := cli.sshCli.Run(cmd)
+	return string(resp), err
+}
+
+func (cli *client) Scp(localPath, remotePath string) error {
+	if runtime.GOOS == "linux" {
+		remoteAddr := fmt.Sprintf("%s@%s:%s", cli.username, gpuDataAddr, remotePath)
+		cmd := exec.Command("scp", "-r", localPath, remoteAddr)
+		return cmd.Run()
+	}
+	return fmt.Errorf("scp is not supported in your os")
+}
+
+func (cli *client) Rsync(localPath, remotePath string) error {
+	if runtime.GOOS == "linux" {
+		remoteAddr := fmt.Sprintf("%s@%s:%s", cli.username, gpuDataAddr, remotePath)
+		cmd := exec.Command("rsync", "--archive", "--partial", "--progress", remoteAddr, localPath)
+		return cmd.Run()
+	}
+	return fmt.Errorf("rsync is not supported in your os")
+}
+
+func (cli *client) loadCuda() (string, error) {
+	cmd := "module load cuda/9.2.88-gcc-4.8.5"
+	resp, err := cli.sshCli.Run(cmd)
+	return string(resp), err
+}
+
+func (cli *client) SubmitScript(scriptPath string) (string, error) {
+	cmd := fmt.Sprintf("sbatch %s", scriptPath)
+	respRaw, err := cli.sshCli.Run(cmd)
+	return string(respRaw), err
 }
 
 func (cli *client) Mkdir(dir string) (string, error) {
@@ -149,7 +199,7 @@ func (cli *client) Upload(localPath, remotePath string) error {
 }
 
 func newSSHClient(username, password string) *goph.Client {
-	if cli, err := goph.NewUnknown(username, gpuAddr, goph.Password(password)); err == nil {
+	if cli, err := goph.NewUnknown(username, gpuLoginAddr, goph.Password(password)); err == nil {
 		return cli
 	}
 	return nil
@@ -161,6 +211,8 @@ func NewClient(username, password string) Client {
 		return nil
 	}
 	return &client{
-		sshCli: sshCli,
+		username: username,
+		password: password,
+		sshCli:   sshCli,
 	}
 }
