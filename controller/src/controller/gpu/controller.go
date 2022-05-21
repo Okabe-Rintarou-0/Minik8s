@@ -7,17 +7,18 @@ import (
 	"io/ioutil"
 	"minik8s/apiObject"
 	"minik8s/apiserver/src/url"
+	"minik8s/entity"
 	"minik8s/listwatch"
 	"minik8s/util/httputil"
 	"minik8s/util/logger"
 	"minik8s/util/topicutil"
-	"path"
+	"minik8s/util/uidutil"
 )
 
 var log = logger.Log("Gpu")
 
 const (
-	minik8sGpuServerImage = ""
+	minik8sGpuServerImage = "923048992/minik8s-gpu-server:v1.0"
 )
 
 type Controller interface {
@@ -27,21 +28,27 @@ type Controller interface {
 type controller struct{}
 
 func (c *controller) dispatchGpuJob(msg *redis.Message) {
-	gpuJob := &apiObject.GpuJob{}
-	if err := json.Unmarshal([]byte(msg.Payload), gpuJob); err != nil {
+	gpuJobUpdate := &entity.GpuUpdate{}
+	if err := json.Unmarshal([]byte(msg.Payload), gpuJobUpdate); err != nil {
 		return
 	}
-
-	jobFullName := path.Join(gpuJob.Namespace(), gpuJob.Name())
+	gpuJob := gpuJobUpdate.Target
+	log("received %+v gpu: ", gpuJob)
+	jobFullName := "Gpu" + "-" + gpuJob.Namespace() + "-" + gpuJob.Name() + "-" + uidutil.New()
 	gpuServerCommands := []string{
 		"./gpu-server",
 		fmt.Sprintf("--job-name=%s", jobFullName),
+		fmt.Sprintf("--workdir=%s", gpuJob.WorkDir()),
 		fmt.Sprintf("--output=%s", gpuJob.OutputFile()),
 		fmt.Sprintf("--error=%s", gpuJob.ErrorFile()),
-		fmt.Sprintf("-N %d", gpuJob.NumProcess()),
+		fmt.Sprintf("--process=%d", gpuJob.NumProcess()),
 		fmt.Sprintf("--ntasks-per-node=%d", gpuJob.NumTasksPerNode()),
 		fmt.Sprintf("--cpus-per-task=%d", gpuJob.CpusPerTask()),
 		fmt.Sprintf("--gres=gpu:%d", gpuJob.NumGpus()),
+		fmt.Sprintf("--username=%s", gpuJob.Username()),
+		fmt.Sprintf("--password=%s", gpuJob.Password()),
+		fmt.Sprintf("--run=%s", gpuJob.RunScripts()),
+		fmt.Sprintf("--compile=%s", gpuJob.CompileScripts()),
 	}
 
 	podNamePrefix := jobFullName
@@ -49,7 +56,10 @@ func (c *controller) dispatchGpuJob(msg *redis.Message) {
 		Base: apiObject.Base{
 			ApiVersion: "v1",
 			Kind:       "Pod",
-			Metadata:   apiObject.Metadata{},
+			Metadata: apiObject.Metadata{
+				Name:      gpuJob.Name(),
+				Namespace: gpuJob.Namespace(),
+			},
 		},
 		Spec: apiObject.PodSpec{
 			Containers: []apiObject.Container{
@@ -69,7 +79,7 @@ func (c *controller) dispatchGpuJob(msg *redis.Message) {
 					},
 				},
 				{
-					Name:    podNamePrefix + "gpu-server",
+					Name:    podNamePrefix + "-gpu-server",
 					Image:   minik8sGpuServerImage,
 					Command: gpuServerCommands,
 					VolumeMounts: []apiObject.VolumeMount{
@@ -104,7 +114,7 @@ func (c *controller) dispatchGpuJob(msg *redis.Message) {
 }
 
 func (c *controller) Run() {
-	go listwatch.Watch(topicutil.GpuJobUpdateTopic(), c.dispatchGpuJob)
+	listwatch.Watch(topicutil.GpuJobUpdateTopic(), c.dispatchGpuJob)
 }
 
 func NewController() Controller {

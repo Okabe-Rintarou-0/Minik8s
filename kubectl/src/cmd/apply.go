@@ -81,7 +81,7 @@ func apply(cmd *cobra.Command, args []string) {
 			fmt.Println(err.Error())
 			return
 		}
-		URL := url.Prefix + url.HPAURL
+		URL := url.Prefix + url.GpuURL
 		applyApiObjectToApiServer(URL, gpu)
 	}
 }

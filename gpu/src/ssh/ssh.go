@@ -6,7 +6,6 @@ import (
 	"github.com/spf13/cast"
 	"os/exec"
 	"runtime"
-	"strconv"
 	"strings"
 )
 
@@ -42,11 +41,13 @@ type QueueInfo struct {
 
 type Client interface {
 	Close()
+	Reconnect()
 
 	GetQueueInfoByPartition(partition string) []*QueueInfo
-	GetAllQueueInfo() []*QueueInfo                  //Sinfo
-	GetJobById(jobID string) *JobInfo               //Squeue
-	SubmitScript(scriptPath string) (string, error) //Sbatch
+	GetAllQueueInfo() []*QueueInfo               //Sinfo
+	GetJobById(jobID string) *JobInfo            //Squeue
+	SubmitJob(scriptPath string) (string, error) //Sbatch
+	JobCompleted(jobID string) bool
 	//Scancel() ([]byte, error)         //取消指定作业
 
 	Compile(cmd string) (string, error)
@@ -54,7 +55,10 @@ type Client interface {
 	Scp(localPath, remotePath string) error
 	Rsync(localPath, remotePath string) error
 
+	CD(filepath string) (string, error)
+	ExistsFile(filepath string) (bool, error)
 	Mkdir(dir string) (string, error)
+	RmDir(dir string) (string, error)
 	CreateFile(filename string) (string, error)
 	WriteFile(filename, content string) (string, error)
 	ReadFile(filename string) (string, error)
@@ -66,11 +70,33 @@ type client struct {
 	sshCli   *goph.Client
 }
 
-func (cli *client) Compile(cmd string) (string, error) {
-	if resp, err := cli.loadCuda(); err != nil {
-		return resp, err
+func (cli *client) JobCompleted(jobID string) bool {
+	job := cli.GetJobById(jobID)
+	return job != nil && job.State == "COMPLETED"
+}
+
+func (cli *client) Reconnect() {
+	if cli.sshCli != nil {
+		_ = cli.sshCli.Close()
 	}
 
+	cli.sshCli = newSSHClient(cli.username, cli.password)
+}
+
+func (cli *client) ExistsFile(filepath string) (bool, error) {
+	cmd := fmt.Sprintf("if [ -f %s ]; then echo true; else echo false; fi", filepath)
+	raw, err := cli.sshCli.Run(cmd)
+	if err != nil {
+		return false, err
+	}
+	return cast.ToBool(string(raw)), nil
+}
+
+func (cli *client) Compile(cmd string) (string, error) {
+	//if resp, err := cli.loadCuda(); err != nil {
+	//	return resp, err
+	//}
+	fmt.Println(cmd)
 	resp, err := cli.sshCli.Run(cmd)
 	return string(resp), err
 }
@@ -99,10 +125,29 @@ func (cli *client) loadCuda() (string, error) {
 	return string(resp), err
 }
 
-func (cli *client) SubmitScript(scriptPath string) (string, error) {
+func (cli *client) SubmitJob(scriptPath string) (string, error) {
 	cmd := fmt.Sprintf("sbatch %s", scriptPath)
 	respRaw, err := cli.sshCli.Run(cmd)
-	return string(respRaw), err
+	resp := string(respRaw)
+	var jobID string
+	fmt.Printf("Submit and got response: %s\n", resp)
+	n, err := fmt.Sscanf(resp, "Submitted batch job %s", &jobID)
+	if err != nil || n != 1 {
+		return "-1", err
+	}
+	return jobID, nil
+}
+
+func (cli *client) CD(filepath string) (string, error) {
+	cmd := fmt.Sprintf("cd %s", filepath)
+	resp, err := cli.sshCli.Run(cmd)
+	return string(resp), err
+}
+
+func (cli *client) RmDir(dir string) (string, error) {
+	cmd := fmt.Sprintf("rm -rf %s", dir)
+	resp, err := cli.sshCli.Run(cmd)
+	return string(resp), err
 }
 
 func (cli *client) Mkdir(dir string) (string, error) {
@@ -118,7 +163,9 @@ func (cli *client) CreateFile(filename string) (string, error) {
 }
 
 func (cli *client) WriteFile(filename, content string) (string, error) {
-	cmd := fmt.Sprintf("echo \"%s\" > %s", strconv.Quote(content), filename)
+	content = strings.Replace(content, "\"", "\\\"", -1)
+	fmt.Println(content)
+	cmd := fmt.Sprintf("echo \"%s\" > %s", content, filename)
 	resp, err := cli.sshCli.Run(cmd)
 	return string(resp), err
 }
@@ -138,7 +185,7 @@ func (cli *client) GetJobById(jobID string) *JobInfo {
 	if raw, err := cli.sshCli.Run(cmd); err == nil {
 		resp := string(raw)
 		rows := strings.Split(resp, "\n")
-		if len(rows) > 0 {
+		if len(rows) > 0 && len(rows[0]) == 7 {
 			row := rows[0]
 			cols := strings.Split(row, " ")
 			return &JobInfo{
@@ -207,9 +254,6 @@ func newSSHClient(username, password string) *goph.Client {
 
 func NewClient(username, password string) Client {
 	sshCli := newSSHClient(username, password)
-	if sshCli == nil {
-		return nil
-	}
 	return &client{
 		username: username,
 		password: password,

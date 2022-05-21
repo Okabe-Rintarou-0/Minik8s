@@ -186,6 +186,7 @@ func (rm *runtimeManager) CreatePod(pod *apiObject.Pod) error {
 	/// TODO implement it
 
 	// Step 3: Start common containers
+	log("Pause container start finished, now start user defined containers")
 	for _, c := range pod.Spec.Containers {
 		err = rm.startCommonContainer(pod, &c)
 		if err != nil {
