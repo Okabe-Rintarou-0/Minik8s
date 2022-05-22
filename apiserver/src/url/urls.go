@@ -29,8 +29,10 @@ const (
 	AutoscaleURL                  = "/autoscaling/v1/"
 	AutoscaleURLWithSpecifiedName = "/autoscaling/v1/:namespace/:name"
 
-	PodIpGeneratorUrl = "/generator/pod/ip"
-	SvcIpGeneratorUrl = "/generator/service/ip"
+	PodIpGeneratorURL = "/generator/pod/ip"
+	SvcIpGeneratorURL = "/generator/service/ip"
+
+	EndpointURL = "/endpoint/"
 
 	ResetURL = "/reset"
 )

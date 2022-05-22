@@ -6,7 +6,7 @@ import (
 )
 
 func Test(t *testing.T) {
-	ig, err := New(url.PodIpGeneratorUrl, "10.44.0.0/28")
+	ig, err := New(url.PodIpGeneratorURL, "10.44.0.0/28")
 	if err != nil {
 		t.Error(err)
 	}

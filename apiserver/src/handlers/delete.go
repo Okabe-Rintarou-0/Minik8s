@@ -40,6 +40,10 @@ func deleteSpecifiedPod(namespace, name string) (pod *apiObject.Pod, node string
 			continue
 		}
 		if err = json.Unmarshal([]byte(raw), &pod); err != nil {
+			// Delete endpoints
+			// @TODO push to proxy
+			err = helper.DelEndpoints(*pod)
+
 			return nil, "", err
 		}
 		if err = etcd.Delete(etcdPodURL); err == nil {
