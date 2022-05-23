@@ -15,7 +15,7 @@ type DnsStatus struct {
 }
 
 type Dns struct {
-	ApiObjectBase `yaml:",inline"`
-	Spec          DnsSpec   `yaml:"spec"`
-	Status        DnsStatus `yaml:"status,omitempty"`
+	Base   `yaml:",inline"`
+	Spec   DnsSpec   `yaml:"spec"`
+	Status DnsStatus `yaml:"status,omitempty"`
 }
