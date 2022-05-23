@@ -183,7 +183,10 @@ func (s *server) Run() {
 		return
 	}
 	wait.PeriodWithCondition(pollPeriod, pollPeriod, s.poll)
+	fmt.Println("Job finished, now download the result")
 	s.downloadResult()
+	fmt.Println("Down load successfully, now hang forever.")
+	wait.Forever()
 }
 
 func NewServer(args JobArgs, jobsURL string) Server {

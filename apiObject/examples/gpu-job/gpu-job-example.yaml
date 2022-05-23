@@ -5,23 +5,23 @@ metadata:
   namespace: default
 spec:
   numProcess: 1
-  numTasksPerNode: 5
+  numTasksPerNode: 1
   cpusPerTask: 6
   numGpus: 1
   compileScripts: [
       "module load cuda/9.2.88-gcc-4.8.5",
-      "nvcc cublashello.cu -o cublashello -lcublas"
+      "nvcc gpu-job-test/cublashello.cu -o gpu-job-test/cublashello -lcublas"
   ]
   runScripts: [
       "module load cuda/9.2.88-gcc-4.8.5",
-      "./cublashello",
+      "./gpu-job-test/cublashello",
   ]
   volume: D:/gpu
-  workDir: gpu-job
   outputFile: gpu.out
   errorFile: gpu.err
   username: stu633
   password: 8uhlGet%
+  workDir: gpu-job-test
 
 
 #SBATCH --job-name=cublas

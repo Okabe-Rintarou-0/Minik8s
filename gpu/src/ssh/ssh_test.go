@@ -25,8 +25,9 @@ func TestSSH(t *testing.T) {
 func TestGpuSSH(t *testing.T) {
 	cli := NewClient(gpuUser, gpuPasswd)
 	defer cli.Close()
-	job := cli.GetJobById("13277555")
-	fmt.Println(job)
+	//job := cli.GetJobById("13277555")
+	//fmt.Println(job)
+	fmt.Println(cli.JobCompleted("13462525"))
 	//allQueues := cli.GetAllQueueInfo()
 	//fmt.Println(allQueues)
 	//smallQueue := cli.GetQueueInfoByPartition("small")

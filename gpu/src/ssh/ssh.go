@@ -185,17 +185,19 @@ func (cli *client) GetJobById(jobID string) *JobInfo {
 	if raw, err := cli.sshCli.Run(cmd); err == nil {
 		resp := string(raw)
 		rows := strings.Split(resp, "\n")
-		if len(rows) > 0 && len(rows[0]) == 7 {
+		if len(rows) > 0 {
 			row := rows[0]
 			cols := strings.Split(row, " ")
-			return &JobInfo{
-				JobID:     cols[0],
-				JobName:   cols[1],
-				Partition: cols[2],
-				Account:   cols[3],
-				AllocCPUS: cast.ToInt(cols[4]),
-				State:     cols[5],
-				ExitCode:  cols[6],
+			if len(cols) == 7 {
+				return &JobInfo{
+					JobID:     cols[0],
+					JobName:   cols[1],
+					Partition: cols[2],
+					Account:   cols[3],
+					AllocCPUS: cast.ToInt(cols[4]),
+					State:     cols[5],
+					ExitCode:  cols[6],
+				}
 			}
 		}
 	}

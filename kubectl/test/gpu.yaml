@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: GpuJob
 metadata:
-  name: gpu
+  name: matrix-ops
   namespace: default
 spec:
   numProcess: 1
@@ -10,18 +10,20 @@ spec:
   numGpus: 1
   compileScripts: [
       "module load cuda/9.2.88-gcc-4.8.5",
-      "nvcc gpu-job-test/cublashello.cu -o gpu-job-test/cublashello -lcublas"
+      "nvcc matrix/matrix_add.cu -o matrix/matrix_add",
+      "nvcc matrix/matrix_multiply.cu -o matrix/matrix_multiply"
   ]
   runScripts: [
       "module load cuda/9.2.88-gcc-4.8.5",
-      "./gpu-job-test/cublashello",
+      "./matrix/matrix_add",
+      "./matrix/matrix_multiply"
   ]
   volume: D:/gpu
-  outputFile: gpu.out
-  errorFile: gpu.err
+  outputFile: matrix_op.out
+  errorFile: matrix_op.err
   username: stu633
   password: 8uhlGet%
-  workDir: gpu-job-test
+  workDir: matrix
 
 
 #SBATCH --job-name=cublas

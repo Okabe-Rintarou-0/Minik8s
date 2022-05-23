@@ -18,7 +18,7 @@ import (
 var log = logger.Log("Gpu")
 
 const (
-	minik8sGpuServerImage = "923048992/minik8s-gpu-server:v1.0"
+	minik8sGpuServerImage = "923048992/minik8s-gpu-server:v1.2"
 )
 
 type Controller interface {
