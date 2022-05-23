@@ -16,6 +16,7 @@ const (
 	Deployment
 	ReplicaSet
 	HorizontalPodAutoscaler
+	GpuJob
 )
 
 func (tp *ApiObjectType) String() string {
@@ -63,6 +64,8 @@ func parseType(content []byte) ApiObjectType {
 		return ReplicaSet
 	case "HorizontalPodAutoscaler":
 		return HorizontalPodAutoscaler
+	case "GpuJob":
+		return GpuJob
 	}
 	return Unknown
 }

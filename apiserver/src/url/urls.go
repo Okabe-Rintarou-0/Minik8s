@@ -2,7 +2,7 @@ package url
 
 const (
 	HttpScheme = "http://"
-	Hostname   = "10.119.11.101"
+	Hostname   = "localhost"
 	Port       = ":8080"
 	Prefix     = HttpScheme + Hostname + Port
 
@@ -28,6 +28,8 @@ const (
 	HPAStatusURLWithSpecifiedName = "/api/v1/hpa/status/:namespace/:name"
 	AutoscaleURL                  = "/autoscaling/v1/"
 	AutoscaleURLWithSpecifiedName = "/autoscaling/v1/:namespace/:name"
+
+	GpuURL = "/api/v1/gpu/"
 
 	ResetURL = "/reset"
 )

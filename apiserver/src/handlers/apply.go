@@ -82,7 +82,7 @@ func HandleApplyPod(c *gin.Context) {
 	}
 
 	pod.Metadata.UID = uidutil.New()
-	log("receive pod %s/%s[ID = %v]", pod.Namespace(), pod.Name(), pod.UID())
+	log("receive pod %s/%s: %+v", pod.Namespace(), pod.Name(), pod)
 
 	// Schedule first, then put the data to url: PodURL/node/namespace/name
 	podUpdateMsg, _ := json.Marshal(entity.PodUpdate{
@@ -162,5 +162,23 @@ func HandleApplyHPA(c *gin.Context) {
 		c.String(http.StatusOK, err.Error())
 		return
 	}
+	c.String(http.StatusOK, "Apply successfully!")
+}
+
+func HandleApplyGpuJob(c *gin.Context) {
+	gpu := apiObject.GpuJob{}
+	err := readAndUnmarshal(c.Request.Body, &gpu)
+	if err != nil {
+		c.String(http.StatusOK, err.Error())
+	}
+	gpu.Metadata.UID = uidutil.New()
+	log("receive gpu job[ID = %v]: %v", gpu.UID(), gpu)
+
+	GpuUpdateMsg, _ := json.Marshal(entity.GpuUpdate{
+		Action: entity.CreateAction,
+		Target: gpu,
+	})
+
+	listwatch.Publish(topicutil.GpuJobUpdateTopic(), GpuUpdateMsg)
 	c.String(http.StatusOK, "Apply successfully!")
 }
