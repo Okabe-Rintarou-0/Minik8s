@@ -34,9 +34,9 @@ func get(cmd *cobra.Command, args []string) {
 		err = printSpecifiedNodeStatus(name)
 	case "nodes":
 		err = printNodeStatuses()
-	case "replicaset":
+	case "rs":
 		err = printSpecifiedReplicaSetStatus(name)
-	case "replicasets":
+	case "rss":
 		err = printReplicaSetStatuses()
 	case "hpas":
 		err = printHPAStatuses()
