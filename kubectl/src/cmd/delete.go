@@ -58,7 +58,7 @@ func del(cmd *cobra.Command, args []string) {
 		err = deleteSpecifiedNode(namespace, name)
 	case "pod":
 		err = deleteSpecifiedPod(namespace, name)
-	case "replicaset":
+	case "rs":
 		err = deleteSpecifiedReplicaSet(namespace, name)
 	case "hpa":
 		err = deleteSpecifiedHPA(namespace, name)

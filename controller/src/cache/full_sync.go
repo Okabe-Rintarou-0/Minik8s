@@ -217,8 +217,8 @@ func (m *manager) fullSyncPodStatuses() {
 	toDelete, toAdd := m.syncPodChange(cachedPodStatuses, serverPodStatuses)
 
 	// Step 3: Handle toDelete & toAdd
-	log("To Delete: %v", toDelete)
-	log("To Add: %v", toAdd)
+	//log("To Delete: %v", toDelete)
+	//log("To Add: %v", toAdd)
 	m.handlePodAdd(toAdd)
 	m.handlePodDelete(toDelete)
 }
