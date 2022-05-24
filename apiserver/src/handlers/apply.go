@@ -55,7 +55,7 @@ func HandleApplyNode(c *gin.Context) {
 	var nodeStatusJson []byte
 	if nodeStatusJson, err = json.Marshal(entity.NodeStatus{
 		Hostname:   node.Name(),
-		Ip:         "",
+		Ip:         node.Ip,
 		Labels:     node.Labels(),
 		Lifecycle:  entity.NodeUnknown,
 		Error:      "",
