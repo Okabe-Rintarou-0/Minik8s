@@ -135,6 +135,37 @@ func getHPAApiObjectFromEtcd(namespace, name string) (hpa *apiObject.HorizontalP
 	return nil
 }
 
+func getServiceFromEtcd(namespace, name string) (service *apiObject.Service) {
+	etcdURL := path.Join(url.ServiceURL, namespace, name)
+	if raw, err := etcd.Get(etcdURL); err == nil {
+		if err = json.Unmarshal([]byte(raw), &service); err == nil {
+			return service
+		}
+		logger.Error(err.Error())
+	}
+	return nil
+}
+
+func getServicesFromEtcd() (services []apiObject.Service) {
+	etcdURL := url.ServiceURL
+	services = make([]apiObject.Service, 0)
+	vis := make(map[string]bool)
+	if raws, err := etcd.GetAll(etcdURL); err == nil {
+		for _, raw := range raws {
+			service := apiObject.Service{}
+			if err = json.Unmarshal([]byte(raw), &service); err == nil {
+				if !vis[service.Metadata.UID] {
+					services = append(services, service)
+					vis[service.Metadata.UID] = true
+				}
+			} else {
+				logger.Error(err.Error())
+			}
+		}
+	}
+	return services
+}
+
 func HandleGetNodeStatus(c *gin.Context) {
 	namespace := c.Param("namespace")
 	name := c.Param("name")
@@ -202,4 +233,14 @@ func HandleGetHPAStatus(c *gin.Context) {
 
 func HandleGetHPAStatuses(c *gin.Context) {
 	c.JSON(http.StatusOK, getHPAStatusesFromEtcd())
+}
+
+func HandleGetService(c *gin.Context) {
+	namespace := c.Param("namespace")
+	name := c.Param("name")
+	c.JSON(http.StatusOK, getServiceFromEtcd(namespace, name))
+}
+
+func HandleGetServices(c *gin.Context) {
+	c.JSON(http.StatusOK, getServicesFromEtcd())
 }

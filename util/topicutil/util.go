@@ -7,6 +7,8 @@ const podStatusTopic = "PodStatus"
 const nodeStatusTopic = "NodeStatus"
 const replicaSetStatusTopic = "ReplicaSetStatus"
 const replicaSetUpdateTopic = "ReplicaSetUpdate"
+const serviceUpdateTopic = "ServiceUpdate"
+const endpointUpdateTopic = "EndpointUpdate"
 const testTopic = "__test__"
 
 func PodUpdateTopic(hostname string) string {
@@ -39,6 +41,14 @@ func HPAUpdateTopic() string {
 
 func HPAStatusTopic() string {
 	return hpaStatusTopic
+}
+
+func ServiceUpdateTopic() string {
+	return serviceUpdateTopic
+}
+
+func EndpointUpdateTopic() string {
+	return endpointUpdateTopic
 }
 
 func TestTopic() string {

@@ -31,6 +31,13 @@ const (
 
 	PodIpGeneratorURL = "/generator/pod/ip"
 	SvcIpGeneratorURL = "/generator/service/ip"
+	ServiceIpBase     = "10.96.0.1/24"
+	PodIpBase         = "10.44.0.1/24"
+
+	ServiceURL                  = "/api/v1/service/"
+	ServiceURLWithSpecifiedName = "/api/v1/service/:namespace/:name"
+
+	DNSURL = "/api/v1/dns/"
 
 	EndpointURL = "/endpoint/"
 

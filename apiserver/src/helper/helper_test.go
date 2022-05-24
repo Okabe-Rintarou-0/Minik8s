@@ -140,22 +140,22 @@ func Test(t *testing.T) {
 		}
 	}
 
-	if ret, err := getEndpoints("key1", "value1"); err != nil {
+	if ret, err := GetEndpoints("key1", "value1"); err != nil {
 		t.Error(err)
 	} else {
 		t.Log(ret)
 	}
-	if ret, err := getEndpoints("key2", "value2"); err != nil {
+	if ret, err := GetEndpoints("key2", "value2"); err != nil {
 		t.Error(err)
 	} else {
 		t.Log(ret)
 	}
-	if ret, err := getEndpoints("key3", "value3"); err != nil {
+	if ret, err := GetEndpoints("key3", "value3"); err != nil {
 		t.Error(err)
 	} else {
 		t.Log(ret)
 	}
-	if ret, err := getEndpoints("key", "value"); err != nil {
+	if ret, err := GetEndpoints("key", "value"); err != nil {
 		t.Error(err)
 	} else {
 		t.Log(ret)

@@ -2,29 +2,25 @@ package service
 
 import (
 	"github.com/coreos/go-iptables/iptables"
+	"minik8s/proxy/src/constant"
 	"strconv"
-)
-
-const (
-	preRouting   = "PREROUTING"
-	output       = "OUTPUT"
-	kubeServices = "KUBE-SERVICES"
+	"strings"
 )
 
 type EndPoint struct {
 	Name string
 	Ip   string
-	Port int32
+	Port string
 }
 
 func (ep *EndPoint) getTarget() string {
-	return ep.Ip + ":" + strconv.Itoa(int(ep.Port))
+	return ep.Ip + ":" + ep.Port
 }
 
 type Manager interface {
 	Init() error
-	CreateService(service, ip string, port int32) error
-	DeleteService(service, ip string, port int32) error
+	CreateService(service, ip string, port string) error
+	DeleteService(service, ip string, port string) error
 	// CreateEndpoints Endpoints should be deleted before re-create endpoints
 	CreateEndpoints(service string, eps []EndPoint) error
 	DeleteEndPoints(service string, eps []EndPoint) error
@@ -38,7 +34,7 @@ type serviceManager struct {
 func New() (Manager, error) {
 	tab, err := iptables.New()
 	if err != nil {
-		return nil, nil
+		return nil, err
 	}
 	sm := &serviceManager{
 		tab: tab,
@@ -47,6 +43,11 @@ func New() (Manager, error) {
 }
 
 func (sm *serviceManager) newChain(chain string) error {
+	if exist, err := sm.tab.ChainExists("nat", chain); err != nil {
+		return err
+	} else if exist {
+		return nil
+	}
 	return sm.tab.NewChain("nat", chain)
 }
 
@@ -116,39 +117,68 @@ func (sm *serviceManager) deleteChainToChains(from string, tos []EndPoint) error
 	return nil
 }
 
-func (sm *serviceManager) appendServiceToChain(from, to, ip string, port int32) error {
+func (sm *serviceManager) appendServiceToChain(from, to, ip string, port string) error {
 	return sm.tab.AppendUnique("nat", from, "-d", ip, "-p", "tcp", "-m", "tcp",
-		"--dport", strconv.Itoa(int(port)), "-j", to)
+		"--dport", port, "-j", to)
 }
 
-func (sm *serviceManager) deleteServiceToChain(from, to, ip string, port int32) error {
+func (sm *serviceManager) deleteServiceToChain(from, to, ip string, port string) error {
 	return sm.tab.Delete("nat", from, "-d", ip, "-p", "tcp", "-m", "tcp",
-		"--dport", strconv.Itoa(int(port)), "-j", to)
+		"--dport", port, "-j", to)
 }
 
-func (sm *serviceManager) Init() error {
-	var err error
-	if err = sm.newChain(kubeServices); err != nil {
+func (sm *serviceManager) Init() (err error) {
+	if err = sm.tab.ClearChain("nat", constant.KubeServices); err != nil {
 		return err
 	}
-	if err = sm.tab.AppendUnique("nat", preRouting, "-j", kubeServices); err != nil {
+	if chains, err := sm.tab.ListChains("nat"); err != nil {
+		return err
+	} else {
+		for _, chain := range chains {
+			if strings.Contains(chain, constant.KubeEndpoint) {
+				if err = sm.tab.ClearChain("nat", chain); err != nil {
+					return err
+				}
+			} else if strings.Contains(chain, constant.KubeService) {
+				if err = sm.tab.ClearChain("nat", chain); err != nil {
+					return err
+				}
+			}
+		}
+		for _, chain := range chains {
+			if strings.Contains(chain, constant.KubeEndpoint) {
+				if err = sm.tab.DeleteChain("nat", chain); err != nil {
+					return err
+				}
+			} else if strings.Contains(chain, constant.KubeService) {
+				if err = sm.tab.DeleteChain("nat", chain); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	if err = sm.newChain(constant.KubeServices); err != nil {
 		return err
 	}
-	if err = sm.tab.AppendUnique("nat", output, "-j", kubeServices); err != nil {
+	if err = sm.tab.AppendUnique("nat", constant.PreRouting, "-j", constant.KubeServices); err != nil {
+		return err
+	}
+	if err = sm.tab.AppendUnique("nat", constant.Output, "-j", constant.KubeServices); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (sm *serviceManager) CreateService(service, ip string, port int32) error {
+func (sm *serviceManager) CreateService(service, ip string, port string) error {
 	if err := sm.newChain(service); err != nil {
 		return err
 	}
-	return sm.appendServiceToChain(kubeServices, service, ip, port)
+	return sm.appendServiceToChain(constant.KubeServices, service, ip, port)
 }
 
-func (sm *serviceManager) DeleteService(service, ip string, port int32) error {
-	if err := sm.deleteServiceToChain(kubeServices, service, ip, port); err != nil {
+func (sm *serviceManager) DeleteService(service, ip string, port string) error {
+	if err := sm.deleteServiceToChain(constant.KubeServices, service, ip, port); err != nil {
 		return err
 	}
 	return sm.delChain(service)
@@ -170,7 +200,10 @@ func (sm *serviceManager) DeleteEndPoints(service string, eps []EndPoint) error 
 	if err := sm.deleteEndpoints(eps); err != nil {
 		return err
 	}
-	if err := sm.deleteChainToChains(service, eps); err != nil {
+	//if err := sm.deleteChainToChains(service, eps); err != nil {
+	//	return err
+	//}
+	if err := sm.tab.ClearChain("nat", service); err != nil {
 		return err
 	}
 	for _, ep := range eps {

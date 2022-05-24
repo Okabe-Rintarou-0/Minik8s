@@ -75,5 +75,13 @@ func apply(cmd *cobra.Command, args []string) {
 		}
 		URL := url.Prefix + url.HPAURL
 		applyApiObjectToApiServer(URL, hpa)
+	case util.Service:
+		service := apiObject.Service{}
+		if err = yaml.Unmarshal(content, &service); err != nil {
+			fmt.Println(err.Error())
+			return
+		}
+		URL := url.Prefix + url.ServiceURL
+		applyApiObjectToApiServer(URL, service)
 	}
 }

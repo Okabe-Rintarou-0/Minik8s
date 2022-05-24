@@ -14,6 +14,8 @@ var postTable = map[string]Handler{
 	url.PodURL:        handlers.HandleApplyPod,
 	url.ReplicaSetURL: handlers.HandleApplyReplicaSet,
 	url.HPAURL:        handlers.HandleApplyHPA,
+	url.ServiceURL:    handlers.HandleApplyService,
+	url.DNSURL:        handlers.HandleApplyDNS,
 
 	// update pod after it's scheduled
 	url.PodURLWithSpecifiedNode: handlers.HandleSchedulePod,
@@ -50,6 +52,10 @@ var getTable = map[string]Handler{
 	url.ReplicaSetURLWithSpecifiedName: handlers.HandleGetReplicaSetApiObject,
 	url.HPAURLWithSpecifiedName:        handlers.HandleGetHPAApiObject,
 	url.PodURLWithSpecifiedNode:        handlers.HandleGetPodsApiObject,
+
+	// kubectl get service service_name
+	url.ServiceURLWithSpecifiedName: handlers.HandleGetService,
+	url.ServiceURL:                  handlers.HandleGetServices,
 }
 
 var putTable = map[string]Handler{
@@ -64,6 +70,7 @@ var deleteTable = map[string]Handler{
 	url.NodeURLWithSpecifiedName:       handlers.HandleDeleteNode,
 	url.ReplicaSetURLWithSpecifiedName: handlers.HandleDeleteReplicaSet,
 	url.HPAURLWithSpecifiedName:        handlers.HandleDeleteHPA,
+	url.ServiceURLWithSpecifiedName:    handlers.HandleDeleteService,
 
 	// kubectl reset
 	url.ResetURL: handlers.HandleReset,

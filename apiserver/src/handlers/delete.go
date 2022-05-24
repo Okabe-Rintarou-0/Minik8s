@@ -40,12 +40,13 @@ func deleteSpecifiedPod(namespace, name string) (pod *apiObject.Pod, node string
 			continue
 		}
 		if err = json.Unmarshal([]byte(raw), &pod); err != nil {
-			// Delete endpoints
-			// @TODO push to proxy
-			err = helper.DelEndpoints(*pod)
-
 			return nil, "", err
 		}
+
+		// Delete endpoints
+		// @TODO push to proxy
+		log("Pod to delete is %+v", *pod)
+		err = helper.DelEndpoints(*pod)
 		if err = etcd.Delete(etcdPodURL); err == nil {
 			log("Delete pod %s/%s successfully", namespace, name)
 			break
@@ -189,4 +190,57 @@ func HandleDeleteNodePods(c *gin.Context) {
 			createAndPublishPodDeleteMsg(node, pod)
 		}
 	}
+}
+
+func HandleDeleteService(c *gin.Context) {
+	namespace := c.Param("namespace")
+	name := c.Param("name")
+
+	if !helper.ExistsService(namespace, name) {
+		c.String(http.StatusOK, fmt.Sprintf("service %s/%s does not exist", namespace, name))
+		return
+	}
+
+	service := apiObject.Service{}
+	if serviceJsonStr, err := etcd.Get(path.Join(url.ServiceURL, namespace, name)); err != nil {
+		c.String(http.StatusOK, err.Error())
+		return
+	} else {
+		if err := json.Unmarshal([]byte(serviceJsonStr), &service); err != nil {
+			c.String(http.StatusOK, err.Error())
+			return
+		}
+	}
+
+	serviceUpdate := entity.ServiceUpdate{
+		Action: entity.DeleteAction,
+		Target: entity.ServiceTarget{
+			Service:   service,
+			Endpoints: make([]apiObject.Endpoint, 0),
+		},
+	}
+	for key, value := range service.Spec.Selector {
+		if endpoints, err := helper.GetEndpoints(key, value); err != nil {
+			c.String(http.StatusOK, err.Error())
+			return
+		} else {
+			serviceUpdate.Target.Endpoints = append(serviceUpdate.Target.Endpoints, endpoints...)
+		}
+	}
+
+	serviceDeleteMsg, _ := json.Marshal(serviceUpdate)
+	listwatch.Publish(topicutil.ServiceUpdateTopic(), serviceDeleteMsg)
+
+	for key, value := range service.Spec.Selector {
+		if err := etcd.Delete(path.Join(url.ServiceURL, key, value, service.Metadata.UID)); err != nil {
+			c.String(http.StatusOK, err.Error())
+			return
+		}
+	}
+	if err := etcd.Delete(path.Join(url.ServiceURL, namespace, name)); err != nil {
+		c.String(http.StatusOK, err.Error())
+		return
+	}
+
+	c.String(http.StatusOK, "Delete successfully")
 }

@@ -148,6 +148,7 @@ type PodSpec struct {
 	NodeSelector  Labels      `yaml:"nodeSelector,omitempty"`
 	Containers    []Container `yaml:"containers"`
 	Volumes       []Volume    `yaml:"volumes"`
+	ClusterIp     string      `yaml:"clusterIp,omitempty"`
 }
 
 type Pod struct {

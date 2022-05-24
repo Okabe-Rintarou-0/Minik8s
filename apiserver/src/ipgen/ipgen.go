@@ -26,6 +26,7 @@ type Generator interface {
 	GetCurrentWithMask() (string, error)
 	GetNextWithMask() (string, error)
 	Clear() error
+	ClearIfInit() error
 }
 
 type ipGenerator struct {
@@ -69,13 +70,14 @@ func (ig *ipGenerator) GetNext() (string, error) {
 		return ret, err
 	}
 	num, err := strconv.Atoi(ret)
+	newNum := (num + 1) & ((1 << (32 - ig.mask)) - 1)
 	if err != nil {
 		return ret, err
 	}
-	if err := etcd.Put(ig.url, strconv.Itoa(num+1)); err != nil {
+	if err := etcd.Put(ig.url, strconv.Itoa(newNum)); err != nil {
 		return ret, err
 	}
-	return inetNtoA(ig.base + int64(num+1)), nil
+	return inetNtoA(ig.base + int64(newNum)), nil
 }
 
 func (ig *ipGenerator) GetCurrentWithMask() (string, error) {
@@ -96,4 +98,15 @@ func (ig *ipGenerator) GetNextWithMask() (string, error) {
 
 func (ig *ipGenerator) Clear() error {
 	return etcd.Put(ig.url, "1")
+}
+
+func (ig *ipGenerator) ClearIfInit() error {
+	if ret, err := etcd.Get(ig.url); err != nil {
+		return err
+	} else {
+		if ret == "" {
+			return etcd.Put(ig.url, "1")
+		}
+	}
+	return nil
 }

@@ -5,6 +5,9 @@ import (
 	"minik8s/apiObject"
 	"minik8s/apiserver/src/etcd"
 	"minik8s/apiserver/src/url"
+	"minik8s/entity"
+	"minik8s/listwatch"
+	"minik8s/util/topicutil"
 	"minik8s/util/uidutil"
 	"path"
 )
@@ -64,14 +67,31 @@ func AddEndpoints(pod apiObject.Pod) error {
 			}
 		}
 
+		preEndpoints := make([]apiObject.Endpoint, 0)
+		for _, UIDs := range endpoints {
+			for _, UID := range UIDs {
+				endpoint := apiObject.Endpoint{}
+				if endpointJsonStr, err := etcd.Get(path.Join(url.EndpointURL, UID)); err != nil {
+					return nil
+				} else {
+					if err := json.Unmarshal([]byte(endpointJsonStr), &endpoint); err != nil {
+						return nil
+					}
+				}
+				preEndpoints = append(preEndpoints, endpoint)
+			}
+		}
+
+		newEndpoints := make([]apiObject.Endpoint, 0)
 		for _, container := range pod.Spec.Containers {
 			for _, port := range container.Ports {
 				endpoint := apiObject.Endpoint{
 					UID:  uidutil.New(),
-					IP:   port.HostIP,
-					Port: port.HostPort,
+					IP:   pod.Spec.ClusterIp,
+					Port: port.ContainerPort,
 				}
 				endpoints.Add(pod.Metadata.UID, endpoint.UID)
+				newEndpoints = append(newEndpoints, endpoint)
 				var endpointJson []byte
 				if endpointJson, err = json.Marshal(endpoint); err != nil {
 					return err
@@ -79,6 +99,28 @@ func AddEndpoints(pod apiObject.Pod) error {
 				if err = etcd.Put(path.Join(url.EndpointURL, endpoint.UID), string(endpointJson)); err != nil {
 					return err
 				}
+			}
+		}
+		newEndpoints = append(preEndpoints, newEndpoints...)
+
+		// Push endpoints to proxy
+		if servicesStr, err := etcd.GetAll(path.Join(url.ServiceURL, key, value)); err != nil {
+			return err
+		} else {
+			for _, serviceStr := range servicesStr {
+				service := apiObject.Service{}
+				if err := json.Unmarshal([]byte(serviceStr), &service); err != nil {
+					return err
+				}
+				endpointUpdateMsg, _ := json.Marshal(entity.EndpointUpdate{
+					Action: entity.CreateAction,
+					Target: entity.EndpointTarget{
+						PreEndpoints: preEndpoints,
+						NewEndpoints: newEndpoints,
+						Service:      service,
+					},
+				})
+				listwatch.Publish(topicutil.EndpointUpdateTopic(), endpointUpdateMsg)
 			}
 		}
 
@@ -107,9 +149,56 @@ func DelEndpoints(pod apiObject.Pod) error {
 				return err
 			}
 		}
-		for _, UID := range endpoints.Get(pod.Metadata.UID) {
-			if err = etcd.Delete(path.Join(url.EndpointURL, UID)); err != nil {
-				return err
+
+		preEndpoints := make([]apiObject.Endpoint, 0)
+		newEndpoints := make([]apiObject.Endpoint, 0)
+		for podUID, UIDs := range endpoints {
+			for _, UID := range UIDs {
+				endpoint := apiObject.Endpoint{}
+				if endpointJsonStr, err := etcd.Get(path.Join(url.EndpointURL, UID)); err != nil {
+					return err
+				} else {
+					if err := json.Unmarshal([]byte(endpointJsonStr), &endpoint); err != nil {
+						return err
+					}
+				}
+				preEndpoints = append(preEndpoints, endpoint)
+				if podUID != pod.Metadata.UID {
+					newEndpoints = append(newEndpoints, endpoint)
+				} else {
+					// Push endpoints to proxy
+					endpoint := apiObject.Endpoint{}
+					if endpointJsonStr, err := etcd.Get(path.Join(url.EndpointURL, UID)); err != nil {
+						return err
+					} else {
+						if err := json.Unmarshal([]byte(endpointJsonStr), &endpoint); err != nil {
+							return err
+						}
+					}
+					if err = etcd.Delete(path.Join(url.EndpointURL, UID)); err != nil {
+						return err
+					}
+				}
+			}
+		}
+
+		if servicesStr, err := etcd.GetAll(path.Join(url.ServiceURL, key, value)); err != nil {
+			return err
+		} else {
+			for _, serviceStr := range servicesStr {
+				service := apiObject.Service{}
+				if err := json.Unmarshal([]byte(serviceStr), &service); err != nil {
+					return err
+				}
+				endpointUpdateMsg, _ := json.Marshal(entity.EndpointUpdate{
+					Action: entity.DeleteAction,
+					Target: entity.EndpointTarget{
+						PreEndpoints: preEndpoints,
+						NewEndpoints: newEndpoints,
+						Service:      service,
+					},
+				})
+				listwatch.Publish(topicutil.EndpointUpdateTopic(), endpointUpdateMsg)
 			}
 		}
 		endpoints.Del(pod.Metadata.UID)
@@ -124,7 +213,7 @@ func DelEndpoints(pod apiObject.Pod) error {
 	return nil
 }
 
-func getEndpoints(key, value string) (endpointArray []apiObject.Endpoint, err error) {
+func GetEndpoints(key, value string) (endpointArray []apiObject.Endpoint, err error) {
 	etcdEndpointsKVURL := path.Join(url.EndpointURL, key, value)
 	var endpointsJsonStr string
 	if endpointsJsonStr, err = etcd.Get(etcdEndpointsKVURL); err != nil {
@@ -152,4 +241,13 @@ func getEndpoints(key, value string) (endpointArray []apiObject.Endpoint, err er
 		}
 	}
 	return endpointArray, nil
+}
+
+func ExistsService(namespace, name string) bool {
+	var etcdURL string
+	etcdURL = path.Join(url.ServiceURL, namespace, name)
+	if serviceRaw, err := etcd.Get(etcdURL); err == nil && serviceRaw != "" {
+		return true
+	}
+	return false
 }
