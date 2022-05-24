@@ -91,6 +91,7 @@ func weaveInit(url, ipBase string) error {
 
 func (api *apiServer) Run() {
 	etcd.Start()
+	_ = etcd.DeleteAllKeys()
 
 	if err := ipInit(url.SvcIpGeneratorURL, url.ServiceIpBase); err != nil {
 		logger.Log("api-server")(err.Error())
