@@ -4,15 +4,25 @@ import "time"
 
 type handler func()
 
+type conditionalHandler func() bool
+
 func Forever() {
 	<-make(chan struct{})
 }
 
 func Period(delay time.Duration, period time.Duration, handler handler) {
-	<-time.NewTimer(delay).C
+	<-time.After(delay)
 	tick := time.Tick(period)
 	for {
 		handler()
+		<-tick
+	}
+}
+
+func PeriodWithCondition(delay time.Duration, period time.Duration, handler conditionalHandler) {
+	<-time.After(delay)
+	tick := time.Tick(period)
+	for handler() {
 		<-tick
 	}
 }
