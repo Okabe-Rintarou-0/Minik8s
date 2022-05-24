@@ -370,6 +370,7 @@ func (rm *runtimeManager) startCommonContainer(pod *apiObject.Pod, c *apiObject.
 	var ID container.ID
 	ID, err = rm.cm.CreateContainer(containerFullName, rm.getCommonContainerCreateConfig(pod, c))
 	if err != nil {
+		log("Created failed, because: %s\n", err.Error())
 		return err
 	}
 	log("Create the container successfully, got %s", ID)
