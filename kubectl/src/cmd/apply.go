@@ -83,5 +83,13 @@ func apply(cmd *cobra.Command, args []string) {
 		}
 		URL := url.Prefix + url.ServiceURL
 		applyApiObjectToApiServer(URL, service)
+	case util.GpuJob:
+		gpu := apiObject.GpuJob{}
+		if err = yaml.Unmarshal(content, &gpu); err != nil {
+			fmt.Println(err.Error())
+			return
+		}
+		URL := url.Prefix + url.GpuURL
+		applyApiObjectToApiServer(URL, gpu)
 	}
 }

@@ -356,14 +356,14 @@ func (rm *runtimeManager) startCommonContainer(pod *apiObject.Pod, c *apiObject.
 			return err
 		}
 	} else {
-		//fmt.Printf("No need to pull image %s, continue\n", c.Image)
+		log("No need to pull image %s, continue", c.Image)
 	}
 	// Prepare
 	podFullName := pod.FullName()
 	podUID := pod.UID()
 
 	// Step 3: Create a container
-	//fmt.Println("Now create the container")
+	log("Now create the container")
 
 	containerFullName := podutil.ContainerFullName(c.Name, podFullName, podUID, 0)
 
@@ -372,10 +372,10 @@ func (rm *runtimeManager) startCommonContainer(pod *apiObject.Pod, c *apiObject.
 	if err != nil {
 		return err
 	}
-	//fmt.Println("Create the container successfully, got ID", ID)
+	log("Create the container successfully, got %s", ID)
 
 	// Step 4: Start this container
-	//fmt.Println("Now start the container with ID", ID)
+	log("Now start the container with ID %s", ID)
 	err = rm.cm.StartContainer(ID, &container.StartConfig{})
 	return err
 }

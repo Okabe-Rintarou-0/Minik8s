@@ -16,6 +16,7 @@ var postTable = map[string]Handler{
 	url.HPAURL:        handlers.HandleApplyHPA,
 	url.ServiceURL:    handlers.HandleApplyService,
 	url.DNSURL:        handlers.HandleApplyDNS,
+	url.GpuURL:        handlers.HandleApplyGpuJob,
 
 	// update pod after it's scheduled
 	url.PodURLWithSpecifiedNode: handlers.HandleSchedulePod,
