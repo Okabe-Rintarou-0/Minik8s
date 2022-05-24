@@ -1,7 +1,6 @@
 #!/bin/bash
 docker run \
 --name=cadvisor \
---net="host" \
 -p 8000:8080 \
 --volume=/:/rootfs:ro \
 --volume=/var/run:/var/run:rw \
