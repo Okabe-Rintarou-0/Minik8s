@@ -2,8 +2,20 @@ package main
 
 import (
 	"fmt"
-	"os"
+	"minik8s/apiserver/src/url"
+	"minik8s/entity"
+	"minik8s/util/httputil"
 )
+
+func getNodes() (nodes []string) {
+	var nodeStatuses []*entity.NodeStatus
+	if err := httputil.GetAndUnmarshal(url.Prefix+url.NodeURL, &nodeStatuses); err == nil {
+		for _, status := range nodeStatuses {
+			nodes = append(nodes, status.Ip)
+		}
+	}
+	return
+}
 
 func main() {
 	template := `# my global config
@@ -22,8 +34,8 @@ scrape_configs:
     static_configs:
     - targets: `
 	targets := "['localhost:9090'"
-	for _, nodeIp := range os.Args[1:] {
-		endpoint := fmt.Sprintf("'%s:8080'", nodeIp)
+	for _, nodeIp := range getNodes() {
+		endpoint := fmt.Sprintf("'%s:8000'", nodeIp)
 		targets += ", " + endpoint
 	}
 	targets += "]\n"
