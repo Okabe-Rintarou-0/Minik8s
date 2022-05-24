@@ -50,6 +50,8 @@ func ServiceUpdateTopic() string {
 
 func EndpointUpdateTopic() string {
 	return endpointUpdateTopic
+}
+
 func GpuJobUpdateTopic() string {
 	return gpuJobUpdateTopic
 }
