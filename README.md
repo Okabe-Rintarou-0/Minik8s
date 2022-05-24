@@ -27,6 +27,13 @@ using `localhost`(Even if they are running in `host` network mode).
 Please use the ip instead.
 
 ### GPU
+Users only need to specify the scripts needed to compile cuda files and run them, and also the work directory. 
+
+The cuda files(ended with `.cu`) will be recognized and uploaded to the π2.0 platform. The slurm script will be created automatically according to given parameters.
+
+The jobs should be independent of each other, so we adopt a sidecar structure. The `gpu-server` will upload cuda files, compile them, create slurm script and finally submit the job by using command `sbatch`.
+
+Since we don't have a good idea to be aware of the completion of submitted jobs(π2.0 supports email alert, but it's not suitable for this situation). So we temporarily adopt the strategy of polling(every 5 minutes). Once the job has been completed(can be known by using command `sacct`. If the job returned is `COMPLETED` in its `State` field, then it is completed), the `gpu-server` will download the output file and error file(`xxx.out`, `xxx.err`, specified by users). Users can then browse and download the results of jobs using `nginx-fileserver`.
 
 ![](./readme-images/gpu-pod-struct.svg)
 

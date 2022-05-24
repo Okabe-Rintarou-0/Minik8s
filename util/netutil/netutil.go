@@ -60,3 +60,8 @@ func Hostname() string {
 	hostname, _ := os.Hostname()
 	return hostname
 }
+
+func LookUpIp(hostname string) string {
+	addr, _ := net.LookupIP(hostname)
+	return fmt.Sprintf("%d.%d.%d.%d/24", addr[0][12], addr[0][13], addr[0][14], addr[0][15])
+}

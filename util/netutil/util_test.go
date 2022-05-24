@@ -1,7 +1,12 @@
 package netutil
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
 func TestUtil(t *testing.T) {
-	GetHostIp()
+	//GetHostIp()
+
+	fmt.Println(LookUpIp("www.baidu.com"))
 }
