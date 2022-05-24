@@ -1,7 +1,11 @@
-package run
+package main
 
-import "minik8s/serverless/src/registry"
+import (
+	"minik8s/serverless/src/function"
+	"minik8s/serverless/src/registry"
+)
 
 func main() {
-	registry.InitRegistry("127.0.0.1")
+	registry.InitRegistry()
+	function.InitFunction()
 }

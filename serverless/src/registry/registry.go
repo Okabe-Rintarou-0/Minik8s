@@ -3,43 +3,39 @@ package registry
 
 import (
 	"context"
-	"github.com/docker/distribution"
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/client"
-	"github.com/docker/go-connections/nat"
+	"encoding/base64"
+	"encoding/json"
 	"io"
 	"log"
 	"minik8s/kubelet/src/runtime/container"
 	"minik8s/serverless/src/utils"
 	"os"
+
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/client"
+	"github.com/docker/go-connections/nat"
 )
 
 const (
-	mediaType        = "application/vnd.docker.distribution.manifest.v2+json"
-	registryImage    = "registry:2.8.0"
-	registryName     = "local-registry"
-	registryHost     = "127.0.0.1:5000"
-	registryHostIP   = "127.0.0.1"
-	registryHostPort = "5000"
+	RegistryImage    = "registry:2.8.0"
+	RegistryName     = "local-registry"
+	RegistryHost     = "0.0.0.0:5000"
+	RegistryHostIP   = "0.0.0.0"
+	RegistryHostPort = "5000"
 )
 
 var (
 	cli *client.Client
 )
 
-func InitRegistry(host string) {
-	utils.PullImg(registryImage)
-	err := distribution.RegisterManifestSchema(mediaType, nil)
-	if err != nil {
-		log.Print(err)
-		return
-	}
+func InitRegistry() {
+	utils.PullImg(RegistryImage)
 
-	id, state := utils.FindContainer(registryName)
+	id, state := utils.FindContainer(RegistryName)
 
 	if id == "" {
-		id = utils.CreateContainer(registryName, &container.ContainerCreateConfig{
-			Image:      registryImage,
+		id = utils.CreateContainer(RegistryName, &container.ContainerCreateConfig{
+			Image:      RegistryImage,
 			Entrypoint: nil,
 			Cmd:        nil,
 			Env:        nil,
@@ -48,17 +44,17 @@ func InitRegistry(host string) {
 			IpcMode:    "",
 			PidMode:    "",
 			ExposedPorts: nat.PortSet{
-				registryHostPort + "/tcp": {},
+				RegistryHostPort + "/tcp": {},
 			},
 			Tty:         false,
 			Links:       nil,
 			NetworkMode: "",
 			Binds:       nil,
 			PortBindings: nat.PortMap{
-				registryHostPort + "/tcp": []nat.PortBinding{
+				RegistryHostPort + "/tcp": []nat.PortBinding{
 					{
-						HostIP:   registryHostIP,
-						HostPort: registryHostPort,
+						HostIP:   RegistryHostIP,
+						HostPort: RegistryHostPort,
 					},
 				},
 			},
@@ -70,23 +66,43 @@ func InitRegistry(host string) {
 		utils.StartContainer(id)
 	}
 
-	cli, err = client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	if err == nil {
-		log.Printf("init registry complete")
-	} else {
-		log.Print(err)
-	}
+	cli, _ = client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	log.Printf("init registry complete")
 }
 
 func PushImage(image string) {
+	authConfig := types.AuthConfig{Username: "docker", Password: ""}
+	encodedJSON, err := json.Marshal(authConfig)
+	if err != nil {
+		log.Print(err)
+		return
+	}
+	authStr := base64.URLEncoding.EncodeToString(encodedJSON)
 	pushReader, err := cli.ImagePush(context.Background(), image, types.ImagePushOptions{
 		All:           false,
-		RegistryAuth:  "",
+		RegistryAuth:  authStr,
 		PrivilegeFunc: nil,
 	})
 	if err != nil {
 		log.Printf("push image %s to registry error: %s\n", image, err)
 	}
 	wr, err := io.Copy(os.Stdout, pushReader)
+	log.Print(wr)
+}
+
+func PullImage(image string) {
+	authConfig := types.AuthConfig{Username: "docker", Password: ""}
+	encodedJSON, err := json.Marshal(authConfig)
+	if err != nil {
+		log.Print(err)
+		return
+	}
+	authStr := base64.URLEncoding.EncodeToString(encodedJSON)
+	pullReader, err := cli.ImagePull(context.Background(), image, types.ImagePullOptions{
+		All:           false,
+		RegistryAuth:  authStr,
+		PrivilegeFunc: nil,
+	})
+	wr, err := io.Copy(os.Stdout, pullReader)
 	log.Print(wr)
 }

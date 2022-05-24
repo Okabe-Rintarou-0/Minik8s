@@ -1,19 +1,18 @@
 package utils
 
 import (
-	"log"
 	"minik8s/kubelet/src/runtime/container"
 	"minik8s/kubelet/src/runtime/image"
+	"log"
 )
 
-//const etcdImage = "bitnami/etcd:3.5"
-//const serverName = "etcd-server"
 
 var (
 	cm = container.NewContainerManager()
 	im = image.NewImageManager()
 )
 
+// pull image from web
 func PullImg(imageName string) {
 	if exists, err := im.ExistsImage(imageName); !exists && err == nil {
 		err := im.PullImage(imageName, &image.PullConfig{All: false, Verbose: true})
@@ -29,19 +28,3 @@ func PullImg(imageName string) {
 		return
 	}
 }
-
-//func Start() {
-//	pullImage()
-//	ID, State := findContainer()
-//	if ID != "" {
-//		log.Printf("[etcd] Find etcd container, ID: %s, State: %s\n", ID, State)
-//
-//	} else {
-//		ID = createContainer()
-//		log.Printf("[etcd] Create Container, ID: %s\n", ID)
-//	}
-//	if State != "running" && ID != "" {
-//		startContainer(ID)
-//		log.Printf("[etcd] Container starts\n")
-//	}
-//}
