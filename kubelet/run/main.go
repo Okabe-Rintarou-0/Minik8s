@@ -43,6 +43,7 @@ func registerNode(ip string) {
 func main() {
 	var ip string
 	flag.StringVar(&ip, "ip", "127.0.0.1", "ip address for node register")
+	flag.Parse()
 
 	registerNode(ip)
 
