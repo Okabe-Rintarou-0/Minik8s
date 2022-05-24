@@ -42,6 +42,10 @@ func get(cmd *cobra.Command, args []string) {
 		err = printHPAStatuses()
 	case "hpa":
 		err = printSpecifiedHPAStatus(name)
+	case "service":
+		err = printSpecifiedService(name)
+	case "services":
+		err = printServices()
 	default:
 		err = fmt.Errorf("invalid api object type \"%s\", acceptable api object type is pod, service, etc", apiObjectType)
 	}
