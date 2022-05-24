@@ -73,6 +73,10 @@ func apply(cmd *cobra.Command, args []string) {
 			fmt.Println(err.Error())
 			return
 		}
+		if hpa.MinReplicas() > hpa.MaxReplicas() {
+			fmt.Println("Minimum number of replicas should be less than Maximum one!")
+			return
+		}
 		URL := url.Prefix + url.HPAURL
 		applyApiObjectToApiServer(URL, hpa)
 	}

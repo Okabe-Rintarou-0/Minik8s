@@ -2,7 +2,7 @@ package url
 
 const (
 	HttpScheme = "http://"
-	Hostname   = "10.119.11.101"
+	Hostname   = "localhost"
 	Port       = ":8080"
 	Prefix     = HttpScheme + Hostname + Port
 
