@@ -95,6 +95,8 @@ func Start() {
 	}
 	if State != "running" && ID != "" {
 		startContainer(ID)
-		log.Printf("[etcd] Container starts\n")
+		log.Printf("[etcd] Container start\n")
+	} else {
+		log.Printf("[etcd] Container already start\n")
 	}
 }

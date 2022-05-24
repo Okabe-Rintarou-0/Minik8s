@@ -1,0 +1,5 @@
+spec:
+  python-version: 3.10
+  src: helloworld.py
+  name: helloworld-python
+  namespace: default
