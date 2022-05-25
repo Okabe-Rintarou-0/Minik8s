@@ -41,15 +41,16 @@ func (podStatus *PodStatus) ToEntity() *entity.PodStatus {
 	hostname := netutil.Hostname()
 	cpuPercent, memPercent := calcMetrics(podStatus.ContainerStatuses)
 	return &entity.PodStatus{
-		ID:         podStatus.ID,
-		Name:       podStatus.Name,
-		Node:       hostname,
-		Namespace:  podStatus.Namespace,
-		Lifecycle:  entity.PodRunning,
-		CpuPercent: cpuPercent,
-		MemPercent: memPercent,
-		Error:      "",
-		SyncTime:   time.Now(),
+		ID:           podStatus.ID,
+		Name:         podStatus.Name,
+		Node:         hostname,
+		Namespace:    podStatus.Namespace,
+		Lifecycle:    entity.PodRunning,
+		CpuPercent:   cpuPercent,
+		MemPercent:   memPercent,
+		Error:        "",
+		SyncTime:     time.Now(),
+		PortBindings: podStatus.PortBindings,
 	}
 }
 
