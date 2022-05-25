@@ -87,6 +87,6 @@ func handleGpu(cmd *cobra.Command, args []string) {
 		}
 	}
 	if err != nil {
-		fmt.Println(err.Error())
+		fmt.Printf("No such gpu job %s/%s!\n", gpuJob.Namespace(), gpuJob.Name())
 	}
 }
