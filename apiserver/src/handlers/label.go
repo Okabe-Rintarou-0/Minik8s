@@ -37,6 +37,9 @@ func HandleLabelNode(c *gin.Context) {
 		log("got %s from etcd", raw)
 		if err = json.Unmarshal([]byte(raw), &node); err == nil {
 			nodeLabels := node.Labels()
+			if nodeLabels == nil {
+				nodeLabels = make(apiObject.Labels)
+			}
 			for key, value := range labels {
 				if _, exists := nodeLabels[key]; !exists || overwrite {
 					nodeLabels[key] = value
