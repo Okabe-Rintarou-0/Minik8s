@@ -59,5 +59,5 @@ func HandleAutoscale(c *gin.Context) {
 		return
 	}
 
-	c.String(http.StatusOK, "Apply successfully!")
+	c.String(http.StatusOK, "ok")
 }

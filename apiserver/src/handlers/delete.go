@@ -126,7 +126,7 @@ func HandleDeleteNode(c *gin.Context) {
 	if err := deleteSpecifiedNode(namespace, name); err != nil {
 		c.String(http.StatusOK, err.Error())
 	}
-	c.String(http.StatusOK, "Delete successfully")
+	c.String(http.StatusOK, "ok")
 }
 
 func deletePod(namespace, name string) error {
@@ -150,7 +150,7 @@ func HandleDeletePod(c *gin.Context) {
 		c.String(http.StatusOK, err.Error())
 		return
 	}
-	c.String(http.StatusOK, "Delete successfully")
+	c.String(http.StatusOK, "ok")
 }
 
 func HandleDeleteReplicaSet(c *gin.Context) {
@@ -167,7 +167,7 @@ func HandleDeleteReplicaSet(c *gin.Context) {
 		})
 		listwatch.Publish(topicutil.ReplicaSetUpdateTopic(), replicaSetDeleteMsg)
 	}
-	c.String(http.StatusOK, "Delete successfully")
+	c.String(http.StatusOK, "ok")
 }
 
 func HandleDeleteGpuJob(c *gin.Context) {
@@ -195,7 +195,7 @@ func HandleDeleteHPA(c *gin.Context) {
 		})
 		listwatch.Publish(topicutil.HPAUpdateTopic(), hpaDeleteMsg)
 	}
-	c.String(http.StatusOK, "Delete successfully")
+	c.String(http.StatusOK, "ok")
 }
 
 func HandleReset(c *gin.Context) {
@@ -203,7 +203,7 @@ func HandleReset(c *gin.Context) {
 		c.String(http.StatusOK, err.Error())
 		return
 	}
-	c.String(http.StatusOK, "OK")
+	c.String(http.StatusOK, "ok")
 }
 
 func HandleDeleteNodePods(c *gin.Context) {
@@ -270,5 +270,5 @@ func HandleDeleteService(c *gin.Context) {
 		return
 	}
 
-	c.String(http.StatusOK, "Delete successfully")
+	c.String(http.StatusOK, "ok")
 }

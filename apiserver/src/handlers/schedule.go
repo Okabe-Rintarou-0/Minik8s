@@ -66,5 +66,5 @@ func HandleSchedulePod(c *gin.Context) {
 
 	log("Schedule pod %s/%s to node %s", pod.Namespace(), pod.Name(), node)
 
-	c.String(http.StatusOK, "Schedule successfully!")
+	c.String(http.StatusOK, "ok")
 }
