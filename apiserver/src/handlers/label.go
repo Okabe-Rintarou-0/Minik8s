@@ -27,11 +27,14 @@ func HandleLabelNode(c *gin.Context) {
 		return
 	}
 
+	log("Add labels %v to node[hostname = %v]", labels, name)
+
 	node := apiObject.Node{}
 	etcdURL := path.Join(url.NodeURL, namespace, name)
 	var err error
 	var raw string
 	if raw, err = etcd.Get(etcdURL); err == nil {
+		log("got %s from etcd", raw)
 		if err = json.Unmarshal([]byte(raw), &node); err == nil {
 			nodeLabels := node.Labels()
 			for key, value := range labels {
@@ -42,7 +45,6 @@ func HandleLabelNode(c *gin.Context) {
 			nodeJson, _ := json.Marshal(node)
 			if err = etcd.Put(etcdURL, string(nodeJson)); err == nil {
 				c.String(http.StatusOK, "ok")
-				log("Add labels %v to node[hostname = %v]", labels, name)
 				return
 			}
 		}
