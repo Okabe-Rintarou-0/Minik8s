@@ -4,12 +4,12 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
+	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 	"io/ioutil"
 	"minik8s/apiObject"
 	"minik8s/apiserver/src/url"
 	"minik8s/entity"
-	"minik8s/util/colorwrapper"
 	"minik8s/util/httputil"
 	"net/http"
 	"os"
@@ -43,7 +43,8 @@ func listFiles(URL string) {
 
 	for _, file := range files {
 		if strings.HasSuffix(file, "/") {
-			fmt.Printf("%s ", colorwrapper.Green(file[0:len(file)-1]))
+			blue := color.New(color.FgBlue)
+			_, _ = blue.Print(file[0:len(file)-1], " ")
 		} else {
 			fmt.Printf("%s ", file)
 		}
@@ -60,6 +61,7 @@ func downloadFiles(baseURL string) {
 			if file, err := os.Create(URL); err == nil {
 				w := bufio.NewWriter(file)
 				_, _ = w.Write(content)
+				_ = w.Flush()
 			}
 		}
 	}
@@ -75,25 +77,8 @@ func handleGpu(cmd *cobra.Command, args []string) {
 		pod := entity.PodStatus{}
 		podURL := url.Prefix + path.Join(url.PodURL, "status", gpuJob.Namespace(), gpuJob.Name())
 		if err = httputil.GetAndUnmarshal(podURL, &pod); err == nil {
-			// get node ip
-			scheduledNode := pod.Node
-			nodeNamespace, nodeName := parseName(scheduledNode)
-			nodeURL := url.Prefix + path.Join(url.NodeURL, "status", nodeNamespace, nodeName)
-
-			// get node ip
-			node := entity.NodeStatus{}
-			ip := "127.0.0.1"
-			if err = httputil.GetAndUnmarshal(nodeURL, &node); err == nil {
-				ip = node.Ip
-			}
-
-			port := "80"
-			for podPort, portBinding := range pod.PortBindings {
-				if podPort.Port() == "80" {
-					port = portBinding[0].HostPort
-				}
-			}
-			URL := path.Join(ip+":"+port, "files") + "/"
+			ip := pod.Ip
+			URL := ip + ":80/files/"
 			if downloadFile == "" {
 				listFiles(URL)
 			} else {
@@ -102,6 +87,6 @@ func handleGpu(cmd *cobra.Command, args []string) {
 		}
 	}
 	if err != nil {
-		fmt.Println(err.Error())
+		fmt.Printf("No such gpu job %s/%s!\n", gpuJob.Namespace(), gpuJob.Name())
 	}
 }

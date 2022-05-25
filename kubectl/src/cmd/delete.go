@@ -47,6 +47,12 @@ func deleteSpecifiedService(namespace, name string) error {
 	return nil
 }
 
+func deleteSpecifiedGpuJob(namespace, name string) error {
+	resp := httputil.DeleteWithoutBody(url.Prefix + path.Join(url.GpuURL, namespace, name))
+	fmt.Println(resp)
+	return nil
+}
+
 func del(cmd *cobra.Command, args []string) {
 	apiObjectType := args[0]
 	target := args[1]
@@ -64,6 +70,8 @@ func del(cmd *cobra.Command, args []string) {
 		err = deleteSpecifiedHPA(namespace, name)
 	case "service":
 		err = deleteSpecifiedService(namespace, name)
+	case "gpu":
+		err = deleteSpecifiedGpuJob(namespace, name)
 	default:
 		err = fmt.Errorf("invalid api object type \"%s\", acceptable api object type is pod, service, etc", apiObjectType)
 	}

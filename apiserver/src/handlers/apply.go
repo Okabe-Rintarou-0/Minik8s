@@ -68,7 +68,7 @@ func HandleApplyNode(c *gin.Context) {
 		_ = etcd.Put(etcdNodeStatusURL, string(nodeStatusJson))
 	}
 
-	c.String(http.StatusOK, "Apply successfully!")
+	c.String(http.StatusOK, "ok")
 }
 
 func HandleApplyPod(c *gin.Context) {
@@ -95,7 +95,6 @@ func HandleApplyPod(c *gin.Context) {
 		}
 	}
 	log("receive pod %s/%s[ID = %v] %+v", pod.Namespace(), pod.Name(), pod.UID(), pod)
-	log("receive pod %s/%s: %+v", pod.Namespace(), pod.Name(), pod)
 
 	// Schedule first, then put the data to url: PodURL/node/namespace/name
 	podUpdateMsg, _ := json.Marshal(entity.PodUpdate{
@@ -104,7 +103,7 @@ func HandleApplyPod(c *gin.Context) {
 	})
 
 	listwatch.Publish(topicutil.SchedulerPodUpdateTopic(), podUpdateMsg)
-	c.String(http.StatusOK, "Apply successfully!")
+	c.String(http.StatusOK, "ok")
 }
 
 func HandleApplyReplicaSet(c *gin.Context) {
@@ -160,7 +159,7 @@ func HandleApplyReplicaSet(c *gin.Context) {
 	})
 
 	listwatch.Publish(topicutil.ReplicaSetUpdateTopic(), replicaSetUpdateMsg)
-	c.String(http.StatusOK, "Apply successfully!")
+	c.String(http.StatusOK, "ok")
 }
 
 func HandleApplyHPA(c *gin.Context) {
@@ -177,7 +176,7 @@ func HandleApplyHPA(c *gin.Context) {
 		c.String(http.StatusOK, err.Error())
 		return
 	}
-	c.String(http.StatusOK, "Apply successfully!")
+	c.String(http.StatusOK, "ok")
 }
 
 func HandleApplyService(c *gin.Context) {
@@ -236,7 +235,7 @@ func HandleApplyService(c *gin.Context) {
 	serviceUpdateMsg, _ := json.Marshal(serviceUpdate)
 	listwatch.Publish(topicutil.ServiceUpdateTopic(), serviceUpdateMsg)
 
-	c.String(http.StatusOK, "Apply successfully!")
+	c.String(http.StatusOK, "ok")
 }
 
 func HandleApplyDNS(c *gin.Context) {
@@ -280,5 +279,5 @@ func HandleApplyGpuJob(c *gin.Context) {
 	})
 
 	listwatch.Publish(topicutil.GpuJobUpdateTopic(), GpuUpdateMsg)
-	c.String(http.StatusOK, "Apply successfully!")
+	c.String(http.StatusOK, "ok")
 }

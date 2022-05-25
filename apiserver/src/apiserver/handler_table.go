@@ -73,6 +73,7 @@ var deleteTable = map[string]Handler{
 	url.ReplicaSetURLWithSpecifiedName: handlers.HandleDeleteReplicaSet,
 	url.HPAURLWithSpecifiedName:        handlers.HandleDeleteHPA,
 	url.ServiceURLWithSpecifiedName:    handlers.HandleDeleteService,
+	url.GpuURLWithSpecifiedName:        handlers.HandleDeleteGpuJob,
 
 	// kubectl reset
 	url.ResetURL: handlers.HandleReset,

@@ -200,6 +200,10 @@ func (pod *Pod) NodeSelector() map[string]string {
 	return pod.Spec.NodeSelector
 }
 
+func (pod *Pod) ClusterIp() string {
+	return pod.Spec.ClusterIp
+}
+
 type PodTemplateSpec struct {
 	Metadata Metadata `yaml:"metadata"`
 	Spec     PodSpec  `yaml:"spec"`
