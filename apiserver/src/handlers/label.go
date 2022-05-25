@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"minik8s/apiObject"
 	"minik8s/apiserver/src/etcd"
@@ -12,7 +13,7 @@ import (
 )
 
 func HandleLabelNode(c *gin.Context) {
-	namespace := c.Param("name")
+	namespace := c.Param("namespace")
 	name := c.Param("name")
 	body := c.Request.Body
 	overwrite, _ := strconv.ParseBool(c.Query("overwrite"))
@@ -46,6 +47,6 @@ func HandleLabelNode(c *gin.Context) {
 			}
 		}
 	}
-
+	fmt.Printf("no such node %s/%s\n", node.Namespace(), node.Name())
 	c.String(http.StatusOK, err.Error())
 }
