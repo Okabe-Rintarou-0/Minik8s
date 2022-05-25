@@ -29,8 +29,8 @@ func init() {
 	gpuCmd.Flags().StringVarP(&directory, "dir", "d", "./", "directory")
 	gpuCmd.Flags().StringVarP(&downloadFile, "file", "f", "", "download file")
 
-	funcCmd.Flags().StringVarP(&function, "function", "f", "", "function name")
-	funcCmd.Flags().StringVarP(&functionPath, "functionPath", "p", "", "function filepath")
+	funcCmd.Flags().StringVarP(&function, "func", "f", "", "function name")
+	funcCmd.Flags().StringVarP(&functionPath, "path", "p", "", "function filepath")
 
 	rootCmd.AddCommand(applyCmd)
 	rootCmd.AddCommand(getCmd)

@@ -26,6 +26,9 @@ var postTable = map[string]Handler{
 
 	// kubectl label nodes node_name os=linux --overwrite
 	url.NodeLabelsURLWithSpecifiedName: handlers.HandleLabelNode,
+
+	// kubectl func add func_name func_path
+	url.FuncURL: handlers.HandleApplyFunc,
 }
 
 var getTable = map[string]Handler{
@@ -80,4 +83,7 @@ var deleteTable = map[string]Handler{
 
 	// delete pods of a node
 	url.PodURLWithSpecifiedNode: handlers.HandleDeleteNodePods,
+
+	// kubectl func rm func_name
+	url.FuncURLWithSpecifiedName: handlers.HandleRemoveFunc,
 }
