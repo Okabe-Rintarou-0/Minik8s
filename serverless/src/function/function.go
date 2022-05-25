@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -16,7 +17,6 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
-	uuid "github.com/satori/go.uuid"
 )
 
 const (
@@ -26,22 +26,26 @@ const (
 	requirementPath = "../src/app/requirements.txt"
 	mainCodePath    = "../src/app/main.py" // a fixed template, start a http server
 	dockerfile      = "Dockerfile"
-	funcCode        = "func.py"		       // rename to "func.py" in docker
-	mainCode        ="main.py"
+	funcCode        = "func.py" // rename to "func.py" in docker
+	mainCode        = "main.py"
 	requirement     = "requirements.txt"
 )
 
-func InitFunction(name string, namespace string, codePath string) {
-	utils.PullImg(pythonImage)
-	createImage(name, codePath)
-
-	uid := uuid.NewV4().String()
-	containerName := name + "-" + uid
+func InitFunction(name string, codePath string) error {
+	err := utils.PullImg(pythonImage)
+	if err != nil {
+		return err
+	}
+	err = createImage(name, codePath)
+	if err != nil {
+		return err
+	}
+	//uid := uidutil.New()
+	//containerName := name + "-" + uid
 	imageName := registry.RegistryHost + "/" + name
 
-	registry.PushImage(imageName)
-	_,_ =createContainer(name, containerName, imageName)
-
+	return registry.PushImage(imageName)
+	//_, _ = createContainer(name, containerName, imageName)
 }
 
 func createContainer(name, containerName, imageName string) (string, string) {
@@ -64,7 +68,7 @@ func createContainer(name, containerName, imageName string) (string, string) {
 		PortBindings: nat.PortMap{
 			exposedPort + "/tcp": []nat.PortBinding{
 				{
-					HostIP:   registry.RegistryHostIP,
+					HostIP: registry.RegistryHostIP,
 				},
 			},
 		},
@@ -72,19 +76,21 @@ func createContainer(name, containerName, imageName string) (string, string) {
 	})
 	utils.StartContainer(id)
 	id, state, port := utils.FindContainer(containerName)
-	portStr:=strconv.FormatUint(uint64(port),10);
-	log.Printf("Ready to serve %s, container id: %s, container state: %s, host port: %s\n",name, id, state, portStr)
+	portStr := strconv.FormatUint(uint64(port), 10)
+	log.Printf("Ready to serve %s, container id: %s, container state: %s, host port: %s\n", name, id, state, portStr)
 	return id, portStr
 }
 
-func copyFile(tw *tar.Writer, path string, filename string) {
+func copyFile(tw *tar.Writer, path string, filename string) error {
 	reader, err := os.Open(path)
 	if err != nil {
-		log.Fatal(err, " :unable to open file "+path)
+		fmt.Println(err, " :unable to open file "+path)
+		return err
 	}
 	readFile, err := ioutil.ReadAll(reader)
 	if err != nil {
-		log.Fatal(err, " :unable to read file "+path)
+		fmt.Println(err, " :unable to read file "+path)
+		return err
 	}
 
 	tarHeader := &tar.Header{
@@ -93,29 +99,41 @@ func copyFile(tw *tar.Writer, path string, filename string) {
 	}
 	err = tw.WriteHeader(tarHeader)
 	if err != nil {
-		log.Fatal(err, " :unable to write tar header")
+		fmt.Println(err, " :unable to write tar header")
+		return err
 	}
 	_, err = tw.Write(readFile)
 	if err != nil {
-		log.Fatal(err, " :unable to write tar body")
+		fmt.Println(err, " :unable to write tar body")
+		return err
 	}
+	return nil
 }
 
-func createImage(name, funcCodePath string) {
+func createImage(name, funcCodePath string) error {
 	ctx := context.Background()
-	cli, err := client.NewEnvClient()
+	cli, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
-		log.Fatal(err, " :unable to init client")
+		fmt.Println(err, " :unable to init client")
+		return err
 	}
 
 	buf := new(bytes.Buffer)
 	tw := tar.NewWriter(buf)
 	defer tw.Close()
 
-	copyFile(tw, dockerfilePath, dockerfile)
-	copyFile(tw, mainCodePath, mainCode)
-	copyFile(tw, funcCodePath, funcCode)
-	copyFile(tw, requirementPath, requirement)
+	if err = copyFile(tw, dockerfilePath, dockerfile); err != nil {
+		return err
+	}
+	if err = copyFile(tw, mainCodePath, mainCode); err != nil {
+		return err
+	}
+	if err = copyFile(tw, funcCodePath, funcCode); err != nil {
+		return err
+	}
+	if err = copyFile(tw, requirementPath, requirement); err != nil {
+		return err
+	}
 
 	tarReader := bytes.NewReader(buf.Bytes())
 
@@ -128,11 +146,14 @@ func createImage(name, funcCodePath string) {
 			Tags:       []string{registry.RegistryHost + "/" + name},
 			Remove:     true})
 	if err != nil {
-		log.Fatal(err, " :unable to build docker image")
+		fmt.Println(err, " :unable to build docker image")
+		return err
 	}
 	defer imageBuildResponse.Body.Close()
 	_, err = io.Copy(os.Stdout, imageBuildResponse.Body)
 	if err != nil {
-		log.Fatal(err, " :unable to read image build response")
+		fmt.Println(err, " :unable to read image build response")
+		return err
 	}
+	return nil
 }

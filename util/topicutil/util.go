@@ -10,6 +10,7 @@ const replicaSetUpdateTopic = "ReplicaSetUpdate"
 const serviceUpdateTopic = "ServiceUpdate"
 const endpointUpdateTopic = "EndpointUpdate"
 const gpuJobUpdateTopic = "GpuJobUpdate"
+const functionUpdateTopic = "FunctionUpdate"
 const testTopic = "__test__"
 
 func PodUpdateTopic(hostname string) string {
@@ -54,6 +55,10 @@ func EndpointUpdateTopic() string {
 
 func GpuJobUpdateTopic() string {
 	return gpuJobUpdateTopic
+}
+
+func FunctionUpdateTopic() string {
+	return functionUpdateTopic
 }
 
 func TestTopic() string {

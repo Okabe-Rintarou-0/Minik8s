@@ -1,7 +1,6 @@
 package kpa
 
 import (
-	"minik8s/controller/src/cache"
 	"minik8s/util/logger"
 	"minik8s/util/wait"
 	"sync"
@@ -23,7 +22,6 @@ type functionReplicaSet struct {
 }
 
 type controller struct {
-	cacheManager          cache.Manager
 	scaleLock             sync.RWMutex
 	functionReplicaSetMap map[string]functionReplicaSet
 }
@@ -47,8 +45,6 @@ type Controller interface {
 	Run()
 }
 
-func NewController(cacheManager cache.Manager) Controller {
-	return &controller{
-		cacheManager: cacheManager,
-	}
+func NewController() Controller {
+	return &controller{}
 }
