@@ -1,12 +1,14 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
-	"minik8s/util/colorwrapper"
+	"io/ioutil"
+	"minik8s/apiserver/src/url"
 	"net/http"
+	"os"
 	"path"
-	"strings"
 	"testing"
 )
 
@@ -22,12 +24,25 @@ func TestNginxFileServer(t *testing.T) {
 	doc.Find("a").Each(func(i int, s *goquery.Selection) {
 		files = append(files, s.Text())
 	})
-
-	for _, file := range files {
-		if strings.HasSuffix(file, "/") {
-			fmt.Printf("%s ", colorwrapper.Green(file[0:len(file)-1]))
-		} else {
-			fmt.Printf("%s ", file)
+	fileURL := url.HttpScheme + path.Join("localhost:8000/files/", "matrix_add.cu")
+	if resp, err := http.Get(fileURL); err == nil {
+		if content, err := ioutil.ReadAll(resp.Body); err == nil {
+			//fmt.Println(string(content))
+			defer resp.Body.Close()
+			URL := path.Join("D:/", "matrix_add.cu")
+			if file, err := os.Create(URL); err == nil {
+				w := bufio.NewWriter(file)
+				_, err = w.Write(content)
+				_ = w.Flush()
+			}
 		}
 	}
+	//for _, file := range files {
+	//	if strings.HasSuffix(file, "/") {
+	//		blue := color.New(color.FgBlue)
+	//		_, _ = blue.Print(file[0:len(file)-1], " ")
+	//	} else {
+	//		fmt.Printf("%s ", file)
+	//	}
+	//}
 }
