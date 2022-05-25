@@ -41,6 +41,7 @@ type PodStatus struct {
 	ID           types.UID
 	Node         string
 	Name         string
+	Ip           string
 	Namespace    string
 	Labels       apiObject.Labels
 	Lifecycle    PodLifecycle

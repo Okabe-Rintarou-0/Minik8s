@@ -18,7 +18,7 @@ func podStatusTbl() table.Table {
 	headerFmt := color.New(color.FgGreen, color.Underline).SprintfFunc()
 	columnFmt := color.New(color.FgYellow).SprintfFunc()
 
-	tbl := table.New("Name", "UID", "Status", "Node", "Ports", "Cpu", "Memory", "Last Sync Time", "Error")
+	tbl := table.New("Name", "UID", "Status", "Ipv4", "Node", "Ports", "Cpu", "Memory", "Last Sync Time", "Error")
 	tbl.WithHeaderFormatter(headerFmt).WithFirstColumnFormatter(columnFmt)
 	return tbl
 }
@@ -129,6 +129,7 @@ func printSpecifiedPodStatus(name string) error {
 		fullName,
 		podStatus.ID,
 		podStatus.Lifecycle.String(),
+		podStatus.Ip,
 		podStatus.Node,
 		strings.Join(portBindingsStrList, ","),
 		podStatus.CpuPercent,
@@ -212,6 +213,7 @@ func printPodStatuses() error {
 			fullName,
 			podStatus.ID,
 			podStatus.Lifecycle.String(),
+			podStatus.Ip,
 			podStatus.Node,
 			strings.Join(portBindingsStrList, ","),
 			podStatus.CpuPercent,

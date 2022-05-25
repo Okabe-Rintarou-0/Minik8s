@@ -75,18 +75,7 @@ func handleGpu(cmd *cobra.Command, args []string) {
 		pod := entity.PodStatus{}
 		podURL := url.Prefix + path.Join(url.PodURL, "status", gpuJob.Namespace(), gpuJob.Name())
 		if err = httputil.GetAndUnmarshal(podURL, &pod); err == nil {
-			// get node ip
-			scheduledNode := pod.Node
-			nodeNamespace, nodeName := parseName(scheduledNode)
-			nodeURL := url.Prefix + path.Join(url.NodeURL, "status", nodeNamespace, nodeName)
-
-			// get node ip
-			node := entity.NodeStatus{}
-			ip := "127.0.0.1"
-			if err = httputil.GetAndUnmarshal(nodeURL, &node); err == nil {
-				ip = node.Ip
-			}
-
+			ip := pod.Ip
 			port := "80"
 			for podPort, portBinding := range pod.PortBindings {
 				if podPort.Port() == "80" {

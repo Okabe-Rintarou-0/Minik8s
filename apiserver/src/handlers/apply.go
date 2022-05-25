@@ -95,7 +95,6 @@ func HandleApplyPod(c *gin.Context) {
 		}
 	}
 	log("receive pod %s/%s[ID = %v] %+v", pod.Namespace(), pod.Name(), pod.UID(), pod)
-	log("receive pod %s/%s: %+v", pod.Namespace(), pod.Name(), pod)
 
 	// Schedule first, then put the data to url: PodURL/node/namespace/name
 	podUpdateMsg, _ := json.Marshal(entity.PodUpdate{
