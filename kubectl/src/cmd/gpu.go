@@ -76,13 +76,7 @@ func handleGpu(cmd *cobra.Command, args []string) {
 		podURL := url.Prefix + path.Join(url.PodURL, "status", gpuJob.Namespace(), gpuJob.Name())
 		if err = httputil.GetAndUnmarshal(podURL, &pod); err == nil {
 			ip := pod.Ip
-			port := "80"
-			for podPort, portBinding := range pod.PortBindings {
-				if podPort.Port() == "80" {
-					port = portBinding[0].HostPort
-				}
-			}
-			URL := path.Join(ip+":"+port, "files") + "/"
+			URL := ip + ":80/files/"
 			if downloadFile == "" {
 				listFiles(URL)
 			} else {

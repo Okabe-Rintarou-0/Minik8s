@@ -75,6 +75,23 @@ func deleteSpecifiedReplicaSet(namespace, name string) (rs *apiObject.ReplicaSet
 	return
 }
 
+func deleteSpecifiedGpuJob(namespace, name string) (gpu *apiObject.GpuJob, err error) {
+	log("gpu to delete is %s/%s", namespace, name)
+
+	var raw string
+	etcdURL := path.Join(url.GpuURL, namespace, name)
+	if raw, err = etcd.Get(etcdURL); err != nil {
+		return nil, err
+	}
+
+	if err = json.Unmarshal([]byte(raw), &gpu); err != nil {
+		return nil, fmt.Errorf("no such gpu job %s/%s", namespace, name)
+	}
+
+	err = etcd.Delete(etcdURL)
+	return
+}
+
 func deleteSpecifiedHPA(namespace, name string) (hpa *apiObject.HorizontalPodAutoscaler, err error) {
 	log("hpa to delete is %s/%s", namespace, name)
 
@@ -151,6 +168,17 @@ func HandleDeleteReplicaSet(c *gin.Context) {
 		listwatch.Publish(topicutil.ReplicaSetUpdateTopic(), replicaSetDeleteMsg)
 	}
 	c.String(http.StatusOK, "Delete successfully")
+}
+
+func HandleDeleteGpuJob(c *gin.Context) {
+	namespace := c.Param("namespace")
+	name := c.Param("name")
+
+	if _, err := deleteSpecifiedGpuJob(namespace, name); err != nil {
+		c.String(http.StatusOK, err.Error())
+		return
+	}
+	c.String(http.StatusOK, "ok")
 }
 
 func HandleDeleteHPA(c *gin.Context) {
