@@ -122,7 +122,7 @@ func printSpecifiedPodStatus(name string) error {
 	var portBindingsStrList []string
 	for port, portBinding := range portBindings {
 		for _, binding := range portBinding {
-			portBindingsStrList = append(portBindingsStrList, fmt.Sprintf("%s:%s", port.Port(), binding.HostPort))
+			portBindingsStrList = append(portBindingsStrList, fmt.Sprintf("%s:%s", binding.HostPort, port.Port()))
 		}
 	}
 	tbl.AddRow(
@@ -205,7 +205,7 @@ func printPodStatuses() error {
 		var portBindingsStrList []string
 		for port, portBinding := range portBindings {
 			for _, binding := range portBinding {
-				portBindingsStrList = append(portBindingsStrList, fmt.Sprintf("%s:%s", port.Port(), binding.HostPort))
+				portBindingsStrList = append(portBindingsStrList, fmt.Sprintf("%s:%s", binding.HostPort, port.Port()))
 			}
 		}
 		tbl.AddRow(
