@@ -18,6 +18,7 @@ require (
 )
 
 require (
+	github.com/PuerkitoBio/goquery v1.8.0 // indirect
 	github.com/containerd/containerd v1.6.2 // indirect
 	github.com/coreos/etcd v3.3.27+incompatible // indirect
 	github.com/docker/distribution v2.8.1+incompatible // indirect
