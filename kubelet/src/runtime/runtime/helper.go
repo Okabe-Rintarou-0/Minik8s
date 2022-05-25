@@ -202,6 +202,7 @@ func (rm *runtimeManager) inspectionToContainerStatus(inspection *container.Insp
 		ImageID:      inspection.Image,
 		RestartCount: inspection.RestartCount,
 		Error:        inspection.State.Error,
+		PortBindings: inspection.HostConfig.PortBindings,
 	}, nil
 }
 

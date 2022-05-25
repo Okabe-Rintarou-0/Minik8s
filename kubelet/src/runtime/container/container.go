@@ -47,6 +47,8 @@ type Status struct {
 	Error string
 	// The status of resource usage
 	ResourcesUsage ResourcesUsage
+	// PortBindings
+	PortBindings PortBindings
 }
 
 type ID = string

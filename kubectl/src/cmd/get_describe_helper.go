@@ -10,6 +10,7 @@ import (
 	"minik8s/util/httputil"
 	"path"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -17,7 +18,7 @@ func podStatusTbl() table.Table {
 	headerFmt := color.New(color.FgGreen, color.Underline).SprintfFunc()
 	columnFmt := color.New(color.FgYellow).SprintfFunc()
 
-	tbl := table.New("Name", "UID", "Status", "Node", "Cpu", "Memory", "Last Sync Time", "Error")
+	tbl := table.New("Name", "UID", "Status", "Node", "Ports", "Cpu", "Memory", "Last Sync Time", "Error")
 	tbl.WithHeaderFormatter(headerFmt).WithFirstColumnFormatter(columnFmt)
 	return tbl
 }
@@ -117,11 +118,19 @@ func printSpecifiedPodStatus(name string) error {
 
 	tbl := podStatusTbl()
 	fullName := path.Join(podStatus.Namespace, podStatus.Name)
+	portBindings := podStatus.PortBindings
+	var portBindingsStrList []string
+	for port, portBinding := range portBindings {
+		for _, binding := range portBinding {
+			portBindingsStrList = append(portBindingsStrList, fmt.Sprintf("%s:%s", port.Port(), binding.HostPort))
+		}
+	}
 	tbl.AddRow(
 		fullName,
 		podStatus.ID,
 		podStatus.Lifecycle.String(),
 		podStatus.Node,
+		strings.Join(portBindingsStrList, ","),
 		podStatus.CpuPercent,
 		podStatus.MemPercent,
 		podStatus.SyncTime.Format(time.RFC3339),
@@ -192,11 +201,19 @@ func printPodStatuses() error {
 	tbl := podStatusTbl()
 	for _, podStatus := range podStatuses {
 		fullName := path.Join(podStatus.Namespace, podStatus.Name)
+		portBindings := podStatus.PortBindings
+		var portBindingsStrList []string
+		for port, portBinding := range portBindings {
+			for _, binding := range portBinding {
+				portBindingsStrList = append(portBindingsStrList, fmt.Sprintf("%s:%s", port.Port(), binding.HostPort))
+			}
+		}
 		tbl.AddRow(
 			fullName,
 			podStatus.ID,
 			podStatus.Lifecycle.String(),
 			podStatus.Node,
+			strings.Join(portBindingsStrList, ","),
 			podStatus.CpuPercent,
 			podStatus.MemPercent,
 			podStatus.SyncTime.Format(time.RFC3339),

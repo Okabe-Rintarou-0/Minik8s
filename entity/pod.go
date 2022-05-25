@@ -3,6 +3,7 @@ package entity
 import (
 	"minik8s/apiObject"
 	"minik8s/apiObject/types"
+	"minik8s/kubelet/src/runtime/container"
 	"time"
 )
 
@@ -37,16 +38,17 @@ func (pl *PodLifecycle) String() string {
 }
 
 type PodStatus struct {
-	ID         types.UID
-	Node       string
-	Name       string
-	Namespace  string
-	Labels     apiObject.Labels
-	Lifecycle  PodLifecycle
-	CpuPercent float64
-	MemPercent float64
-	Error      string
-	SyncTime   time.Time
+	ID           types.UID
+	Node         string
+	Name         string
+	Namespace    string
+	Labels       apiObject.Labels
+	Lifecycle    PodLifecycle
+	CpuPercent   float64
+	MemPercent   float64
+	Error        string
+	PortBindings container.PortBindings
+	SyncTime     time.Time
 }
 
 type PodStatusLogEntry struct {

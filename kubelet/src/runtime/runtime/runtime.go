@@ -34,6 +34,7 @@ type PodStatus struct {
 	IPs []string
 	// PodLifecycle of containers in the pod.
 	ContainerStatuses []*container.Status
+	PortBindings      container.PortBindings
 }
 
 func (podStatus *PodStatus) ToEntity() *entity.PodStatus {
@@ -216,9 +217,17 @@ func (rm *runtimeManager) GetPodStatuses() (PodStatuses, error) {
 	allContainerStatuses := rm.getAllPodContainers()
 	podStatuses := make(PodStatuses)
 	for podUID, cs := range allContainerStatuses {
+		var portBindings container.PortBindings
+		for _, c := range cs {
+			if len(c.PortBindings) > 0 {
+				portBindings = c.PortBindings
+				break
+			}
+		}
 		podStatuses[podUID] = &PodStatus{
 			ID:                podUID,
 			ContainerStatuses: cs,
+			PortBindings:      portBindings,
 		}
 		//fmt.Printf("Convert to entity would be: %v\n", *podStatuses[podUID].ToEntity())
 	}
