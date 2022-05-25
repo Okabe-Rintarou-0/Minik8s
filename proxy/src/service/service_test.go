@@ -1,6 +1,9 @@
 package service
 
-import "testing"
+import (
+	"github.com/coreos/go-iptables/iptables"
+	"testing"
+)
 
 func TestInit(t *testing.T) {
 	sm, err := New()
@@ -18,8 +21,8 @@ func TestServiceCreate(t *testing.T) {
 		t.Error(err)
 	}
 	var eps = make([]EndPoint, 1)
-	eps[0] = EndPoint{Name: "KUBE-SEP", Ip: "127.0.0.1", Port: 23333}
-	if err = sm.CreateService("KUBE-SVC", "10.96.1.1/32", 32222); err != nil {
+	eps[0] = EndPoint{Name: "KUBE-SEP", Ip: "127.0.0.1", Port: "23333"}
+	if err = sm.CreateService("KUBE-SVC", "10.96.1.1/32", "32222"); err != nil {
 		t.Error(err)
 	}
 	if err = sm.CreateEndpoints("KUBE-SVC", eps); err != nil {
@@ -33,11 +36,11 @@ func TestServiceDelete(t *testing.T) {
 		t.Error(err)
 	}
 	var eps = make([]EndPoint, 1)
-	eps[0] = EndPoint{Name: "KUBE-SEP", Ip: "127.0.0.1", Port: 23333}
+	eps[0] = EndPoint{Name: "KUBE-SEP", Ip: "127.0.0.1", Port: "23333"}
 	if err = sm.DeleteEndPoints("KUBE-SVC", eps); err != nil {
 		t.Error(err)
 	}
-	if err = sm.DeleteService("KUBE-SVC", "10.96.1.1/32", 32222); err != nil {
+	if err = sm.DeleteService("KUBE-SVC", "10.96.1.1/32", "32222"); err != nil {
 		t.Error(err)
 	}
 }
@@ -48,10 +51,10 @@ func TestReplicaServiceCreate(t *testing.T) {
 		t.Error(err)
 	}
 	var eps = make([]EndPoint, 3)
-	eps[0] = EndPoint{Name: "KUBE-SEP1", Ip: "127.0.0.1", Port: 23333}
-	eps[1] = EndPoint{Name: "KUBE-SEP2", Ip: "127.0.0.1", Port: 23334}
-	eps[2] = EndPoint{Name: "KUBE-SEP3", Ip: "127.0.0.1", Port: 23335}
-	if err = sm.CreateService("KUBE-SVC", "10.96.1.1/32", 32222); err != nil {
+	eps[0] = EndPoint{Name: "KUBE-SEP1", Ip: "127.0.0.1", Port: "23333"}
+	eps[1] = EndPoint{Name: "KUBE-SEP2", Ip: "127.0.0.1", Port: "23334"}
+	eps[2] = EndPoint{Name: "KUBE-SEP3", Ip: "127.0.0.1", Port: "23335"}
+	if err = sm.CreateService("KUBE-SVC", "10.96.1.1/32", "32222"); err != nil {
 		t.Error(err)
 	}
 	if err = sm.CreateEndpoints("KUBE-SVC", eps); err != nil {
@@ -65,13 +68,30 @@ func TestReplicaServiceDelete(t *testing.T) {
 		t.Error(err)
 	}
 	var eps = make([]EndPoint, 3)
-	eps[0] = EndPoint{Name: "KUBE-SEP1", Ip: "127.0.0.1", Port: 23333}
-	eps[1] = EndPoint{Name: "KUBE-SEP2", Ip: "127.0.0.1", Port: 23334}
-	eps[2] = EndPoint{Name: "KUBE-SEP3", Ip: "127.0.0.1", Port: 23335}
+	eps[0] = EndPoint{Name: "KUBE-SEP1", Ip: "127.0.0.1", Port: "23333"}
+	eps[1] = EndPoint{Name: "KUBE-SEP2", Ip: "127.0.0.1", Port: "23334"}
+	eps[2] = EndPoint{Name: "KUBE-SEP3", Ip: "127.0.0.1", Port: "23335"}
 	if err = sm.DeleteEndPoints("KUBE-SVC", eps); err != nil {
 		t.Error(err)
 	}
-	if err = sm.DeleteService("KUBE-SVC", "10.96.1.1/32", 32222); err != nil {
+	if err = sm.DeleteService("KUBE-SVC", "10.96.1.1/32", "32222"); err != nil {
 		t.Error(err)
 	}
+}
+
+func TestClear(t *testing.T) {
+	tab, err := iptables.New()
+	if err != nil {
+		t.Error(err)
+	}
+	_ = tab.ClearChain("nat", "KUBE-SERVICES")
+}
+
+func TestListChains(t *testing.T) {
+	tab, err := iptables.New()
+	if err != nil {
+		t.Error(err)
+	}
+	str, _ := tab.ListChains("nat")
+	t.Log(str)
 }

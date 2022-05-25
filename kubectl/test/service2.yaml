@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: not-nginx-service
+  namespace: default
+spec:
+  ports:
+  - name: nginx
+    port: 8080
+    targetPort: 80
+  selector:
+    name: not-nginx
+  type: ClusterIP

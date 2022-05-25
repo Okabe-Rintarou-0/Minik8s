@@ -42,6 +42,11 @@ func deleteSpecifiedPod(namespace, name string) (pod *apiObject.Pod, node string
 		if err = json.Unmarshal([]byte(raw), &pod); err != nil {
 			return nil, "", err
 		}
+
+		// Delete endpoints
+		// @TODO push to proxy
+		log("Pod to delete is %+v", *pod)
+		err = helper.DelEndpoints(*pod)
 		if err = etcd.Delete(etcdPodURL); err == nil {
 			log("Delete pod %s/%s successfully", namespace, name)
 			break
@@ -67,6 +72,23 @@ func deleteSpecifiedReplicaSet(namespace, name string) (rs *apiObject.ReplicaSet
 	}
 
 	err = etcd.Delete(etcdReplicaSetURL)
+	return
+}
+
+func deleteSpecifiedGpuJob(namespace, name string) (gpu *apiObject.GpuJob, err error) {
+	log("gpu to delete is %s/%s", namespace, name)
+
+	var raw string
+	etcdURL := path.Join(url.GpuURL, namespace, name)
+	if raw, err = etcd.Get(etcdURL); err != nil {
+		return nil, err
+	}
+
+	if err = json.Unmarshal([]byte(raw), &gpu); err != nil {
+		return nil, fmt.Errorf("no such gpu job %s/%s", namespace, name)
+	}
+
+	err = etcd.Delete(etcdURL)
 	return
 }
 
@@ -104,7 +126,7 @@ func HandleDeleteNode(c *gin.Context) {
 	if err := deleteSpecifiedNode(namespace, name); err != nil {
 		c.String(http.StatusOK, err.Error())
 	}
-	c.String(http.StatusOK, "Delete successfully")
+	c.String(http.StatusOK, "ok")
 }
 
 func deletePod(namespace, name string) error {
@@ -128,7 +150,7 @@ func HandleDeletePod(c *gin.Context) {
 		c.String(http.StatusOK, err.Error())
 		return
 	}
-	c.String(http.StatusOK, "Delete successfully")
+	c.String(http.StatusOK, "ok")
 }
 
 func HandleDeleteReplicaSet(c *gin.Context) {
@@ -145,7 +167,18 @@ func HandleDeleteReplicaSet(c *gin.Context) {
 		})
 		listwatch.Publish(topicutil.ReplicaSetUpdateTopic(), replicaSetDeleteMsg)
 	}
-	c.String(http.StatusOK, "Delete successfully")
+	c.String(http.StatusOK, "ok")
+}
+
+func HandleDeleteGpuJob(c *gin.Context) {
+	namespace := c.Param("namespace")
+	name := c.Param("name")
+
+	if _, err := deleteSpecifiedGpuJob(namespace, name); err != nil {
+		c.String(http.StatusOK, err.Error())
+		return
+	}
+	c.String(http.StatusOK, "ok")
 }
 
 func HandleDeleteHPA(c *gin.Context) {
@@ -162,7 +195,7 @@ func HandleDeleteHPA(c *gin.Context) {
 		})
 		listwatch.Publish(topicutil.HPAUpdateTopic(), hpaDeleteMsg)
 	}
-	c.String(http.StatusOK, "Delete successfully")
+	c.String(http.StatusOK, "ok")
 }
 
 func HandleReset(c *gin.Context) {
@@ -170,7 +203,7 @@ func HandleReset(c *gin.Context) {
 		c.String(http.StatusOK, err.Error())
 		return
 	}
-	c.String(http.StatusOK, "OK")
+	c.String(http.StatusOK, "ok")
 }
 
 func HandleDeleteNodePods(c *gin.Context) {
@@ -185,4 +218,57 @@ func HandleDeleteNodePods(c *gin.Context) {
 			createAndPublishPodDeleteMsg(node, pod)
 		}
 	}
+}
+
+func HandleDeleteService(c *gin.Context) {
+	namespace := c.Param("namespace")
+	name := c.Param("name")
+
+	if !helper.ExistsService(namespace, name) {
+		c.String(http.StatusOK, fmt.Sprintf("service %s/%s does not exist", namespace, name))
+		return
+	}
+
+	service := apiObject.Service{}
+	if serviceJsonStr, err := etcd.Get(path.Join(url.ServiceURL, namespace, name)); err != nil {
+		c.String(http.StatusOK, err.Error())
+		return
+	} else {
+		if err := json.Unmarshal([]byte(serviceJsonStr), &service); err != nil {
+			c.String(http.StatusOK, err.Error())
+			return
+		}
+	}
+
+	serviceUpdate := entity.ServiceUpdate{
+		Action: entity.DeleteAction,
+		Target: entity.ServiceTarget{
+			Service:   service,
+			Endpoints: make([]apiObject.Endpoint, 0),
+		},
+	}
+	for key, value := range service.Spec.Selector {
+		if endpoints, err := helper.GetEndpoints(key, value); err != nil {
+			c.String(http.StatusOK, err.Error())
+			return
+		} else {
+			serviceUpdate.Target.Endpoints = append(serviceUpdate.Target.Endpoints, endpoints...)
+		}
+	}
+
+	serviceDeleteMsg, _ := json.Marshal(serviceUpdate)
+	listwatch.Publish(topicutil.ServiceUpdateTopic(), serviceDeleteMsg)
+
+	for key, value := range service.Spec.Selector {
+		if err := etcd.Delete(path.Join(url.ServiceURL, key, value, service.Metadata.UID)); err != nil {
+			c.String(http.StatusOK, err.Error())
+			return
+		}
+	}
+	if err := etcd.Delete(path.Join(url.ServiceURL, namespace, name)); err != nil {
+		c.String(http.StatusOK, err.Error())
+		return
+	}
+
+	c.String(http.StatusOK, "ok")
 }

@@ -34,21 +34,23 @@ type PodStatus struct {
 	IPs []string
 	// PodLifecycle of containers in the pod.
 	ContainerStatuses []*container.Status
+	PortBindings      container.PortBindings
 }
 
 func (podStatus *PodStatus) ToEntity() *entity.PodStatus {
 	hostname := netutil.Hostname()
 	cpuPercent, memPercent := calcMetrics(podStatus.ContainerStatuses)
 	return &entity.PodStatus{
-		ID:         podStatus.ID,
-		Name:       podStatus.Name,
-		Node:       hostname,
-		Namespace:  podStatus.Namespace,
-		Lifecycle:  entity.PodRunning,
-		CpuPercent: cpuPercent,
-		MemPercent: memPercent,
-		Error:      "",
-		SyncTime:   time.Now(),
+		ID:           podStatus.ID,
+		Name:         podStatus.Name,
+		Node:         hostname,
+		Namespace:    podStatus.Namespace,
+		Lifecycle:    entity.PodRunning,
+		CpuPercent:   cpuPercent,
+		MemPercent:   memPercent,
+		Error:        "",
+		SyncTime:     time.Now(),
+		PortBindings: podStatus.PortBindings,
 	}
 }
 
@@ -186,6 +188,7 @@ func (rm *runtimeManager) CreatePod(pod *apiObject.Pod) error {
 	/// TODO implement it
 
 	// Step 3: Start common containers
+	log("Pause container start finished, now start user defined containers")
 	for _, c := range pod.Spec.Containers {
 		err = rm.startCommonContainer(pod, &c)
 		if err != nil {
@@ -215,9 +218,17 @@ func (rm *runtimeManager) GetPodStatuses() (PodStatuses, error) {
 	allContainerStatuses := rm.getAllPodContainers()
 	podStatuses := make(PodStatuses)
 	for podUID, cs := range allContainerStatuses {
+		var portBindings container.PortBindings
+		for _, c := range cs {
+			if len(c.PortBindings) > 0 {
+				portBindings = c.PortBindings
+				break
+			}
+		}
 		podStatuses[podUID] = &PodStatus{
 			ID:                podUID,
 			ContainerStatuses: cs,
+			PortBindings:      portBindings,
 		}
 		//fmt.Printf("Convert to entity would be: %v\n", *podStatuses[podUID].ToEntity())
 	}

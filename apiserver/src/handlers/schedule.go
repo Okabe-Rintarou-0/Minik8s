@@ -40,6 +40,13 @@ func HandleSchedulePod(c *gin.Context) {
 		return
 	}
 
+	// Store pod's endpoints into etcd
+	// @TODO push to proxy
+	if err = helper.AddEndpoints(pod); err != nil {
+		c.String(http.StatusOK, err.Error())
+		return
+	}
+
 	etcdPodStatusURL := path.Join(url.PodURL, "status", pod.Namespace(), pod.Name())
 	var podStatusJson []byte
 	if podStatusJson, err = json.Marshal(entity.PodStatus{
@@ -59,5 +66,5 @@ func HandleSchedulePod(c *gin.Context) {
 
 	log("Schedule pod %s/%s to node %s", pod.Namespace(), pod.Name(), node)
 
-	c.String(http.StatusOK, "Schedule successfully!")
+	c.String(http.StatusOK, "ok")
 }

@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"github.com/fatih/color"
 	"github.com/rodaine/table"
+	"minik8s/apiObject"
 	"minik8s/apiserver/src/url"
 	"minik8s/entity"
 	"minik8s/util/httputil"
 	"path"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -16,7 +18,7 @@ func podStatusTbl() table.Table {
 	headerFmt := color.New(color.FgGreen, color.Underline).SprintfFunc()
 	columnFmt := color.New(color.FgYellow).SprintfFunc()
 
-	tbl := table.New("Name", "UID", "Status", "Node", "Cpu", "Memory", "Last Sync Time", "Error")
+	tbl := table.New("Name", "UID", "Status", "Ipv4", "Node", "Ports", "Cpu", "Memory", "Last Sync Time", "Error")
 	tbl.WithHeaderFormatter(headerFmt).WithFirstColumnFormatter(columnFmt)
 	return tbl
 }
@@ -116,11 +118,20 @@ func printSpecifiedPodStatus(name string) error {
 
 	tbl := podStatusTbl()
 	fullName := path.Join(podStatus.Namespace, podStatus.Name)
+	portBindings := podStatus.PortBindings
+	var portBindingsStrList []string
+	for port, portBinding := range portBindings {
+		for _, binding := range portBinding {
+			portBindingsStrList = append(portBindingsStrList, fmt.Sprintf("%s:%s", binding.HostPort, port.Port()))
+		}
+	}
 	tbl.AddRow(
 		fullName,
 		podStatus.ID,
 		podStatus.Lifecycle.String(),
+		podStatus.Ip,
 		podStatus.Node,
+		strings.Join(portBindingsStrList, ","),
 		podStatus.CpuPercent,
 		podStatus.MemPercent,
 		podStatus.SyncTime.Format(time.RFC3339),
@@ -191,11 +202,20 @@ func printPodStatuses() error {
 	tbl := podStatusTbl()
 	for _, podStatus := range podStatuses {
 		fullName := path.Join(podStatus.Namespace, podStatus.Name)
+		portBindings := podStatus.PortBindings
+		var portBindingsStrList []string
+		for port, portBinding := range portBindings {
+			for _, binding := range portBinding {
+				portBindingsStrList = append(portBindingsStrList, fmt.Sprintf("%s:%s", binding.HostPort, port.Port()))
+			}
+		}
 		tbl.AddRow(
 			fullName,
 			podStatus.ID,
 			podStatus.Lifecycle.String(),
+			podStatus.Ip,
 			podStatus.Node,
+			strings.Join(portBindingsStrList, ","),
 			podStatus.CpuPercent,
 			podStatus.MemPercent,
 			podStatus.SyncTime.Format(time.RFC3339),
@@ -330,6 +350,72 @@ func printSpecifiedHPAStatus(name string) error {
 		hpaStatus.SyncTime.Format(time.RFC3339),
 		hpaStatus.Error,
 	)
+	tbl.Print()
+	return nil
+}
+
+func ServiceTbl() table.Table {
+	headerFmt := color.New(color.FgGreen, color.Underline).SprintfFunc()
+	columnFmt := color.New(color.FgYellow).SprintfFunc()
+
+	tbl := table.New("Name", "UID", "ClusterIp", "Ports")
+	tbl.WithHeaderFormatter(headerFmt).WithFirstColumnFormatter(columnFmt)
+	return tbl
+}
+
+func getServiceFromApiServer(fullName string) (service *apiObject.Service, err error) {
+	namespace, name := parseName(fullName)
+	URL := url.Prefix + path.Join(url.ServiceURL, namespace, name)
+	err = httputil.GetAndUnmarshal(URL, &service)
+	return
+}
+
+func getServicesFromApiServer() (services []apiObject.Service, err error) {
+	URL := url.Prefix + url.ServiceURL
+	err = httputil.GetAndUnmarshal(URL, &services)
+	return
+}
+
+func printSpecifiedService(name string) error {
+	service, err := getServiceFromApiServer(name)
+	if err != nil {
+		return err
+	}
+	if service == nil {
+		return fmt.Errorf("no such service")
+	}
+
+	tbl := ServiceTbl()
+	fullName := path.Join(service.Metadata.Namespace, service.Metadata.Name)
+	tbl.AddRow(
+		fullName,
+		service.Metadata.UID,
+		service.Spec.ClusterIP,
+		service.Spec.Ports,
+	)
+	tbl.Print()
+	return nil
+}
+
+func printServices() error {
+	services, err := getServicesFromApiServer()
+	if err != nil {
+		return err
+	}
+	if services == nil {
+		return fmt.Errorf("no such pod")
+	}
+
+	tbl := ServiceTbl()
+	for _, service := range services {
+		fullName := path.Join(service.Metadata.Namespace, service.Metadata.Name)
+		tbl.AddRow(
+			fullName,
+			service.Metadata.UID,
+			service.Spec.ClusterIP,
+			service.Spec.Ports,
+		)
+	}
 	tbl.Print()
 	return nil
 }

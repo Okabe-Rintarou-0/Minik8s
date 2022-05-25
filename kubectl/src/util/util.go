@@ -16,6 +16,8 @@ const (
 	Deployment
 	ReplicaSet
 	HorizontalPodAutoscaler
+	DNS
+	GpuJob
 )
 
 func (tp *ApiObjectType) String() string {
@@ -32,6 +34,8 @@ func (tp *ApiObjectType) String() string {
 		return "ReplicaSet"
 	case HorizontalPodAutoscaler:
 		return "HorizontalPodAutoscaler"
+	case DNS:
+		return "DNS"
 	}
 	return "Unknown"
 }
@@ -63,6 +67,12 @@ func parseType(content []byte) ApiObjectType {
 		return ReplicaSet
 	case "HorizontalPodAutoscaler":
 		return HorizontalPodAutoscaler
+	case "Service":
+		return Service
+	case "DNS":
+		return DNS
+	case "GpuJob":
+		return GpuJob
 	}
 	return Unknown
 }

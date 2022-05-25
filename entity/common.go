@@ -27,3 +27,13 @@ type PodUpdate struct {
 	Node   string
 	Target apiObject.Pod
 }
+
+type EndpointUpdate struct {
+	Action ApiObjectUpdateAction
+	Target EndpointTarget
+}
+
+type ServiceUpdate struct {
+	Action ApiObjectUpdateAction
+	Target ServiceTarget
+}

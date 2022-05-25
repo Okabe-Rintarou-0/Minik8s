@@ -148,6 +148,7 @@ type PodSpec struct {
 	NodeSelector  Labels      `yaml:"nodeSelector,omitempty"`
 	Containers    []Container `yaml:"containers"`
 	Volumes       []Volume    `yaml:"volumes"`
+	ClusterIp     string      `yaml:"clusterIp,omitempty"`
 }
 
 type Pod struct {
@@ -197,6 +198,10 @@ func (pod *Pod) GetContainerByName(name string) *Container {
 
 func (pod *Pod) NodeSelector() map[string]string {
 	return pod.Spec.NodeSelector
+}
+
+func (pod *Pod) ClusterIp() string {
+	return pod.Spec.ClusterIp
 }
 
 type PodTemplateSpec struct {

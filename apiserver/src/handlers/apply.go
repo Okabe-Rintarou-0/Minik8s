@@ -7,6 +7,7 @@ import (
 	"minik8s/apiObject"
 	"minik8s/apiserver/src/etcd"
 	"minik8s/apiserver/src/helper"
+	"minik8s/apiserver/src/ipgen"
 	"minik8s/apiserver/src/url"
 	"minik8s/entity"
 	"minik8s/listwatch"
@@ -25,6 +26,7 @@ func HandleApplyNode(c *gin.Context) {
 	err := readAndUnmarshal(c.Request.Body, &node)
 	if err != nil {
 		c.String(http.StatusOK, err.Error())
+		return
 	}
 	node.Metadata.UID = uidutil.New()
 	log("receive node[ID = %v]: %v", node.UID(), node)
@@ -54,7 +56,7 @@ func HandleApplyNode(c *gin.Context) {
 	var nodeStatusJson []byte
 	if nodeStatusJson, err = json.Marshal(entity.NodeStatus{
 		Hostname:   node.Name(),
-		Ip:         "",
+		Ip:         node.Ip,
 		Labels:     node.Labels(),
 		Lifecycle:  entity.NodeUnknown,
 		Error:      "",
@@ -66,7 +68,7 @@ func HandleApplyNode(c *gin.Context) {
 		_ = etcd.Put(etcdNodeStatusURL, string(nodeStatusJson))
 	}
 
-	c.String(http.StatusOK, "Apply successfully!")
+	c.String(http.StatusOK, "ok")
 }
 
 func HandleApplyPod(c *gin.Context) {
@@ -74,6 +76,7 @@ func HandleApplyPod(c *gin.Context) {
 	err := readAndUnmarshal(c.Request.Body, &pod)
 	if err != nil {
 		c.String(http.StatusOK, err.Error())
+		return
 	}
 
 	if helper.ExistsPod(pod.Namespace(), pod.Name()) {
@@ -82,7 +85,16 @@ func HandleApplyPod(c *gin.Context) {
 	}
 
 	pod.Metadata.UID = uidutil.New()
-	log("receive pod %s/%s[ID = %v]", pod.Namespace(), pod.Name(), pod.UID())
+	if im, err := ipgen.New(url.PodIpGeneratorURL, url.PodIpBase); err != nil {
+		c.String(http.StatusOK, err.Error())
+		return
+	} else {
+		if pod.Spec.ClusterIp, err = im.GetNext(); err != nil {
+			c.String(http.StatusOK, err.Error())
+			return
+		}
+	}
+	log("receive pod %s/%s[ID = %v] %+v", pod.Namespace(), pod.Name(), pod.UID(), pod)
 
 	// Schedule first, then put the data to url: PodURL/node/namespace/name
 	podUpdateMsg, _ := json.Marshal(entity.PodUpdate{
@@ -91,7 +103,7 @@ func HandleApplyPod(c *gin.Context) {
 	})
 
 	listwatch.Publish(topicutil.SchedulerPodUpdateTopic(), podUpdateMsg)
-	c.String(http.StatusOK, "Apply successfully!")
+	c.String(http.StatusOK, "ok")
 }
 
 func HandleApplyReplicaSet(c *gin.Context) {
@@ -99,6 +111,7 @@ func HandleApplyReplicaSet(c *gin.Context) {
 	err := readAndUnmarshal(c.Request.Body, &rs)
 	if err != nil {
 		c.String(http.StatusOK, err.Error())
+		return
 	}
 	rs.Metadata.UID = uidutil.New()
 	log("receive rs[ID = %v]: %v", rs.UID(), rs)
@@ -146,7 +159,7 @@ func HandleApplyReplicaSet(c *gin.Context) {
 	})
 
 	listwatch.Publish(topicutil.ReplicaSetUpdateTopic(), replicaSetUpdateMsg)
-	c.String(http.StatusOK, "Apply successfully!")
+	c.String(http.StatusOK, "ok")
 }
 
 func HandleApplyHPA(c *gin.Context) {
@@ -154,6 +167,7 @@ func HandleApplyHPA(c *gin.Context) {
 	err := readAndUnmarshal(c.Request.Body, &hpa)
 	if err != nil {
 		c.String(http.StatusOK, err.Error())
+		return
 	}
 
 	log("receive hpa[ID = %v]: %v", hpa.UID(), hpa)
@@ -162,5 +176,108 @@ func HandleApplyHPA(c *gin.Context) {
 		c.String(http.StatusOK, err.Error())
 		return
 	}
-	c.String(http.StatusOK, "Apply successfully!")
+	c.String(http.StatusOK, "ok")
+}
+
+func HandleApplyService(c *gin.Context) {
+	service := apiObject.Service{}
+	err := readAndUnmarshal(c.Request.Body, &service)
+	if err != nil {
+		c.String(http.StatusOK, err.Error())
+		return
+	}
+
+	if helper.ExistsService(service.Metadata.Namespace, service.Metadata.Name) {
+		c.String(http.StatusOK, fmt.Sprintf("service %s/%s already exists", service.Metadata.Namespace, service.Metadata.Name))
+		return
+	}
+
+	service.Metadata.UID = uidutil.New()
+	if ig, err := ipgen.New(url.SvcIpGeneratorURL, url.ServiceIpBase); err != nil {
+		c.String(http.StatusOK, err.Error())
+		return
+	} else if service.Spec.ClusterIP, err = ig.GetNext(); err != nil {
+		c.String(http.StatusOK, err.Error())
+		return
+	}
+	log("receive service: %+v", service)
+
+	serviceUpdate := entity.ServiceUpdate{
+		Action: entity.CreateAction,
+		Target: entity.ServiceTarget{
+			Service:   service,
+			Endpoints: make([]apiObject.Endpoint, 0),
+		},
+	}
+
+	var serviceJson []byte
+	if serviceJson, err = json.Marshal(service); err != nil {
+		c.String(http.StatusOK, err.Error())
+		return
+	}
+	if err := etcd.Put(path.Join(url.ServiceURL, service.Metadata.Namespace, service.Metadata.Name), string(serviceJson)); err != nil {
+		c.String(http.StatusOK, err.Error())
+		return
+	}
+	for key, value := range service.Spec.Selector {
+		if err := etcd.Put(path.Join(url.ServiceURL, key, value, service.Metadata.UID), string(serviceJson)); err != nil {
+			c.String(http.StatusOK, err.Error())
+			return
+		}
+		if endpoints, err := helper.GetEndpoints(key, value); err != nil {
+			c.String(http.StatusOK, err.Error())
+			return
+		} else {
+			serviceUpdate.Target.Endpoints = append(serviceUpdate.Target.Endpoints, endpoints...)
+		}
+	}
+
+	serviceUpdateMsg, _ := json.Marshal(serviceUpdate)
+	listwatch.Publish(topicutil.ServiceUpdateTopic(), serviceUpdateMsg)
+
+	c.String(http.StatusOK, "ok")
+}
+
+func HandleApplyDNS(c *gin.Context) {
+	dns := apiObject.Dns{}
+	err := readAndUnmarshal(c.Request.Body, &dns)
+	if err != nil {
+		c.String(http.StatusOK, err.Error())
+		return
+	}
+	log("receive dns: %+v", dns)
+}
+
+func HandleApplyGpuJob(c *gin.Context) {
+	gpu := apiObject.GpuJob{}
+	err := readAndUnmarshal(c.Request.Body, &gpu)
+	if err != nil {
+		c.String(http.StatusOK, err.Error())
+		return
+	}
+	gpu.Metadata.UID = uidutil.New()
+	log("receive gpu job[ID = %v]: %v", gpu.UID(), gpu)
+
+	etcdURL := path.Join(url.GpuURL, gpu.Namespace(), gpu.Name())
+	if raw, err := etcd.Get(etcdURL); err == nil {
+		old := apiObject.GpuJob{}
+		if err := json.Unmarshal([]byte(raw), &old); err == nil {
+			c.String(http.StatusOK, fmt.Sprintf("gpu job %s/%s already exists", gpu.Namespace(), gpu.Name()))
+			return
+		}
+	}
+
+	gpuJobJson, _ := json.Marshal(gpu)
+	if err = etcd.Put(etcdURL, string(gpuJobJson)); err != nil {
+		c.String(http.StatusOK, err.Error())
+		return
+	}
+
+	GpuUpdateMsg, _ := json.Marshal(entity.GpuUpdate{
+		Action: entity.CreateAction,
+		Target: gpu,
+	})
+
+	listwatch.Publish(topicutil.GpuJobUpdateTopic(), GpuUpdateMsg)
+	c.String(http.StatusOK, "ok")
 }

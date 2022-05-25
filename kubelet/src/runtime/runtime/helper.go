@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"fmt"
 	"github.com/docker/go-connections/nat"
 	"minik8s/apiObject"
 	"minik8s/apiObject/types"
@@ -9,6 +10,7 @@ import (
 	"minik8s/kubelet/src/runtime/image"
 	"minik8s/util/logger"
 	"minik8s/util/netutil"
+	"os/exec"
 	"strconv"
 	"time"
 )
@@ -200,6 +202,7 @@ func (rm *runtimeManager) inspectionToContainerStatus(inspection *container.Insp
 		ImageID:      inspection.Image,
 		RestartCount: inspection.RestartCount,
 		Error:        inspection.State.Error,
+		PortBindings: inspection.HostConfig.PortBindings,
 	}, nil
 }
 
@@ -271,11 +274,19 @@ func (rm *runtimeManager) startPauseContainer(pod *apiObject.Pod) error {
 	if err != nil {
 		return err
 	}
-	//fmt.Println("Create the container successfully, got ID", ID)
+	fmt.Println("Create the container successfully, got ID", ID)
 
 	// Step 4: Start this container
 	//fmt.Println("Now start the container with ID", ID)
 	err = rm.cm.StartContainer(ID, &container.StartConfig{})
+
+	// Step 5: Attach to weave subnet
+	if out, err := exec.Command("weave", "attach", pod.Spec.ClusterIp+"/24", ID).Output(); err != nil {
+		logger.Log("weave attach pause err")(err.Error())
+		return err
+	} else {
+		logger.Log("weave attach pause")(string(out))
+	}
 	return err
 }
 
@@ -346,26 +357,27 @@ func (rm *runtimeManager) startCommonContainer(pod *apiObject.Pod, c *apiObject.
 			return err
 		}
 	} else {
-		//fmt.Printf("No need to pull image %s, continue\n", c.Image)
+		log("No need to pull image %s, continue", c.Image)
 	}
 	// Prepare
 	podFullName := pod.FullName()
 	podUID := pod.UID()
 
 	// Step 3: Create a container
-	//fmt.Println("Now create the container")
+	log("Now create the container")
 
 	containerFullName := podutil.ContainerFullName(c.Name, podFullName, podUID, 0)
 
 	var ID container.ID
 	ID, err = rm.cm.CreateContainer(containerFullName, rm.getCommonContainerCreateConfig(pod, c))
 	if err != nil {
+		log("Created failed, because: %s\n", err.Error())
 		return err
 	}
-	//fmt.Println("Create the container successfully, got ID", ID)
+	log("Create the container successfully, got %s", ID)
 
 	// Step 4: Start this container
-	//fmt.Println("Now start the container with ID", ID)
+	log("Now start the container with ID %s", ID)
 	err = rm.cm.StartContainer(ID, &container.StartConfig{})
 	return err
 }

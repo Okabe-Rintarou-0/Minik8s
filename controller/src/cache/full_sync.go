@@ -196,8 +196,8 @@ func (m *manager) fullSyncNodeStatuses() {
 	toDelete, toAdd := m.syncNodeChange(cachedNodeStatuses, serverNodeStatuses)
 
 	// Step 4: Handle toDelete & toAdd
-	log("To Delete: %v", toDelete)
-	log("To Add: %v", toAdd)
+	//log("To Delete: %v", toDelete)
+	//log("To Add: %v", toAdd)
 	m.handleNodeAdd(toAdd)
 	m.handleNodeDelete(toDelete)
 }
@@ -217,8 +217,8 @@ func (m *manager) fullSyncPodStatuses() {
 	toDelete, toAdd := m.syncPodChange(cachedPodStatuses, serverPodStatuses)
 
 	// Step 3: Handle toDelete & toAdd
-	log("To Delete: %v", toDelete)
-	log("To Add: %v", toAdd)
+	//log("To Delete: %v", toDelete)
+	//log("To Add: %v", toAdd)
 	m.handlePodAdd(toAdd)
 	m.handlePodDelete(toDelete)
 }
@@ -238,8 +238,8 @@ func (m *manager) fullSyncReplicaSetStatuses() {
 	toDelete, toAdd := m.syncReplicaSetChange(cachedReplicaSetStatuses, serverReplicaSetStatuses)
 
 	// Step 3: Handle toDelete & toAdd
-	log("To Delete: %v", toDelete)
-	log("To Add: %v", toAdd)
+	//log("To Delete: %v", toDelete)
+	//log("To Add: %v", toAdd)
 	m.handleReplicaSetAdd(toAdd)
 	m.handleReplicaSetDelete(toDelete)
 }
@@ -259,8 +259,8 @@ func (m *manager) fullSyncHPAStatuses() {
 	toDelete, toAdd := m.syncHPAChange(cachedReplicaSetStatuses, serverHPAStatuses)
 
 	// Step 3: Handle toDelete & toAdd
-	log("To Delete: %v", toDelete)
-	log("To Add: %v", toAdd)
+	//log("To Delete: %v", toDelete)
+	//log("To Add: %v", toAdd)
 	m.handleHPAAdd(toAdd)
 	m.handleHPADelete(toDelete)
 }

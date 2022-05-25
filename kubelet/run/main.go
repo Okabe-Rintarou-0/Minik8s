@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"minik8s/apiObject"
@@ -11,7 +12,7 @@ import (
 	"os"
 )
 
-func registerNode() {
+func registerNode(ip string) {
 	hostname := netutil.Hostname()
 	node := apiObject.Node{
 		Base: apiObject.Base{
@@ -23,7 +24,7 @@ func registerNode() {
 				UID:       "",
 			},
 		},
-		Ip: "0.0.0.0",
+		Ip: ip,
 	}
 
 	URL := url.Prefix + url.NodeURL
@@ -40,7 +41,11 @@ func registerNode() {
 }
 
 func main() {
-	registerNode()
+	var ip string
+	flag.StringVar(&ip, "ip", "127.0.0.1", "ip address for node register")
+	flag.Parse()
+
+	registerNode(ip)
 
 	kl := kubelet.New()
 	kl.Run()

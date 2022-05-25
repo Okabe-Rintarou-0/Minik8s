@@ -34,14 +34,18 @@ func get(cmd *cobra.Command, args []string) {
 		err = printSpecifiedNodeStatus(name)
 	case "nodes":
 		err = printNodeStatuses()
-	case "replicaset":
+	case "rs":
 		err = printSpecifiedReplicaSetStatus(name)
-	case "replicasets":
+	case "rss":
 		err = printReplicaSetStatuses()
 	case "hpas":
 		err = printHPAStatuses()
 	case "hpa":
 		err = printSpecifiedHPAStatus(name)
+	case "service":
+		err = printSpecifiedService(name)
+	case "services":
+		err = printServices()
 	default:
 		err = fmt.Errorf("invalid api object type \"%s\", acceptable api object type is pod, service, etc", apiObjectType)
 	}

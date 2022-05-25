@@ -23,9 +23,18 @@ func syncNodeStatus(msg *redis.Message) {
 
 	logApiServer("Received status %s of Node[host = %s, cpu = %v, mem = %v, pods = %v]", nodeStatus.Lifecycle.String(), nodeStatus.Hostname, nodeStatus.CpuPercent, nodeStatus.MemPercent, nodeStatus.NumPods)
 
+	etcdURL := path.Join(url.NodeURL, "status", nodeStatus.Namespace, nodeStatus.Hostname)
+	var oldNodeStatusStr string
+	if oldNodeStatusStr, err = etcd.Get(etcdURL); err == nil {
+		oldNodeStatus := entity.NodeStatus{}
+		if err = json.Unmarshal([]byte(oldNodeStatusStr), &oldNodeStatus); err == nil {
+			nodeStatus.Ip = oldNodeStatus.Ip
+			nodeStatus.Labels = oldNodeStatus.Labels
+		}
+	}
+
 	var nodeStatusJson []byte
 	if nodeStatusJson, err = json.Marshal(nodeStatus); err == nil {
-		etcdURL := path.Join(url.NodeURL, "status", nodeStatus.Namespace, nodeStatus.Hostname)
 		err = etcd.Put(etcdURL, string(nodeStatusJson))
 		if err != nil {
 			logger.Error(err.Error())

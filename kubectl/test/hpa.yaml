@@ -5,7 +5,7 @@ metadata:
   namespace: default
 spec:
   minReplicas: 1
-  maxReplicas: 5
+  maxReplicas: 4
   scaleTargetRef:
     apiVersion: v1
     kind: ReplicaSet # we only support replicaSet now
