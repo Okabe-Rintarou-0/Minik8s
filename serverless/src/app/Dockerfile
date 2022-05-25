@@ -10,4 +10,4 @@ EXPOSE 8080
 
 ENTRYPOINT ["python"]
 
-CMD ["func.py"]
+CMD ["main.py"]

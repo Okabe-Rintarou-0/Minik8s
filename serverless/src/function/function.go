@@ -11,6 +11,7 @@ import (
 	"minik8s/serverless/src/registry"
 	"minik8s/serverless/src/utils"
 	"os"
+	"strconv"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
@@ -22,28 +23,28 @@ const (
 	pythonImage     = "python:3.10-slim"
 	exposedPort     = "8080"
 	dockerfilePath  = "../src/app/Dockerfile"
-	codePath        = "../src/app/helloworld.py"
 	requirementPath = "../src/app/requirements.txt"
-	name            = "test1"
+	mainCodePath    = "../src/app/main.py" // a fixed template, start a http server
 	dockerfile      = "Dockerfile"
-	code            = "func.py"
+	funcCode        = "func.py"		       // rename to "func.py" in docker
+	mainCode        ="main.py"
 	requirement     = "requirements.txt"
 )
 
-func InitFunction() {
+func InitFunction(name string, namespace string, codePath string) {
 	utils.PullImg(pythonImage)
-	createImage()
+	createImage(name, codePath)
 
 	uid := uuid.NewV4().String()
 	containerName := name + "-" + uid
 	imageName := registry.RegistryHost + "/" + name
 
 	registry.PushImage(imageName)
-	createContainer(containerName, imageName)
+	_,_ =createContainer(name, containerName, imageName)
 
 }
 
-func createContainer(containerName, imageName string) {
+func createContainer(name, containerName, imageName string) (string, string) {
 	id := utils.CreateContainer(containerName, &container.ContainerCreateConfig{
 		Image:      imageName,
 		Entrypoint: nil,
@@ -64,15 +65,16 @@ func createContainer(containerName, imageName string) {
 			exposedPort + "/tcp": []nat.PortBinding{
 				{
 					HostIP:   registry.RegistryHostIP,
-					HostPort: "10303",
 				},
 			},
 		},
 		VolumesFrom: nil,
 	})
-	log.Printf("container created, id=%s\n", id)
 	utils.StartContainer(id)
-	log.Printf("Ready to serve " + name)
+	id, state, port := utils.FindContainer(containerName)
+	portStr:=strconv.FormatUint(uint64(port),10);
+	log.Printf("Ready to serve %s, container id: %s, container state: %s, host port: %s\n",name, id, state, portStr)
+	return id, portStr
 }
 
 func copyFile(tw *tar.Writer, path string, filename string) {
@@ -99,7 +101,7 @@ func copyFile(tw *tar.Writer, path string, filename string) {
 	}
 }
 
-func createImage() {
+func createImage(name, funcCodePath string) {
 	ctx := context.Background()
 	cli, err := client.NewEnvClient()
 	if err != nil {
@@ -111,7 +113,8 @@ func createImage() {
 	defer tw.Close()
 
 	copyFile(tw, dockerfilePath, dockerfile)
-	copyFile(tw, codePath, code)
+	copyFile(tw, mainCodePath, mainCode)
+	copyFile(tw, funcCodePath, funcCode)
 	copyFile(tw, requirementPath, requirement)
 
 	tarReader := bytes.NewReader(buf.Bytes())

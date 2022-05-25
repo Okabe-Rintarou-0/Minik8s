@@ -31,7 +31,7 @@ var (
 func InitRegistry() {
 	utils.PullImg(RegistryImage)
 
-	id, state := utils.FindContainer(RegistryName)
+	id, state, _ := utils.FindContainer(RegistryName)
 
 	if id == "" {
 		id = utils.CreateContainer(RegistryName, &container.ContainerCreateConfig{

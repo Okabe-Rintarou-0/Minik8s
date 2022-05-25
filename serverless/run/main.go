@@ -6,6 +6,7 @@ import (
 )
 
 func main() {
-	registry.InitRegistry()
-	function.InitFunction()
+	registry.InitRegistry()                                              // only run on master node
+	function.InitFunction("helloworld", "default", "../src/app/func.py") // the third parameter need to be replaced
+
 }
