@@ -46,5 +46,8 @@ const (
 	FuncURL                  = "/api/v1/func/"
 	FuncURLWithSpecifiedName = "/api/v1/func/:name"
 
+	WorkflowURL                  = "/api/v1/workflow/"
+	WorkflowURLWithSpecifiedName = "/api/v1/workflow/:name"
+
 	ResetURL = "/reset"
 )

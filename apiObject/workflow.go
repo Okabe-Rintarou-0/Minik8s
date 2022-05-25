@@ -1,5 +1,7 @@
 package apiObject
 
+import "minik8s/apiObject/types"
+
 type NodeType string
 
 const (
@@ -32,4 +34,16 @@ type Workflow struct {
 	Base    `json:",inline"`
 	StartAt string                  `json:"startAt"`
 	Nodes   map[string]WorkflowNode `json:"nodes"`
+}
+
+func (wf *Workflow) UID() types.UID {
+	return wf.Metadata.UID
+}
+
+func (wf *Workflow) Namespace() string {
+	return wf.Metadata.Namespace
+}
+
+func (wf *Workflow) Name() string {
+	return wf.Metadata.Name
 }

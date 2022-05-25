@@ -18,6 +18,9 @@ var postTable = map[string]Handler{
 	url.DNSURL:        handlers.HandleApplyDNS,
 	url.GpuURL:        handlers.HandleApplyGpuJob,
 
+	// kubectl wf apply -f
+	url.WorkflowURL: handlers.HandleApplyWorkflow,
+
 	// update pod after it's scheduled
 	url.PodURLWithSpecifiedNode: handlers.HandleSchedulePod,
 
