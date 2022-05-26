@@ -96,6 +96,7 @@ func (c *controller) createFunction(apiFunc *apiObject.Function) error {
 		if err := function.CreateFunctionImage(apiFunc.Name, apiFunc.Path); err != nil {
 			return err
 		} else {
+			logManager("Now should create replicaSet")
 			c.createReplicaSet(apiFunc)
 		}
 	}
