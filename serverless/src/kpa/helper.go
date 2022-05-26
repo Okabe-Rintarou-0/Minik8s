@@ -45,9 +45,9 @@ func (c *controller) createReplicaSet(apiFunc *apiObject.Function) {
 			Replicas: 1,
 			Template: apiObject.PodTemplateSpec{
 				Spec: apiObject.PodSpec{
-					NodeSelector: apiObject.Labels{
-						"type": "master",
-					},
+					//NodeSelector: apiObject.Labels{
+					//	"type": "master",
+					//},
 					Containers: []apiObject.Container{
 						{
 							Name:      apiFunc.Name,
@@ -93,6 +93,7 @@ func (c *controller) createFunction(apiFunc *apiObject.Function) error {
 	replicaSet := c.functionReplicaSetMap[apiFunc.Name]
 	c.scaleLock.RUnlock()
 	if replicaSet == nil {
+		logManager("Now create replica set")
 		if err := function.CreateFunctionImage(apiFunc.Name, apiFunc.Path); err != nil {
 			return err
 		} else {

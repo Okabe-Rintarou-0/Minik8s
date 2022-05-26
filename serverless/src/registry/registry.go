@@ -71,6 +71,7 @@ func InitRegistry() {
 }
 
 func PushImage(image string) error {
+	log.Printf("Now push image %s", image)
 	authConfig := types.AuthConfig{Username: "docker", Password: ""}
 	encodedJSON, err := json.Marshal(authConfig)
 	if err != nil {
