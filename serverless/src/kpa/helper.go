@@ -109,10 +109,9 @@ func (c *controller) deleteFunction(apiFunc *apiObject.Function) error {
 	replicaSet := c.functionReplicaSetMap[apiFunc.Name]
 	c.scaleLock.RUnlock()
 	if replicaSet != nil {
+		c.removeReplicaSet(apiFunc)
 		if err := function.RemoveFunctionImage(apiFunc.Name); err != nil {
 			return err
-		} else {
-			c.removeReplicaSet(apiFunc)
 		}
 	}
 	return nil

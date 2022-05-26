@@ -24,7 +24,7 @@ func (c *controller) handleFunctionUpdate(msg *redis.Message) {
 	case entity.CreateAction:
 		err = c.createFunction(&apiFunc)
 	case entity.DeleteAction:
-
+		err = c.deleteFunction(&apiFunc)
 	}
 
 	if err != nil {
