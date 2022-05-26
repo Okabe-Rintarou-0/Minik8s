@@ -54,5 +54,8 @@ type Controller interface {
 }
 
 func NewController() Controller {
-	return &controller{}
+	return &controller{
+		workers:               make(map[string]*worker),
+		functionReplicaSetMap: make(map[string]*functionReplicaSet),
+	}
 }

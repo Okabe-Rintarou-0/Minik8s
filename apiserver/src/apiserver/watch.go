@@ -11,7 +11,7 @@ import (
 	"path"
 )
 
-var logApiServer = logger.Log("api-server watching")
+//var logApiServer = logger.Log("api-server watching")
 
 func syncNodeStatus(msg *redis.Message) {
 	nodeStatus := &entity.NodeStatus{}
@@ -21,7 +21,7 @@ func syncNodeStatus(msg *redis.Message) {
 		return
 	}
 
-	logApiServer("Received status %s of Node[host = %s, cpu = %v, mem = %v, pods = %v]", nodeStatus.Lifecycle.String(), nodeStatus.Hostname, nodeStatus.CpuPercent, nodeStatus.MemPercent, nodeStatus.NumPods)
+	//logApiServer("Received status %s of Node[host = %s, cpu = %v, mem = %v, pods = %v]", nodeStatus.Lifecycle.String(), nodeStatus.Hostname, nodeStatus.CpuPercent, nodeStatus.MemPercent, nodeStatus.NumPods)
 
 	etcdURL := path.Join(url.NodeURL, "status", nodeStatus.Namespace, nodeStatus.Hostname)
 	var oldNodeStatusStr string
@@ -54,7 +54,7 @@ func syncPodStatus(msg *redis.Message) {
 		return
 	}
 
-	logApiServer("Received status %s of Pod[name = %s, id = %v]", podStatus.Lifecycle.String(), podStatus.Name, podStatus.ID)
+	//logApiServer("Received status %s of Pod[name = %s, id = %v]", podStatus.Lifecycle.String(), podStatus.Name, podStatus.ID)
 
 	var podStatusJson []byte
 	if podStatusJson, err = json.Marshal(podStatus); err == nil {
@@ -78,7 +78,7 @@ func syncReplicaSetStatus(msg *redis.Message) {
 		return
 	}
 
-	logApiServer("Received status %s of Rs[name = %s, id = %v]", replicaSetStatus.Lifecycle.String(), replicaSetStatus.Name, replicaSetStatus.ID)
+	//logApiServer("Received status %s of Rs[name = %s, id = %v]", replicaSetStatus.Lifecycle.String(), replicaSetStatus.Name, replicaSetStatus.ID)
 
 	var replicaSetStatusJson []byte
 	if replicaSetStatusJson, err = json.Marshal(replicaSetStatus); err == nil {
@@ -102,7 +102,7 @@ func syncHPAStatus(msg *redis.Message) {
 		return
 	}
 
-	logApiServer("Received status %s of HPA[name = %s, id = %v]", hpaStatus.Lifecycle.String(), hpaStatus.Name, hpaStatus.ID)
+	//logApiServer("Received status %s of HPA[name = %s, id = %v]", hpaStatus.Lifecycle.String(), hpaStatus.Name, hpaStatus.ID)
 
 	var hpaStatusJson []byte
 	if hpaStatusJson, err = json.Marshal(hpaStatus); err == nil {

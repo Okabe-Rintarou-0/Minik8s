@@ -36,7 +36,7 @@ func CreateFunctionImage(name string, codePath string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("python iamge pull succeed\n")
+	fmt.Printf("python image pull succeed\n")
 	err = createImage(name, codePath)
 	if err != nil {
 		return err
