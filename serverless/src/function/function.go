@@ -30,7 +30,7 @@ const (
 	requirement     = "requirements.txt"
 )
 
-func InitFunction(name string, codePath string) error {
+func CreateFunctionImage(name string, codePath string) error {
 	err := utils.PullImg(pythonImage)
 	if err != nil {
 		return err
@@ -39,12 +39,14 @@ func InitFunction(name string, codePath string) error {
 	if err != nil {
 		return err
 	}
-	//uid := uidutil.New()
-	//containerName := name + "-" + uid
 	imageName := registry.RegistryHost + "/" + name
-
 	return registry.PushImage(imageName)
 	//_, _ = createContainer(name, containerName, imageName)
+}
+
+func RemoveFunctionImage(name string) error {
+	//TODO implement it
+	return nil
 }
 
 func createContainer(name, containerName, imageName string) (string, string) {

@@ -34,6 +34,10 @@ func (w *worker) handleFunctionMsg(msg *entity.FunctionMsg) bool {
 }
 
 func (w *worker) doJob() {
+	if w.DAG == nil {
+		logWorker("No available dag")
+		return
+	}
 	curNode := w.DAG.Root
 	for curNode != nil {
 		select {
