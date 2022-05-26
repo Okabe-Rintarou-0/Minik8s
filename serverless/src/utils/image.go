@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"log"
+	"fmt"
 	"minik8s/kubelet/src/runtime/container"
 	"minik8s/kubelet/src/runtime/image"
 )
@@ -15,15 +15,15 @@ var (
 func PullImg(imageName string) error {
 	if exists, err := im.ExistsImage(imageName); !exists && err == nil {
 		err := im.PullImage(imageName, &image.PullConfig{All: false, Verbose: true})
-		log.Printf("pull image of %s complete\n", imageName)
+		fmt.Printf("pull image of %s complete\n", imageName)
 		if err != nil {
-			log.Print(err.Error())
+			fmt.Println(err.Error())
 			return err
 		}
 	} else if err == nil {
-		log.Printf("image of %s exists", imageName)
+		fmt.Printf("image of %s exists\n", imageName)
 	} else {
-		log.Print(err.Error())
+		fmt.Println(err.Error())
 		return err
 	}
 	return nil
