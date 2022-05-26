@@ -21,7 +21,7 @@ func getFuncPods(funcName string) []entity.PodStatus {
 		logger.Error(err.Error())
 		return nil
 	}
-	fmt.Printf("Got pods: %v\n", pods)
+	//fmt.Printf("Got pods: %v\n", pods)
 	return pods
 }
 

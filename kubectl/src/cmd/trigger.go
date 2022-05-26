@@ -24,5 +24,5 @@ func trigger(cmd *cobra.Command, args []string) {
 	if err != nil {
 		errMsg = err.Error()
 	}
-	fmt.Printf("Called function %s:\n\terror: %s\n\tresult: %s\n", funcName, result, errMsg)
+	fmt.Printf("Called function %s:\n\terror: %s\n\tresult: %s\n", funcName, errMsg, result)
 }
