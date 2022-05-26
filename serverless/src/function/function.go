@@ -22,9 +22,9 @@ import (
 const (
 	pythonImage     = "python:3.10-slim"
 	exposedPort     = "8080"
-	dockerfilePath  = "../src/app/Dockerfile"
-	requirementPath = "../src/app/requirements.txt"
-	mainCodePath    = "../src/app/main.py" // a fixed template, start a http server
+	dockerfilePath  = "serverless/src/app/Dockerfile"
+	requirementPath = "serverless/src/app/requirements.txt"
+	mainCodePath    = "serverless/src/app/main.py" // a fixed template, start a http server
 	dockerfile      = "Dockerfile"
 	funcCode        = "func.py" // rename to "func.py" in docker
 	mainCode        = "main.py"
