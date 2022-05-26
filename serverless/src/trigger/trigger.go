@@ -16,7 +16,7 @@ func getFuncPods(funcName string) []entity.PodStatus {
 	URL := url.Prefix + strings.Replace(url.FuncPodsURLWithSpecifiedName, ":name", funcName, -1)
 
 	var pods []entity.PodStatus
-	err := httputil.GetAndUnmarshal(URL, pods)
+	err := httputil.GetAndUnmarshal(URL, &pods)
 	if err != nil {
 		logger.Error(err.Error())
 		return nil
