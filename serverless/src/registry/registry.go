@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"minik8s/kubelet/src/runtime/container"
@@ -67,7 +68,7 @@ func InitRegistry() {
 	}
 
 	cli, _ = client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	log.Printf("init registry complete")
+	fmt.Println("init registry complete")
 }
 
 func PushImage(image string) error {
