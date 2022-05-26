@@ -26,7 +26,7 @@ func (c *controller) scaleToHalf(funcReplicaSet *functionReplicaSet) {
 
 func (c *controller) createFunction(apiFunc *apiObject.Function) error {
 	if _, exists := c.functionReplicaSetMap[apiFunc.Name]; !exists {
-		if err := function.InitFunction(apiFunc.Name, apiFunc.Name); err != nil {
+		if err := function.InitFunction(apiFunc.Name, apiFunc.Path); err != nil {
 			return err
 		}
 	}

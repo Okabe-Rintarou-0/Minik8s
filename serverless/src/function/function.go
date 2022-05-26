@@ -4,7 +4,6 @@ import (
 	"archive/tar"
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -84,12 +83,10 @@ func createContainer(name, containerName, imageName string) (string, string) {
 func copyFile(tw *tar.Writer, path string, filename string) error {
 	reader, err := os.Open(path)
 	if err != nil {
-		fmt.Println(err, " :unable to open file "+path)
 		return err
 	}
 	readFile, err := ioutil.ReadAll(reader)
 	if err != nil {
-		fmt.Println(err, " :unable to read file "+path)
 		return err
 	}
 
@@ -99,12 +96,10 @@ func copyFile(tw *tar.Writer, path string, filename string) error {
 	}
 	err = tw.WriteHeader(tarHeader)
 	if err != nil {
-		fmt.Println(err, " :unable to write tar header")
 		return err
 	}
 	_, err = tw.Write(readFile)
 	if err != nil {
-		fmt.Println(err, " :unable to write tar body")
 		return err
 	}
 	return nil
@@ -114,7 +109,6 @@ func createImage(name, funcCodePath string) error {
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
-		fmt.Println(err, " :unable to init client")
 		return err
 	}
 
@@ -146,13 +140,11 @@ func createImage(name, funcCodePath string) error {
 			Tags:       []string{registry.RegistryHost + "/" + name},
 			Remove:     true})
 	if err != nil {
-		fmt.Println(err, " :unable to build docker image")
 		return err
 	}
 	defer imageBuildResponse.Body.Close()
 	_, err = io.Copy(os.Stdout, imageBuildResponse.Body)
 	if err != nil {
-		fmt.Println(err, " :unable to read image build response")
 		return err
 	}
 	return nil
