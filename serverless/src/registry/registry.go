@@ -72,11 +72,10 @@ func InitRegistry() {
 }
 
 func PushImage(image string) error {
-	log.Printf("Now push image %s", image)
+	fmt.Printf("Now push image %s\n", image)
 	authConfig := types.AuthConfig{Username: "docker", Password: ""}
 	encodedJSON, err := json.Marshal(authConfig)
 	if err != nil {
-		log.Print(err)
 		return err
 	}
 	authStr := base64.URLEncoding.EncodeToString(encodedJSON)
@@ -86,11 +85,11 @@ func PushImage(image string) error {
 		PrivilegeFunc: nil,
 	})
 	if err != nil {
-		log.Printf("push image %s to registry error: %s\n", image, err)
+		fmt.Printf("push image %s to registry error: %s\n", image, err)
 		return err
 	}
 	wr, err := io.Copy(os.Stdout, pushReader)
-	log.Print(wr)
+	fmt.Println(wr)
 	return nil
 }
 
