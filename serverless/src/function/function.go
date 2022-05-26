@@ -43,7 +43,6 @@ func CreateFunctionImage(name string, codePath string) error {
 	}
 	imageName := registry.RegistryHost + "/" + name
 	fmt.Printf("image create succeed %s\n", imageName)
-	fmt.Printf("Now push image %s\n", imageName)
 	return registry.PushImage(imageName)
 	//_, _ = createContainer(name, containerName, imageName)
 }

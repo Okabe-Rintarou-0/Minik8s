@@ -296,6 +296,7 @@ func HandleRemoveFunc(c *gin.Context) {
 				Target: apiFunc,
 			})
 
+			log("Publish delete func %s msg", apiFunc.Name)
 			listwatch.Publish(topic, updateMsg)
 			c.String(http.StatusOK, "ok")
 			return
