@@ -45,9 +45,9 @@ func (c *controller) createReplicaSet(apiFunc *apiObject.Function) {
 			Replicas: 1,
 			Template: apiObject.PodTemplateSpec{
 				Spec: apiObject.PodSpec{
-					NodeSelector: apiObject.Labels{
-						"type": "master",
-					},
+					//NodeSelector: apiObject.Labels{
+					//	"type": "master",
+					//},
 					Containers: []apiObject.Container{
 						{
 							Name:      apiFunc.Name,
@@ -66,6 +66,7 @@ func (c *controller) createReplicaSet(apiFunc *apiObject.Function) {
 		},
 	}
 
+	logManager("Add rs to api-server now")
 	URL := url.Prefix + url.ReplicaSetURL
 	apiutil.ApplyApiObjectToApiServer(URL, replicaSet)
 
@@ -92,9 +93,11 @@ func (c *controller) createFunction(apiFunc *apiObject.Function) error {
 	replicaSet := c.functionReplicaSetMap[apiFunc.Name]
 	c.scaleLock.RUnlock()
 	if replicaSet == nil {
+		logManager("Now create replica set")
 		if err := function.CreateFunctionImage(apiFunc.Name, apiFunc.Path); err != nil {
 			return err
 		} else {
+			logManager("Now should create replicaSet")
 			c.createReplicaSet(apiFunc)
 		}
 	}
@@ -106,10 +109,9 @@ func (c *controller) deleteFunction(apiFunc *apiObject.Function) error {
 	replicaSet := c.functionReplicaSetMap[apiFunc.Name]
 	c.scaleLock.RUnlock()
 	if replicaSet != nil {
+		c.removeReplicaSet(apiFunc)
 		if err := function.RemoveFunctionImage(apiFunc.Name); err != nil {
 			return err
-		} else {
-			c.removeReplicaSet(apiFunc)
 		}
 	}
 	return nil

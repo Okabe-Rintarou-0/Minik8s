@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -35,11 +36,14 @@ func CreateFunctionImage(name string, codePath string) error {
 	if err != nil {
 		return err
 	}
+	fmt.Printf("python iamge pull succeed\n")
 	err = createImage(name, codePath)
 	if err != nil {
 		return err
 	}
 	imageName := registry.RegistryHost + "/" + name
+	fmt.Printf("image create succeed %s\n", imageName)
+	fmt.Printf("Now push image %s\n", imageName)
 	return registry.PushImage(imageName)
 	//_, _ = createContainer(name, containerName, imageName)
 }

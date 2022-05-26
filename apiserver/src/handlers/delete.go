@@ -279,30 +279,31 @@ func HandleRemoveFunc(c *gin.Context) {
 	apiFunc := apiObject.Function{}
 	if raw, err := etcd.Get(etcdURL); err == nil {
 		if err = json.Unmarshal([]byte(raw), &apiFunc); err == nil {
-			c.String(http.StatusOK, fmt.Sprintf("no such func %s", name))
+			if err = etcd.Delete(etcdURL); err != nil {
+				c.String(http.StatusOK, err.Error())
+				return
+			}
+
+			functionJson, _ := json.Marshal(apiFunc)
+			if err = etcd.Put(etcdURL, string(functionJson)); err != nil {
+				c.String(http.StatusOK, err.Error())
+				return
+			}
+
+			topic := topicutil.FunctionUpdateTopic()
+			updateMsg, _ := json.Marshal(entity.FunctionUpdate{
+				Action: entity.DeleteAction,
+				Target: apiFunc,
+			})
+
+			listwatch.Publish(topic, updateMsg)
+			c.String(http.StatusOK, "ok")
 			return
 		}
 	}
 
-	if err := etcd.Delete(etcdURL); err != nil {
-		c.String(http.StatusOK, err.Error())
-		return
-	}
-
-	functionJson, _ := json.Marshal(apiFunc)
-	if err := etcd.Put(etcdURL, string(functionJson)); err != nil {
-		c.String(http.StatusOK, err.Error())
-		return
-	}
-
-	topic := topicutil.FunctionUpdateTopic()
-	updateMsg, _ := json.Marshal(entity.FunctionUpdate{
-		Action: entity.DeleteAction,
-		Target: apiFunc,
-	})
-
-	listwatch.Publish(topic, updateMsg)
-	c.String(http.StatusOK, "ok")
+	c.String(http.StatusOK, fmt.Sprintf("no such func %s", name))
+	return
 }
 
 func HandleRemoveWorkflow(c *gin.Context) {
