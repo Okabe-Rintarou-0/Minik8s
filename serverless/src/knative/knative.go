@@ -1,7 +1,9 @@
 package knative
 
 import (
+	"fmt"
 	"minik8s/serverless/src/kpa"
+	"minik8s/util/recoverutil"
 	"minik8s/util/wait"
 )
 
@@ -15,7 +17,14 @@ func NewKnative() *Knative {
 	}
 }
 
+func (kn *Knative) recover() {
+	if err := recover(); err != nil {
+		fmt.Println(recoverutil.Trace(fmt.Sprintf("%v\n", err)))
+	}
+}
+
 func (kn *Knative) Run() {
+	defer kn.recover()
 	kn.kpaController.Run()
 	wait.Forever()
 }

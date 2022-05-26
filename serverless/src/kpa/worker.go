@@ -26,7 +26,7 @@ func (w *worker) finishTask(data entity.FunctionData) {
 }
 
 func (w *worker) fetchFuncData() entity.FunctionData {
-	return entity.FunctionData{}
+	return ""
 }
 
 func (w *worker) handleFunctionMsg(msg *entity.FunctionMsg) bool {

@@ -32,6 +32,7 @@ const (
 )
 
 func CreateFunctionImage(name string, codePath string) error {
+	fmt.Printf("try to pull python image\n")
 	err := utils.PullImg(pythonImage)
 	if err != nil {
 		return err
