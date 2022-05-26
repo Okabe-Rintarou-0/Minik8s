@@ -81,8 +81,8 @@ func (c *controller) createReplicaSet(apiFunc *apiObject.Function) {
 // createReplicaSet is coroutine-safe, should be called without lock
 func (c *controller) removeReplicaSet(apiFunc *apiObject.Function) {
 	URL := url.Prefix + path.Join(url.ReplicaSetURL, "function", apiFunc.Name)
-	httputil.DeleteWithoutBody(URL)
-
+	resp := httputil.DeleteWithoutBody(URL)
+	logManager("remove replicaSet and got resp: %s", resp)
 	c.scaleLock.Lock()
 	defer c.scaleLock.Unlock()
 	delete(c.functionReplicaSetMap, apiFunc.Name)
