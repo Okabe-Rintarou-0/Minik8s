@@ -275,6 +275,66 @@ func HandleDeleteService(c *gin.Context) {
 	c.String(http.StatusOK, "ok")
 }
 
+func HandleRemoveFunc(c *gin.Context) {
+	name := c.Param("name")
+	etcdURL := path.Join(url.FuncURL, name)
+	apiFunc := apiObject.Function{}
+	if raw, err := etcd.Get(etcdURL); err == nil {
+		if err = json.Unmarshal([]byte(raw), &apiFunc); err == nil {
+			if err = etcd.Delete(etcdURL); err != nil {
+				c.String(http.StatusOK, err.Error())
+				return
+			}
+
+			topic := topicutil.FunctionUpdateTopic()
+			updateMsg, _ := json.Marshal(entity.FunctionUpdate{
+				Action: entity.DeleteAction,
+				Target: apiFunc,
+			})
+
+			log("Publish delete func %s msg", apiFunc.Name)
+			listwatch.Publish(topic, updateMsg)
+			c.String(http.StatusOK, "ok")
+			return
+		}
+	}
+
+	c.String(http.StatusOK, fmt.Sprintf("no such func %s", name))
+	return
+}
+
+func HandleRemoveWorkflow(c *gin.Context) {
+	name := c.Param("name")
+	etcdURL := path.Join(url.WorkflowURL, name)
+	wf := apiObject.Workflow{}
+	if raw, err := etcd.Get(etcdURL); err == nil {
+		if err = json.Unmarshal([]byte(raw), &wf); err == nil {
+			c.String(http.StatusOK, fmt.Sprintf("no such workflow %s", name))
+			return
+		}
+	}
+
+	if err := etcd.Delete(etcdURL); err != nil {
+		c.String(http.StatusOK, err.Error())
+		return
+	}
+
+	workflowJson, _ := json.Marshal(wf)
+	if err := etcd.Put(etcdURL, string(workflowJson)); err != nil {
+		c.String(http.StatusOK, err.Error())
+		return
+	}
+
+	topic := topicutil.WorkflowUpdateTopic()
+	updateMsg, _ := json.Marshal(entity.WorkflowUpdate{
+		Action: entity.DeleteAction,
+		Target: wf,
+	})
+
+	listwatch.Publish(topic, updateMsg)
+	c.String(http.StatusOK, "ok")
+}
+
 func HandleDeleteDNS(c *gin.Context) {
 	namespace := c.Param("namespace")
 	name := c.Param("name")

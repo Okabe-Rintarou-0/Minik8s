@@ -8,6 +8,7 @@ import (
 	"minik8s/apiserver/src/etcd"
 	"minik8s/apiserver/src/url"
 	"minik8s/entity"
+	"minik8s/util/httputil"
 	"net/http"
 	"path"
 	"strconv"
@@ -23,7 +24,7 @@ func HandleLabelNode(c *gin.Context) {
 	}
 
 	labels := apiObject.Labels{}
-	if err := readAndUnmarshal(body, &labels); err != nil {
+	if err := httputil.ReadAndUnmarshal(body, &labels); err != nil {
 		c.String(http.StatusOK, err.Error())
 		return
 	}

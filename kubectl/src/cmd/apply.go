@@ -4,11 +4,10 @@ import (
 	"fmt"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
-	"io/ioutil"
 	"minik8s/apiObject"
 	"minik8s/apiserver/src/url"
 	"minik8s/kubectl/src/util"
-	"minik8s/util/httputil"
+	"minik8s/util/apiutil"
 )
 
 var applyCmd = &cobra.Command{
@@ -16,17 +15,6 @@ var applyCmd = &cobra.Command{
 	Short: "Kubectl apply is used to create api object in a declarative way",
 	Long:  "Kubectl apply is used to create api object in a declarative way",
 	Run:   apply,
-}
-
-func applyApiObjectToApiServer(URL string, object interface{}) {
-	resp, err := httputil.PostJson(URL, object)
-	if err != nil {
-		fmt.Println(err.Error())
-		return
-	}
-	respBody, _ := ioutil.ReadAll(resp.Body)
-	defer resp.Body.Close()
-	fmt.Println(string(respBody))
 }
 
 func apply(cmd *cobra.Command, args []string) {
@@ -50,7 +38,7 @@ func apply(cmd *cobra.Command, args []string) {
 			return
 		}
 		URL := url.Prefix + url.NodeURL
-		applyApiObjectToApiServer(URL, node)
+		apiutil.ApplyApiObjectToApiServer(URL, node)
 	case util.Pod:
 		pod := apiObject.Pod{}
 		if err = yaml.Unmarshal(content, &pod); err != nil {
@@ -58,7 +46,7 @@ func apply(cmd *cobra.Command, args []string) {
 			return
 		}
 		URL := url.Prefix + url.PodURL
-		applyApiObjectToApiServer(URL, pod)
+		apiutil.ApplyApiObjectToApiServer(URL, pod)
 	case util.ReplicaSet:
 		rs := apiObject.ReplicaSet{}
 		if err = yaml.Unmarshal(content, &rs); err != nil {
@@ -66,7 +54,7 @@ func apply(cmd *cobra.Command, args []string) {
 			return
 		}
 		URL := url.Prefix + url.ReplicaSetURL
-		applyApiObjectToApiServer(URL, rs)
+		apiutil.ApplyApiObjectToApiServer(URL, rs)
 	case util.HorizontalPodAutoscaler:
 		hpa := apiObject.HorizontalPodAutoscaler{}
 		if err = yaml.Unmarshal(content, &hpa); err != nil {
@@ -78,7 +66,7 @@ func apply(cmd *cobra.Command, args []string) {
 			return
 		}
 		URL := url.Prefix + url.HPAURL
-		applyApiObjectToApiServer(URL, hpa)
+		apiutil.ApplyApiObjectToApiServer(URL, hpa)
 	case util.Service:
 		service := apiObject.Service{}
 		if err = yaml.Unmarshal(content, &service); err != nil {
@@ -86,7 +74,7 @@ func apply(cmd *cobra.Command, args []string) {
 			return
 		}
 		URL := url.Prefix + url.ServiceURL
-		applyApiObjectToApiServer(URL, service)
+		apiutil.ApplyApiObjectToApiServer(URL, service)
 	case util.DNS:
 		dns := apiObject.Dns{}
 		if err = yaml.Unmarshal(content, &dns); err != nil {
@@ -94,7 +82,7 @@ func apply(cmd *cobra.Command, args []string) {
 			return
 		}
 		URL := url.Prefix + url.DNSURL
-		applyApiObjectToApiServer(URL, dns)
+		apiutil.ApplyApiObjectToApiServer(URL, dns)
 	case util.GpuJob:
 		gpu := apiObject.GpuJob{}
 		if err = yaml.Unmarshal(content, &gpu); err != nil {
@@ -102,6 +90,6 @@ func apply(cmd *cobra.Command, args []string) {
 			return
 		}
 		URL := url.Prefix + url.GpuURL
-		applyApiObjectToApiServer(URL, gpu)
+		apiutil.ApplyApiObjectToApiServer(URL, gpu)
 	}
 }

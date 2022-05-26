@@ -2,6 +2,7 @@ package kpa
 
 import (
 	"fmt"
+	"github.com/tidwall/gjson"
 	"minik8s/apiObject"
 	"minik8s/entity"
 )
@@ -35,8 +36,8 @@ type choice struct {
 }
 
 func (c *choice) ChooseSatisfied(data entity.FunctionData) *node {
-	for i, branch := range c.Branches {
-		if branch.Satisfied(data) {
+	for i, br := range c.Branches {
+		if br.Satisfied(data) {
 			return c.Branches[i].Next
 		}
 	}
@@ -61,15 +62,15 @@ func toJudgeFunc(c *apiObject.Choice) judgeFunc {
 	case c.NumericEquals != nil:
 		{
 			return func(data entity.FunctionData) bool {
-				val, ok := data[variable].(float64)
-				return ok && val == *c.NumericNotEquals
+				res := gjson.Get(string(data), variable)
+				return res.Int() == *c.NumericNotEquals
 			}
 		}
 	case c.NumericNotEquals != nil:
 		{
 			return func(data entity.FunctionData) bool {
-				val, ok := data[variable].(float64)
-				return ok && val != *c.NumericNotEquals
+				res := gjson.Get(string(data), variable)
+				return res.Int() != *c.NumericNotEquals
 			}
 		}
 	}

@@ -11,6 +11,7 @@ import (
 	"minik8s/apiserver/src/url"
 	"minik8s/entity"
 	"minik8s/listwatch"
+	"minik8s/util/httputil"
 	"minik8s/nginx"
 	"minik8s/util/logger"
 	"minik8s/util/topicutil"
@@ -25,7 +26,7 @@ var log = logger.Log("Api-server")
 
 func HandleApplyNode(c *gin.Context) {
 	node := apiObject.Node{}
-	err := readAndUnmarshal(c.Request.Body, &node)
+	err := httputil.ReadAndUnmarshal(c.Request.Body, &node)
 	if err != nil {
 		c.String(http.StatusOK, err.Error())
 		return
@@ -75,7 +76,7 @@ func HandleApplyNode(c *gin.Context) {
 
 func HandleApplyPod(c *gin.Context) {
 	pod := apiObject.Pod{}
-	err := readAndUnmarshal(c.Request.Body, &pod)
+	err := httputil.ReadAndUnmarshal(c.Request.Body, &pod)
 	if err != nil {
 		c.String(http.StatusOK, err.Error())
 		return
@@ -105,7 +106,7 @@ func HandleApplyPod(c *gin.Context) {
 
 func HandleApplyReplicaSet(c *gin.Context) {
 	rs := apiObject.ReplicaSet{}
-	err := readAndUnmarshal(c.Request.Body, &rs)
+	err := httputil.ReadAndUnmarshal(c.Request.Body, &rs)
 	if err != nil {
 		c.String(http.StatusOK, err.Error())
 		return
@@ -161,7 +162,7 @@ func HandleApplyReplicaSet(c *gin.Context) {
 
 func HandleApplyHPA(c *gin.Context) {
 	hpa := apiObject.HorizontalPodAutoscaler{}
-	err := readAndUnmarshal(c.Request.Body, &hpa)
+	err := httputil.ReadAndUnmarshal(c.Request.Body, &hpa)
 	if err != nil {
 		c.String(http.StatusOK, err.Error())
 		return
@@ -178,7 +179,7 @@ func HandleApplyHPA(c *gin.Context) {
 
 func HandleApplyService(c *gin.Context) {
 	service := apiObject.Service{}
-	err := readAndUnmarshal(c.Request.Body, &service)
+	err := httputil.ReadAndUnmarshal(c.Request.Body, &service)
 	if err != nil {
 		c.String(http.StatusOK, err.Error())
 		return
@@ -234,7 +235,7 @@ func HandleApplyService(c *gin.Context) {
 
 func HandleApplyDNS(c *gin.Context) {
 	dns := apiObject.Dns{}
-	err := readAndUnmarshal(c.Request.Body, &dns)
+	err := httputil.ReadAndUnmarshal(c.Request.Body, &dns)
 	if err != nil {
 		c.String(http.StatusOK, err.Error())
 		return
@@ -320,7 +321,7 @@ func HandleApplyDNS(c *gin.Context) {
 
 func HandleApplyGpuJob(c *gin.Context) {
 	gpu := apiObject.GpuJob{}
-	err := readAndUnmarshal(c.Request.Body, &gpu)
+	err := httputil.ReadAndUnmarshal(c.Request.Body, &gpu)
 	if err != nil {
 		c.String(http.StatusOK, err.Error())
 		return
@@ -349,5 +350,39 @@ func HandleApplyGpuJob(c *gin.Context) {
 	})
 
 	listwatch.Publish(topicutil.GpuJobUpdateTopic(), GpuUpdateMsg)
+	c.String(http.StatusOK, "ok")
+}
+
+func HandleApplyWorkflow(c *gin.Context) {
+	wf := apiObject.Workflow{}
+	err := httputil.ReadAndUnmarshal(c.Request.Body, &wf)
+	if err != nil {
+		c.String(http.StatusOK, err.Error())
+		return
+	}
+	wf.Metadata.UID = uidutil.New()
+	log("receive workflow[ID = %v]: %v", wf.UID(), wf)
+
+	etcdURL := path.Join(url.WorkflowURL, wf.Namespace(), wf.Name())
+	if raw, err := etcd.Get(etcdURL); err == nil {
+		old := apiObject.Workflow{}
+		if err := json.Unmarshal([]byte(raw), &old); err == nil {
+			c.String(http.StatusOK, fmt.Sprintf("Workflow %s/%s already exists", wf.Namespace(), wf.Name()))
+			return
+		}
+	}
+
+	workflowJson, _ := json.Marshal(wf)
+	if err = etcd.Put(etcdURL, string(workflowJson)); err != nil {
+		c.String(http.StatusOK, err.Error())
+		return
+	}
+
+	workflowMsg, _ := json.Marshal(entity.WorkflowUpdate{
+		Action: entity.CreateAction,
+		Target: wf,
+	})
+
+	listwatch.Publish(topicutil.WorkflowUpdateTopic(), workflowMsg)
 	c.String(http.StatusOK, "ok")
 }

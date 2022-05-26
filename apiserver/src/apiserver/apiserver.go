@@ -99,5 +99,5 @@ func (api *apiServer) Run() {
 	}
 	api.bindHandlers()
 	api.watch()
-	log.Fatal(api.httpServer.Run())
+	log.Fatal(api.httpServer.Run(":8080"))
 }

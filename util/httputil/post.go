@@ -18,6 +18,15 @@ func PostJson(URL string, content interface{}) (*http.Response, error) {
 	return cli.Do(req)
 }
 
+func PostString(URL string, content string) (*http.Response, error) {
+	cli := http.Client{}
+	req, err := http.NewRequest(http.MethodPost, URL, bytes.NewReader([]byte(content)))
+	if err != nil {
+		return nil, err
+	}
+	return cli.Do(req)
+}
+
 func PostForm(URL string, form map[string]string) string {
 	values := url.Values{}
 	for key, value := range form {

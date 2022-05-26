@@ -1,5 +1,7 @@
 package apiObject
 
+import "minik8s/apiObject/types"
+
 type NodeType string
 
 const (
@@ -8,10 +10,10 @@ const (
 )
 
 type Choice struct {
-	Variable         string   `json:"variable"`
-	NumericEquals    *float64 `json:"numericEquals,omitempty"`
-	NumericNotEquals *float64 `json:"numericNotEquals,omitempty"`
-	Next             *string  `json:"next"`
+	Variable         string  `json:"variable"`
+	NumericEquals    *int64  `json:"numericEquals,omitempty"`
+	NumericNotEquals *int64  `json:"numericNotEquals,omitempty"`
+	Next             *string `json:"next"`
 }
 
 type Choices struct {
@@ -32,4 +34,16 @@ type Workflow struct {
 	Base    `json:",inline"`
 	StartAt string                  `json:"startAt"`
 	Nodes   map[string]WorkflowNode `json:"nodes"`
+}
+
+func (wf *Workflow) UID() types.UID {
+	return wf.Metadata.UID
+}
+
+func (wf *Workflow) Namespace() string {
+	return wf.Metadata.Namespace
+}
+
+func (wf *Workflow) Name() string {
+	return wf.Metadata.Name
 }

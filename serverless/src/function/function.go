@@ -22,30 +22,35 @@ import (
 const (
 	pythonImage     = "python:3.10-slim"
 	exposedPort     = "8080"
-	dockerfilePath  = "../src/app/Dockerfile"
-	requirementPath = "../src/app/requirements.txt"
-	mainCodePath    = "../src/app/main.py" // a fixed template, start a http server
+	dockerfilePath  = "serverless/src/app/Dockerfile"
+	requirementPath = "serverless/src/app/requirements.txt"
+	mainCodePath    = "serverless/src/app/main.py" // a fixed template, start a http server
 	dockerfile      = "Dockerfile"
 	funcCode        = "func.py" // rename to "func.py" in docker
 	mainCode        = "main.py"
 	requirement     = "requirements.txt"
 )
 
-func InitFunction(name string, codePath string) error {
+func CreateFunctionImage(name string, codePath string) error {
+	fmt.Printf("try to pull python image\n")
 	err := utils.PullImg(pythonImage)
 	if err != nil {
 		return err
 	}
+	fmt.Printf("python image pull succeed\n")
 	err = createImage(name, codePath)
 	if err != nil {
 		return err
 	}
-	//uid := uidutil.New()
-	//containerName := name + "-" + uid
 	imageName := registry.RegistryHost + "/" + name
-
+	fmt.Printf("image create succeed %s\n", imageName)
 	return registry.PushImage(imageName)
 	//_, _ = createContainer(name, containerName, imageName)
+}
+
+func RemoveFunctionImage(name string) error {
+	//TODO implement it
+	return nil
 }
 
 func createContainer(name, containerName, imageName string) (string, string) {
@@ -84,12 +89,10 @@ func createContainer(name, containerName, imageName string) (string, string) {
 func copyFile(tw *tar.Writer, path string, filename string) error {
 	reader, err := os.Open(path)
 	if err != nil {
-		fmt.Println(err, " :unable to open file "+path)
 		return err
 	}
 	readFile, err := ioutil.ReadAll(reader)
 	if err != nil {
-		fmt.Println(err, " :unable to read file "+path)
 		return err
 	}
 
@@ -99,12 +102,10 @@ func copyFile(tw *tar.Writer, path string, filename string) error {
 	}
 	err = tw.WriteHeader(tarHeader)
 	if err != nil {
-		fmt.Println(err, " :unable to write tar header")
 		return err
 	}
 	_, err = tw.Write(readFile)
 	if err != nil {
-		fmt.Println(err, " :unable to write tar body")
 		return err
 	}
 	return nil
@@ -114,7 +115,6 @@ func createImage(name, funcCodePath string) error {
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
-		fmt.Println(err, " :unable to init client")
 		return err
 	}
 
@@ -146,13 +146,11 @@ func createImage(name, funcCodePath string) error {
 			Tags:       []string{registry.RegistryHost + "/" + name},
 			Remove:     true})
 	if err != nil {
-		fmt.Println(err, " :unable to build docker image")
 		return err
 	}
 	defer imageBuildResponse.Body.Close()
 	_, err = io.Copy(os.Stdout, imageBuildResponse.Body)
 	if err != nil {
-		fmt.Println(err, " :unable to read image build response")
 		return err
 	}
 	return nil

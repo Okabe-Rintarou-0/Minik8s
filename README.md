@@ -6,13 +6,41 @@ Group project of SE3356 Cloud Operating System Design and Practice, Spring 2022.
 
 ## Structure
 
+### Kubectl
+
+`kubectl` is a command line tool that helps user controller `minik8s`. It's similar to `kubectl` in `Kubenetes`, but it's simplified and different in some commands. 
+It is also based on `cobra`.
+
+![cobra](./readme-images/cobra.png)
+
+We support basic command like `kubectl get pods`, `kubectl apply -f xxx.yaml`. For more info, see directory `/kubectl/src/cmd`.
+
 ### Kubelet
 
-The structure of `kubelet` in minik8s is similar to k8s, but it's greatly simplified.
+The structure of `kubelet` in `minik8s` is similar to k8s, but it's greatly simplified.
 
 ![Our kubelet](./readme-images/kubelet.svg)
 
-### Pod Resources Monitor
+#### Core: How to create a pod
+
+Start an infra container first(default image is `registry.aliyuncs.com/google_containers/pause:3.6`). 
+The infra container provides network namespace and volumes for all the other containers. 
+So they can communicate with each other though `localhost` and share same volumes.
+
+#### Support & References
+
++ Docker http client: [Moby](https://pkg.go.dev/github.com/docker/docker/client)
++ Docker api document: [Docker Engine API (v1.41)](https://docs.docker.com/engine/api/v1.41/#)
++ A good article on pod creation: [2.2 从 Pause 容器理解 Pod 的本质](https://k8s.iswbm.com/c02/p02_learn-kubernetes-pod-via-pause-container.html)
+
+### Api-server
+<img alt="gin" align="right" height="150" src="./readme-images/gin.png"/>
+
+`Api-server` is the center of `minik8s`. It should expose REST apis for other components of the control plane. For fast development, we adopted a mature framework: `gin`
+
+
+
+### Autoscaler
 
 The pod resources monitor is based on `cAdvisor`, `Prometheus` and `Grafana`.
 

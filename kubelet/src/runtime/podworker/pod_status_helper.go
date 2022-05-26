@@ -16,6 +16,7 @@ func (w *podWorker) pod2PodStatus(pod *apiObject.Pod) *entity.PodStatus {
 		Node:      hostname,
 		Name:      pod.Name(),
 		Labels:    pod.Labels(),
+		Ip:        pod.ClusterIp(),
 		Namespace: pod.Namespace(),
 	}
 }
