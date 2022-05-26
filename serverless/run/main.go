@@ -14,7 +14,7 @@ func main() {
 	cmd := exec.Command("ls")
 	output, _ := cmd.Output()
 	fmt.Println(string(output))
-	function.CreateFunctionImage("helloworld", "serverless/src/app/func.py") // the third parameter need to be replaced
+	function.CreateFunctionImage("helloworld", "/root/tmp/minik8s/apiObject/examples/function/func.py") // the third parameter need to be replaced
 	kn := knative.NewKnative()
 	kn.Run()
 }
