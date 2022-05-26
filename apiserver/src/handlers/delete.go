@@ -298,6 +298,7 @@ func HandleRemoveFunc(c *gin.Context) {
 
 			listwatch.Publish(topic, updateMsg)
 			c.String(http.StatusOK, "ok")
+			return
 		}
 	}
 
