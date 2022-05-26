@@ -69,6 +69,7 @@ func (c *controller) TriggerFunc(funcName string, data entity.FunctionData) (res
 	replicaSet.NumRequest += 1
 	if replicaSet.NumRequest > replicaSet.NumReplicas {
 		replicaSet.NumReplicas = replicaSet.NumRequest
+		replicaSet.LastRequestTime = time.Now()
 		c.scaleLock.Unlock()
 		logManager("Received func %s trigger, scale to %d", funcName, replicaSet.NumReplicas)
 		c.updateReplicaSetToApiServer(replicaSet)
@@ -80,6 +81,7 @@ func (c *controller) TriggerFunc(funcName string, data entity.FunctionData) (res
 	c.scaleLock.Lock()
 	defer c.scaleLock.Unlock()
 	replicaSet.NumRequest -= 1
+	replicaSet.LastRequestTime = time.Now()
 	logManager("func %s trigger ended, num request becomes to %d", funcName, replicaSet.NumRequest)
 
 	return
