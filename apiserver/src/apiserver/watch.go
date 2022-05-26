@@ -29,6 +29,7 @@ func syncNodeStatus(msg *redis.Message) {
 		oldNodeStatus := entity.NodeStatus{}
 		if err = json.Unmarshal([]byte(oldNodeStatusStr), &oldNodeStatus); err == nil {
 			nodeStatus.Ip = oldNodeStatus.Ip
+			nodeStatus.Labels = oldNodeStatus.Labels
 		}
 	}
 

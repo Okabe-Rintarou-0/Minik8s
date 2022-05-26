@@ -22,8 +22,11 @@ var labelCmd = &cobra.Command{
 	Run:   label,
 }
 
-func labelSpecifiedNode(name string, labels apiObject.Labels) {
-	URL := url.Prefix + strings.Replace(url.NodeLabelsURLWithSpecifiedName, ":name", name, 1) + "?overwrite=" + strconv.FormatBool(overwrite)
+func labelSpecifiedNode(fullName string, labels apiObject.Labels) {
+	namespace, name := parseName(fullName)
+	specified := strings.Replace(url.NodeLabelsURLWithSpecifiedName, ":namespace", namespace, -1)
+	specified = strings.Replace(specified, ":name", name, -1)
+	URL := url.Prefix + specified + "?overwrite=" + strconv.FormatBool(overwrite)
 	resp, err := httputil.PostJson(URL, labels)
 	if err != nil {
 		logger.Error(err.Error())

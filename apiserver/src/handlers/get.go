@@ -135,6 +135,16 @@ func getHPAApiObjectFromEtcd(namespace, name string) (hpa *apiObject.HorizontalP
 	return nil
 }
 
+func getGpuApiObjectFromEtcd(namespace, name string) (gpu *apiObject.GpuJob) {
+	etcdURL := path.Join(url.GpuURL, namespace, name)
+	if raw, err := etcd.Get(etcdURL); err == nil {
+		if err = json.Unmarshal([]byte(raw), &gpu); err == nil {
+			return gpu
+		}
+	}
+	return nil
+}
+
 func getServiceFromEtcd(namespace, name string) (service *apiObject.Service) {
 	etcdURL := path.Join(url.ServiceURL, namespace, name)
 	if raw, err := etcd.Get(etcdURL); err == nil {
@@ -254,6 +264,12 @@ func HandleGetHPAApiObject(c *gin.Context) {
 	namespace := c.Param("namespace")
 	name := c.Param("name")
 	c.JSON(http.StatusOK, getHPAApiObjectFromEtcd(namespace, name))
+}
+
+func HandleGetGpuApiObject(c *gin.Context) {
+	namespace := c.Param("namespace")
+	name := c.Param("name")
+	c.JSON(http.StatusOK, getGpuApiObjectFromEtcd(namespace, name))
 }
 
 func HandleGetHPAStatus(c *gin.Context) {

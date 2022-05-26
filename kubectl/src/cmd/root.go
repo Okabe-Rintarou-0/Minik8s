@@ -26,6 +26,12 @@ func init() {
 
 	labelCmd.Flags().BoolVarP(&overwrite, "overwrite", "o", false, "overwrite labels")
 
+	gpuCmd.Flags().StringVarP(&directory, "dir", "d", "./", "directory")
+	gpuCmd.Flags().StringVarP(&downloadFile, "file", "f", "", "download file")
+
+	funcCmd.Flags().StringVarP(&function, "function", "f", "", "function name")
+	funcCmd.Flags().StringVarP(&functionPath, "functionPath", "p", "", "function filepath")
+
 	rootCmd.AddCommand(applyCmd)
 	rootCmd.AddCommand(getCmd)
 	rootCmd.AddCommand(describeCmd)
@@ -33,6 +39,8 @@ func init() {
 	rootCmd.AddCommand(deleteCmd)
 	rootCmd.AddCommand(labelCmd)
 	rootCmd.AddCommand(resetCmd)
+	rootCmd.AddCommand(gpuCmd)
+	rootCmd.AddCommand(funcCmd)
 }
 
 var rootCmd = &cobra.Command{

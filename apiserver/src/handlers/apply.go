@@ -28,6 +28,7 @@ func HandleApplyNode(c *gin.Context) {
 	err := readAndUnmarshal(c.Request.Body, &node)
 	if err != nil {
 		c.String(http.StatusOK, err.Error())
+		return
 	}
 	node.Metadata.UID = uidutil.New()
 	log("receive node[ID = %v]: %v", node.UID(), node)
@@ -69,7 +70,7 @@ func HandleApplyNode(c *gin.Context) {
 		_ = etcd.Put(etcdNodeStatusURL, string(nodeStatusJson))
 	}
 
-	c.String(http.StatusOK, "Apply successfully!")
+	c.String(http.StatusOK, "ok")
 }
 
 func HandleApplyPod(c *gin.Context) {
@@ -77,6 +78,7 @@ func HandleApplyPod(c *gin.Context) {
 	err := readAndUnmarshal(c.Request.Body, &pod)
 	if err != nil {
 		c.String(http.StatusOK, err.Error())
+		return
 	}
 
 	if helper.ExistsPod(pod.Namespace(), pod.Name()) {
@@ -90,7 +92,6 @@ func HandleApplyPod(c *gin.Context) {
 		return
 	}
 	log("receive pod %s/%s[ID = %v] %+v", pod.Namespace(), pod.Name(), pod.UID(), pod)
-	log("receive pod %s/%s: %+v", pod.Namespace(), pod.Name(), pod)
 
 	// Schedule first, then put the data to url: PodURL/node/namespace/name
 	podUpdateMsg, _ := json.Marshal(entity.PodUpdate{
@@ -99,7 +100,7 @@ func HandleApplyPod(c *gin.Context) {
 	})
 
 	listwatch.Publish(topicutil.SchedulerPodUpdateTopic(), podUpdateMsg)
-	c.String(http.StatusOK, "Apply successfully!")
+	c.String(http.StatusOK, "ok")
 }
 
 func HandleApplyReplicaSet(c *gin.Context) {
@@ -107,6 +108,7 @@ func HandleApplyReplicaSet(c *gin.Context) {
 	err := readAndUnmarshal(c.Request.Body, &rs)
 	if err != nil {
 		c.String(http.StatusOK, err.Error())
+		return
 	}
 	rs.Metadata.UID = uidutil.New()
 	log("receive rs[ID = %v]: %v", rs.UID(), rs)
@@ -154,7 +156,7 @@ func HandleApplyReplicaSet(c *gin.Context) {
 	})
 
 	listwatch.Publish(topicutil.ReplicaSetUpdateTopic(), replicaSetUpdateMsg)
-	c.String(http.StatusOK, "Apply successfully!")
+	c.String(http.StatusOK, "ok")
 }
 
 func HandleApplyHPA(c *gin.Context) {
@@ -162,6 +164,7 @@ func HandleApplyHPA(c *gin.Context) {
 	err := readAndUnmarshal(c.Request.Body, &hpa)
 	if err != nil {
 		c.String(http.StatusOK, err.Error())
+		return
 	}
 
 	log("receive hpa[ID = %v]: %v", hpa.UID(), hpa)
@@ -170,7 +173,7 @@ func HandleApplyHPA(c *gin.Context) {
 		c.String(http.StatusOK, err.Error())
 		return
 	}
-	c.String(http.StatusOK, "Apply successfully!")
+	c.String(http.StatusOK, "ok")
 }
 
 func HandleApplyService(c *gin.Context) {
@@ -226,7 +229,7 @@ func HandleApplyService(c *gin.Context) {
 	serviceUpdateMsg, _ := json.Marshal(serviceUpdate)
 	listwatch.Publish(topicutil.ServiceUpdateTopic(), serviceUpdateMsg)
 
-	c.String(http.StatusOK, "Apply successfully!")
+	c.String(http.StatusOK, "ok")
 }
 
 func HandleApplyDNS(c *gin.Context) {
@@ -320,9 +323,25 @@ func HandleApplyGpuJob(c *gin.Context) {
 	err := readAndUnmarshal(c.Request.Body, &gpu)
 	if err != nil {
 		c.String(http.StatusOK, err.Error())
+		return
 	}
 	gpu.Metadata.UID = uidutil.New()
 	log("receive gpu job[ID = %v]: %v", gpu.UID(), gpu)
+
+	etcdURL := path.Join(url.GpuURL, gpu.Namespace(), gpu.Name())
+	if raw, err := etcd.Get(etcdURL); err == nil {
+		old := apiObject.GpuJob{}
+		if err := json.Unmarshal([]byte(raw), &old); err == nil {
+			c.String(http.StatusOK, fmt.Sprintf("gpu job %s/%s already exists", gpu.Namespace(), gpu.Name()))
+			return
+		}
+	}
+
+	gpuJobJson, _ := json.Marshal(gpu)
+	if err = etcd.Put(etcdURL, string(gpuJobJson)); err != nil {
+		c.String(http.StatusOK, err.Error())
+		return
+	}
 
 	GpuUpdateMsg, _ := json.Marshal(entity.GpuUpdate{
 		Action: entity.CreateAction,
@@ -330,5 +349,5 @@ func HandleApplyGpuJob(c *gin.Context) {
 	})
 
 	listwatch.Publish(topicutil.GpuJobUpdateTopic(), GpuUpdateMsg)
-	c.String(http.StatusOK, "Apply successfully!")
+	c.String(http.StatusOK, "ok")
 }

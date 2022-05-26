@@ -203,6 +203,7 @@ func (rm *runtimeManager) inspectionToContainerStatus(inspection *container.Insp
 		ImageID:      inspection.Image,
 		RestartCount: inspection.RestartCount,
 		Error:        inspection.State.Error,
+		PortBindings: inspection.HostConfig.PortBindings,
 	}, nil
 }
 
@@ -368,6 +369,7 @@ func (rm *runtimeManager) startCommonContainer(pod *apiObject.Pod, c *apiObject.
 	var ID container.ID
 	ID, err = rm.cm.CreateContainer(containerFullName, rm.getCommonContainerCreateConfig(pod, c))
 	if err != nil {
+		log("Created failed, because: %s\n", err.Error())
 		return err
 	}
 	log("Create the container successfully, got %s", ID)

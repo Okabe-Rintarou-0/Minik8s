@@ -112,6 +112,7 @@ func (m *manager) addInfo(podStatus *entity.PodStatus) bool {
 	podStatus.Labels = pod.Labels().DeepCopy()
 	podStatus.Namespace = pod.Namespace()
 	podStatus.Name = pod.Name()
+	podStatus.Ip = pod.ClusterIp()
 	return true
 }
 
