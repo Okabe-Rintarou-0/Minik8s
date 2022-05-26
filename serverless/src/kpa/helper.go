@@ -74,7 +74,7 @@ func (c *controller) createReplicaSet(apiFunc *apiObject.Function) {
 	c.functionReplicaSetMap[apiFunc.Name] = &functionReplicaSet{
 		Function:        apiFunc.Name,
 		NumRequest:      0,
-		NumReplicas:     1,
+		NumReplicas:     2,
 		LastRequestTime: time.Now(),
 	}
 }
