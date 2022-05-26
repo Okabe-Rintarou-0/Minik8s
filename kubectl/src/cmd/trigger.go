@@ -19,7 +19,7 @@ var functionData string
 
 func trigger(cmd *cobra.Command, args []string) {
 	funcName := args[0]
-	result, err := functrigger.Trigger(function, entity.FunctionData(functionData))
+	result, err := functrigger.Trigger(funcName, entity.FunctionData(functionData))
 	var errMsg string
 	if err != nil {
 		errMsg = err.Error()

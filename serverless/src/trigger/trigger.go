@@ -24,7 +24,7 @@ func getFuncPods(funcName string) []*entity.PodStatus {
 }
 
 func Trigger(function string, data entity.FunctionData) (result entity.FunctionData, err error) {
-	fmt.Printf("Trigger function %s\n", function)
+	//fmt.Printf("Trigger function %s\n", function)
 	pods := getFuncPods(function)
 	n := len(pods)
 	if n == 0 {
