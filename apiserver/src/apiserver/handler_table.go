@@ -18,6 +18,9 @@ var postTable = map[string]Handler{
 	url.DNSURL:        handlers.HandleApplyDNS,
 	url.GpuURL:        handlers.HandleApplyGpuJob,
 
+	// kubectl wf apply -f
+	url.WorkflowURL: handlers.HandleApplyWorkflow,
+
 	// update pod after it's scheduled
 	url.PodURLWithSpecifiedNode: handlers.HandleSchedulePod,
 
@@ -26,6 +29,9 @@ var postTable = map[string]Handler{
 
 	// kubectl label nodes node_name os=linux --overwrite
 	url.NodeLabelsURLWithSpecifiedName: handlers.HandleLabelNode,
+
+	// kubectl func add func_name func_path
+	url.FuncURL: handlers.HandleApplyFunc,
 }
 
 var getTable = map[string]Handler{
@@ -80,4 +86,10 @@ var deleteTable = map[string]Handler{
 
 	// delete pods of a node
 	url.PodURLWithSpecifiedNode: handlers.HandleDeleteNodePods,
+
+	// kubectl func rm func_name
+	url.FuncURLWithSpecifiedName: handlers.HandleRemoveFunc,
+
+	// kubectl wf rm workflow name:
+	url.WorkflowURLWithSpecifiedName: handlers.HandleApplyWorkflow,
 }

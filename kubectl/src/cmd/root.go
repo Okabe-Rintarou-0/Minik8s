@@ -29,6 +29,11 @@ func init() {
 	gpuCmd.Flags().StringVarP(&directory, "dir", "d", "./", "directory")
 	gpuCmd.Flags().StringVarP(&downloadFile, "file", "f", "", "download file")
 
+	funcCmd.Flags().StringVarP(&function, "func", "f", "", "function name")
+	funcCmd.Flags().StringVarP(&functionPath, "path", "p", "", "function filepath")
+
+	wfCmd.Flags().StringVarP(&filePath, "filePath", "f", "", "filePath of workflow json file")
+
 	rootCmd.AddCommand(applyCmd)
 	rootCmd.AddCommand(getCmd)
 	rootCmd.AddCommand(describeCmd)
@@ -37,6 +42,8 @@ func init() {
 	rootCmd.AddCommand(labelCmd)
 	rootCmd.AddCommand(resetCmd)
 	rootCmd.AddCommand(gpuCmd)
+	rootCmd.AddCommand(funcCmd)
+	rootCmd.AddCommand(wfCmd)
 }
 
 var rootCmd = &cobra.Command{

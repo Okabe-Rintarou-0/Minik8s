@@ -281,3 +281,37 @@ func HandleApplyGpuJob(c *gin.Context) {
 	listwatch.Publish(topicutil.GpuJobUpdateTopic(), GpuUpdateMsg)
 	c.String(http.StatusOK, "ok")
 }
+
+func HandleApplyWorkflow(c *gin.Context) {
+	wf := apiObject.Workflow{}
+	err := readAndUnmarshal(c.Request.Body, &wf)
+	if err != nil {
+		c.String(http.StatusOK, err.Error())
+		return
+	}
+	wf.Metadata.UID = uidutil.New()
+	log("receive workflow[ID = %v]: %v", wf.UID(), wf)
+
+	etcdURL := path.Join(url.WorkflowURL, wf.Namespace(), wf.Name())
+	if raw, err := etcd.Get(etcdURL); err == nil {
+		old := apiObject.Workflow{}
+		if err := json.Unmarshal([]byte(raw), &old); err == nil {
+			c.String(http.StatusOK, fmt.Sprintf("Workflow %s/%s already exists", wf.Namespace(), wf.Name()))
+			return
+		}
+	}
+
+	workflowJson, _ := json.Marshal(wf)
+	if err = etcd.Put(etcdURL, string(workflowJson)); err != nil {
+		c.String(http.StatusOK, err.Error())
+		return
+	}
+
+	workflowMsg, _ := json.Marshal(entity.WorkflowUpdate{
+		Action: entity.CreateAction,
+		Target: wf,
+	})
+
+	listwatch.Publish(topicutil.WorkflowUpdateTopic(), workflowMsg)
+	c.String(http.StatusOK, "ok")
+}
