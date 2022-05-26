@@ -8,13 +8,14 @@ import (
 	"minik8s/apiObject"
 	"minik8s/apiserver/src/url"
 	"minik8s/util/httputil"
+	"path"
 )
 
 var wfCmd = &cobra.Command{
 	Use:   "wf",
 	Short: "Kubectl wf is used to apply a workflow",
 	Long:  "Kubectl wf is used to apply a workflow",
-	Args:  cobra.ExactArgs(1),
+	Args:  cobra.RangeArgs(1, 2),
 	Run:   handleWorkflow,
 }
 
@@ -32,6 +33,12 @@ func addWorkflowToApiServer(wf *apiObject.Workflow) error {
 	} else {
 		return err
 	}
+}
+
+func deleteWorkflowToApiServer(name string) {
+	URL := url.Prefix + path.Join(url.WorkflowURL, name)
+	resp := httputil.DeleteWithoutBody(URL)
+	fmt.Println(resp)
 }
 
 func handleWorkflow(cmd *cobra.Command, args []string) {
@@ -53,7 +60,15 @@ func handleWorkflow(cmd *cobra.Command, args []string) {
 		}
 
 		err = addWorkflowToApiServer(&wf)
+	case "rm":
+		if len(args) < 2 {
+			fmt.Println("expect two args, got one")
+			return
+		}
+		name := args[1]
+		deleteWorkflowToApiServer(name)
 	}
+
 	if err != nil {
 		fmt.Println(err.Error())
 	}

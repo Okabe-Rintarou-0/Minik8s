@@ -35,8 +35,8 @@ type choice struct {
 }
 
 func (c *choice) ChooseSatisfied(data entity.FunctionData) *node {
-	for i, branch := range c.Branches {
-		if branch.Satisfied(data) {
+	for i, br := range c.Branches {
+		if br.Satisfied(data) {
 			return c.Branches[i].Next
 		}
 	}

@@ -89,4 +89,7 @@ var deleteTable = map[string]Handler{
 
 	// kubectl func rm func_name
 	url.FuncURLWithSpecifiedName: handlers.HandleRemoveFunc,
+
+	// kubectl wf rm workflow name:
+	url.WorkflowURLWithSpecifiedName: handlers.HandleApplyWorkflow,
 }

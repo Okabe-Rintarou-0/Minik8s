@@ -304,3 +304,35 @@ func HandleRemoveFunc(c *gin.Context) {
 	listwatch.Publish(topic, updateMsg)
 	c.String(http.StatusOK, "ok")
 }
+
+func HandleRemoveWorkflow(c *gin.Context) {
+	name := c.Param("name")
+	etcdURL := path.Join(url.WorkflowURL, name)
+	wf := apiObject.Workflow{}
+	if raw, err := etcd.Get(etcdURL); err == nil {
+		if err = json.Unmarshal([]byte(raw), &wf); err == nil {
+			c.String(http.StatusOK, fmt.Sprintf("no such workflow %s", name))
+			return
+		}
+	}
+
+	if err := etcd.Delete(etcdURL); err != nil {
+		c.String(http.StatusOK, err.Error())
+		return
+	}
+
+	workflowJson, _ := json.Marshal(wf)
+	if err := etcd.Put(etcdURL, string(workflowJson)); err != nil {
+		c.String(http.StatusOK, err.Error())
+		return
+	}
+
+	topic := topicutil.WorkflowUpdateTopic()
+	updateMsg, _ := json.Marshal(entity.WorkflowUpdate{
+		Action: entity.DeleteAction,
+		Target: wf,
+	})
+
+	listwatch.Publish(topic, updateMsg)
+	c.String(http.StatusOK, "ok")
+}
