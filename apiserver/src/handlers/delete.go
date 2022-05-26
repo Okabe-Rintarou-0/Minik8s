@@ -284,12 +284,6 @@ func HandleRemoveFunc(c *gin.Context) {
 				return
 			}
 
-			functionJson, _ := json.Marshal(apiFunc)
-			if err = etcd.Put(etcdURL, string(functionJson)); err != nil {
-				c.String(http.StatusOK, err.Error())
-				return
-			}
-
 			topic := topicutil.FunctionUpdateTopic()
 			updateMsg, _ := json.Marshal(entity.FunctionUpdate{
 				Action: entity.DeleteAction,
