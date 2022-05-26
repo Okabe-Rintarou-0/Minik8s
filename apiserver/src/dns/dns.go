@@ -1,15 +1,11 @@
 package dns
 
 import (
-	"minik8s/apiserver/src/url"
-	"minik8s/util/weaveutil"
 	"os"
-	"os/exec"
 	"strings"
 )
 
 type Manager interface {
-	Run() error
 	AddEntry(host, ip string) error
 	DeleteIfExistEntry(host string) error
 }
@@ -55,21 +51,6 @@ func (dm *dnsManager) writeBack(mp map[string]string) error {
 		entry := value + " " + key + "\n"
 		_, err := file.WriteString(entry)
 		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (dm *dnsManager) Run() error {
-	if _, err := exec.Command("/bin/bash", "./script/dns-restart.sh").Output(); err != nil {
-		return err
-	} else {
-		id := "coredns"
-		if err = weaveutil.WeaveAttach(id, url.DNSIp+url.MaskStr); err != nil {
-			return err
-		}
-		if _, err = exec.Command("/bin/bash", "./script/set-nameserver.sh").Output(); err != nil {
 			return err
 		}
 	}

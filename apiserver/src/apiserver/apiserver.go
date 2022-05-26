@@ -3,7 +3,6 @@ package apiserver
 import (
 	"github.com/gin-gonic/gin"
 	"log"
-	"minik8s/apiserver/src/dns"
 	"minik8s/apiserver/src/etcd"
 	"minik8s/apiserver/src/ipgen"
 	"minik8s/apiserver/src/url"
@@ -11,7 +10,6 @@ import (
 	"minik8s/util/logger"
 	"minik8s/util/topicutil"
 	"os/exec"
-	"path"
 )
 
 type ApiServer interface {
@@ -87,14 +85,6 @@ func (api *apiServer) Run() {
 	}
 	if err := ipInit(url.ServiceIpURL, url.ServiceIpBase, url.Mask); err != nil {
 		logger.Log("api-server-service-ip")(err.Error())
-		return
-	}
-	if err := weaveInit(); err != nil {
-		logger.Log("api-server-weave")(err.Error())
-		return
-	}
-	if err := dns.New(path.Join(url.DNSDirPath, url.DNSHostsFileName)).Run(); err != nil {
-		logger.Log("api-server-dns")(err.Error())
 		return
 	}
 	api.bindHandlers()
