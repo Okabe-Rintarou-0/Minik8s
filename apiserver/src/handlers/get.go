@@ -190,8 +190,8 @@ func getFuncPodsFromEtcd(name string) (pods []entity.PodStatus) {
 		for _, raw := range raws {
 			pod := entity.PodStatus{}
 			if err = json.Unmarshal([]byte(raw), &pod); err == nil {
-				log("pod labels: %v", pod.Labels)
 				if pod.Labels[runtime.KubernetesReplicaSetUIDLabel] == replicaSetUID {
+					log("pod labels: %v", pod.Labels)
 					pods = append(pods, pod)
 				}
 			} else {

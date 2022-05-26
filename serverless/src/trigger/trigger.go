@@ -7,16 +7,18 @@ import (
 	"minik8s/apiserver/src/url"
 	"minik8s/entity"
 	"minik8s/util/httputil"
+	"minik8s/util/logger"
 	"net/http"
 	"strings"
 )
 
-func getFuncPods(funcName string) []*entity.PodStatus {
+func getFuncPods(funcName string) []entity.PodStatus {
 	URL := url.Prefix + strings.Replace(url.FuncPodsURLWithSpecifiedName, ":name", funcName, -1)
 
-	var pods []*entity.PodStatus
+	var pods []entity.PodStatus
 	err := httputil.GetAndUnmarshal(URL, pods)
 	if err != nil {
+		logger.Error(err.Error())
 		return nil
 	}
 	fmt.Printf("Got pods: %v\n", pods)
