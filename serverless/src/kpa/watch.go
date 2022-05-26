@@ -12,8 +12,11 @@ type functionExecResult struct {
 
 func (c *controller) handleFunctionUpdate(msg *redis.Message) {
 	functionUpdate := entity.FunctionUpdate{}
-	_ = json.Unmarshal([]byte(msg.Payload), &functionUpdate)
-
+	if err := json.Unmarshal([]byte(msg.Payload), &functionUpdate); err != nil {
+		logger.Error(err.Error())
+		return
+	}
+	logManager("Receive %s function: %s(%s)", functionUpdate.Action.String(), functionUpdate.Target.Name, functionUpdate.Target.Path)
 	apiFunc := functionUpdate.Target
 
 	var err error
@@ -31,7 +34,11 @@ func (c *controller) handleFunctionUpdate(msg *redis.Message) {
 
 func (c *controller) handleWorkflowUpdate(msg *redis.Message) {
 	workflowUpdate := entity.WorkflowUpdate{}
-	_ = json.Unmarshal([]byte(msg.Payload), &workflowUpdate)
+	if err := json.Unmarshal([]byte(msg.Payload), &workflowUpdate); err != nil {
+		logger.Error(err.Error())
+		return
+	}
+	logManager("Receive %s workflow: %s", workflowUpdate.Action.String(), workflowUpdate.Target.Name)
 
 	wf := workflowUpdate.Target
 
