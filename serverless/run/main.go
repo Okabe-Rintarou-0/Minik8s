@@ -13,7 +13,7 @@ func main() {
 	// only run on master node
 	cmd := exec.Command("ls")
 	output, _ := cmd.Output()
-	fmt.Println(output)
+	fmt.Println(string(output))
 	function.InitFunction("helloworld", "../src/app/func.py") // the third parameter need to be replaced
 	kn := knative.NewKnative()
 	kn.Run()
