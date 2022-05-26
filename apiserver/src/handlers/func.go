@@ -9,6 +9,7 @@ import (
 	"minik8s/apiserver/src/url"
 	"minik8s/entity"
 	"minik8s/listwatch"
+	"minik8s/util/httputil"
 	"minik8s/util/topicutil"
 	"net/http"
 	"path"
@@ -16,7 +17,7 @@ import (
 
 func HandleApplyFunc(c *gin.Context) {
 	apiFunc := apiObject.Function{}
-	if err := readAndUnmarshal(c.Request.Body, &apiFunc); err != nil {
+	if err := httputil.ReadAndUnmarshal(c.Request.Body, &apiFunc); err != nil {
 		c.String(http.StatusOK, err.Error())
 		return
 	}

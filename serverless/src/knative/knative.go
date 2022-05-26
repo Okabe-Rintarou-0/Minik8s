@@ -2,18 +2,21 @@ package knative
 
 import (
 	"fmt"
+	"github.com/gin-gonic/gin"
+	"log"
 	"minik8s/serverless/src/kpa"
 	"minik8s/util/recoverutil"
-	"minik8s/util/wait"
 )
 
 type Knative struct {
 	kpaController kpa.Controller
+	httpServer    *gin.Engine
 }
 
 func NewKnative() *Knative {
 	return &Knative{
 		kpaController: kpa.NewController(),
+		httpServer:    gin.Default(),
 	}
 }
 
@@ -26,5 +29,6 @@ func (kn *Knative) recover() {
 func (kn *Knative) Run() {
 	defer kn.recover()
 	kn.kpaController.Run()
-	wait.Forever()
+	kn.httpServer.POST("/:function", kn.kpaController.HandleTriggerFunc)
+	log.Fatal(kn.httpServer.Run(":8081"))
 }

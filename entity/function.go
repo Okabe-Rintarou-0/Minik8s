@@ -17,16 +17,16 @@ func NewFunctionData(data map[string]interface{}) FunctionData {
 	return FunctionData(jsonRaw)
 }
 
-type FunctionStatus string
+type FunctionTriggerStatus string
 
 const (
-	Succeed     FunctionStatus = "Succeed"
-	Error       FunctionStatus = "Error"
-	Interrupted FunctionStatus = "Interrupted"
+	TriggerSucceed     FunctionTriggerStatus = "Succeed"
+	TriggerError       FunctionTriggerStatus = "Error"
+	TriggerInterrupted FunctionTriggerStatus = "Interrupted"
 )
 
 type FunctionMsg struct {
 	Data   FunctionData
-	Status FunctionStatus
+	Status FunctionTriggerStatus
 	Error  string
 }

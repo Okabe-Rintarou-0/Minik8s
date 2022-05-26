@@ -20,7 +20,7 @@
           "next": "printFive"
         },
         {
-          "variable": "$.result",
+          "variable": "result",
           "numericNotEquals": 5,
           "next": "printTen"
         }

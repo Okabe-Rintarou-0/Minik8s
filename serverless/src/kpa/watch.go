@@ -7,9 +7,6 @@ import (
 	"minik8s/util/logger"
 )
 
-type functionExecResult struct {
-}
-
 func (c *controller) handleFunctionUpdate(msg *redis.Message) {
 	functionUpdate := entity.FunctionUpdate{}
 	if err := json.Unmarshal([]byte(msg.Payload), &functionUpdate); err != nil {

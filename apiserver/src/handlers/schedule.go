@@ -9,6 +9,7 @@ import (
 	"minik8s/apiserver/src/helper"
 	"minik8s/apiserver/src/url"
 	"minik8s/entity"
+	"minik8s/util/httputil"
 	"net/http"
 	"path"
 	"time"
@@ -18,7 +19,7 @@ func HandleSchedulePod(c *gin.Context) {
 	node := c.Param("node")
 
 	pod := apiObject.Pod{}
-	err := readAndUnmarshal(c.Request.Body, &pod)
+	err := httputil.ReadAndUnmarshal(c.Request.Body, &pod)
 	if err != nil {
 		c.String(http.StatusOK, err.Error())
 	}

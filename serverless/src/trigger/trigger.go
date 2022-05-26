@@ -46,5 +46,6 @@ func Trigger(function string, data entity.FunctionData) (result entity.FunctionD
 			return entity.FunctionData(content), nil
 		}
 	}
+
 	return "", err
 }

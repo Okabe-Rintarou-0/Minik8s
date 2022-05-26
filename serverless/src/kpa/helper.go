@@ -43,7 +43,7 @@ func (c *controller) createReplicaSet(apiFunc *apiObject.Function) {
 			},
 		},
 		Spec: apiObject.ReplicaSetSpec{
-			Replicas: 1,
+			Replicas: 2,
 			Template: apiObject.PodTemplateSpec{
 				Spec: apiObject.PodSpec{
 					//NodeSelector: apiObject.Labels{
