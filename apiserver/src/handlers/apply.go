@@ -5,15 +5,17 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"minik8s/apiObject"
+	dns2 "minik8s/apiserver/src/dns"
 	"minik8s/apiserver/src/etcd"
 	"minik8s/apiserver/src/helper"
-	"minik8s/apiserver/src/ipgen"
 	"minik8s/apiserver/src/url"
 	"minik8s/entity"
 	"minik8s/listwatch"
+	"minik8s/nginx"
 	"minik8s/util/logger"
 	"minik8s/util/topicutil"
 	"minik8s/util/uidutil"
+	"minik8s/util/weaveutil"
 	"net/http"
 	"path"
 	"time"
@@ -83,14 +85,9 @@ func HandleApplyPod(c *gin.Context) {
 	}
 
 	pod.Metadata.UID = uidutil.New()
-	if im, err := ipgen.New(url.PodIpGeneratorURL, url.PodIpBase); err != nil {
+	if pod.Spec.ClusterIp, err = helper.NewPodIp(); err != nil {
 		c.String(http.StatusOK, err.Error())
 		return
-	} else {
-		if pod.Spec.ClusterIp, err = im.GetNext(); err != nil {
-			c.String(http.StatusOK, err.Error())
-			return
-		}
 	}
 	log("receive pod %s/%s[ID = %v] %+v", pod.Namespace(), pod.Name(), pod.UID(), pod)
 	log("receive pod %s/%s: %+v", pod.Namespace(), pod.Name(), pod)
@@ -190,10 +187,7 @@ func HandleApplyService(c *gin.Context) {
 	}
 
 	service.Metadata.UID = uidutil.New()
-	if ig, err := ipgen.New(url.SvcIpGeneratorURL, url.ServiceIpBase); err != nil {
-		c.String(http.StatusOK, err.Error())
-		return
-	} else if service.Spec.ClusterIP, err = ig.GetNext(); err != nil {
+	if service.Spec.ClusterIP, err = helper.NewServiceIp(); err != nil {
 		c.String(http.StatusOK, err.Error())
 		return
 	}
@@ -240,8 +234,85 @@ func HandleApplyDNS(c *gin.Context) {
 	err := readAndUnmarshal(c.Request.Body, &dns)
 	if err != nil {
 		c.String(http.StatusOK, err.Error())
+		return
 	}
+	if helper.ExistsDNS(dns.Metadata.Namespace, dns.Metadata.Name) {
+		c.String(http.StatusOK, fmt.Sprintf("dns %s/%s already exists", dns.Metadata.Namespace, dns.Metadata.Name))
+		return
+	}
+
+	dns.Metadata.UID = uidutil.New()
 	log("receive dns: %+v", dns)
+
+	nm := nginx.New(dns.Metadata.UID)
+
+	// Step 1: Apply mappings to nginx.conf
+	servers := make([]nginx.Server, 1)
+	servers[0].Port = 80
+	for _, p := range dns.Spec.Paths {
+		log("%#v", p)
+		if !helper.ExistsService(dns.Metadata.Namespace, p.Service.Name) {
+			c.String(http.StatusOK, fmt.Sprintf("service %s/%s does not exist", dns.Metadata.Namespace, p.Service.Name))
+			return
+		}
+		service := apiObject.Service{}
+		if serviceJsonStr, err := etcd.Get(path.Join(url.ServiceURL, dns.Metadata.Namespace, p.Service.Name)); err != nil {
+			c.String(http.StatusOK, err.Error())
+			return
+		} else {
+			log("%#v", serviceJsonStr)
+			if err := json.Unmarshal([]byte(serviceJsonStr), &service); err != nil {
+				c.String(http.StatusOK, err.Error())
+			}
+		}
+
+		log("dns service: %+v", service)
+		servers[0].Locations = append(servers[0].Locations, nginx.Location{
+			Dest: service.Spec.ClusterIP + ":" + p.Service.Port,
+			Addr: p.Path,
+		})
+	}
+	if err := nm.Apply(servers); err != nil {
+		c.String(http.StatusOK, err.Error())
+		return
+	}
+
+	// Step 2: Start nginx container
+	log("nginx starting..")
+	if err = nm.Start(); err != nil {
+		c.String(http.StatusOK, err.Error())
+		return
+	}
+
+	// Step 3: Attach ip to nginx container
+	var nginxIp string
+	if nginxIp, err = helper.NewPodIp(); err != nil {
+		c.String(http.StatusOK, err.Error())
+		return
+	}
+	if err = weaveutil.WeaveAttach(nm.GetName(), nginxIp+url.MaskStr); err != nil {
+		c.String(http.StatusOK, err.Error())
+		return
+	}
+	log("%#v", nginxIp)
+
+	// Step 4: Modify dns configuration
+	if err = dns2.New(path.Join(url.DNSDirPath, url.DNSHostsFileName)).AddEntry(dns.Spec.Host, nginxIp); err != nil {
+		c.String(http.StatusOK, err.Error())
+		return
+	}
+
+	// Step 5: Store to etcd
+	if dnsJson, err := json.Marshal(dns); err != nil {
+		c.String(http.StatusOK, err.Error())
+		return
+	} else {
+		if err := etcd.Put(path.Join(url.DNSURL, dns.Metadata.Namespace, dns.Metadata.Name), string(dnsJson)); err != nil {
+			c.String(http.StatusOK, err.Error())
+			return
+		}
+	}
+	c.String(http.StatusOK, "Apply successfully!")
 }
 
 func HandleApplyGpuJob(c *gin.Context) {

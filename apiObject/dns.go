@@ -1,9 +1,13 @@
 package apiObject
 
+type DnsService struct {
+	Name string `yaml:"name,omitempty"`
+	Port string `yaml:"port,omitempty"`
+}
+
 type DnsPath struct {
-	Path        string `yaml:"path,omitempty"`
-	ServiceName string `yaml:"serviceName,omitempty"`
-	ServicePort string `yaml:"servicePort,omitempty"`
+	Path    string     `yaml:"path,omitempty"`
+	Service DnsService `yaml:"service,omitempty"`
 }
 
 type DnsSpec struct {

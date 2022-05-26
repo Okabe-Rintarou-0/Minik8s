@@ -344,6 +344,15 @@ func ServiceTbl() table.Table {
 	return tbl
 }
 
+func DNSTbl() table.Table {
+	headerFmt := color.New(color.FgGreen, color.Underline).SprintfFunc()
+	columnFmt := color.New(color.FgYellow).SprintfFunc()
+
+	tbl := table.New("Name", "UID", "Host", "Paths")
+	tbl.WithHeaderFormatter(headerFmt).WithFirstColumnFormatter(columnFmt)
+	return tbl
+}
+
 func getServiceFromApiServer(fullName string) (service *apiObject.Service, err error) {
 	namespace, name := parseName(fullName)
 	URL := url.Prefix + path.Join(url.ServiceURL, namespace, name)
@@ -354,6 +363,19 @@ func getServiceFromApiServer(fullName string) (service *apiObject.Service, err e
 func getServicesFromApiServer() (services []apiObject.Service, err error) {
 	URL := url.Prefix + url.ServiceURL
 	err = httputil.GetAndUnmarshal(URL, &services)
+	return
+}
+
+func getDnsFromApiServer(fullName string) (dns *apiObject.Dns, err error) {
+	namespace, name := parseName(fullName)
+	URL := url.Prefix + path.Join(url.DNSURL, namespace, name)
+	err = httputil.GetAndUnmarshal(URL, &dns)
+	return
+}
+
+func getDnsesFromApiServer() (dnses []apiObject.Dns, err error) {
+	URL := url.Prefix + url.DNSURL
+	err = httputil.GetAndUnmarshal(URL, &dnses)
 	return
 }
 
@@ -395,6 +417,50 @@ func printServices() error {
 			service.Metadata.UID,
 			service.Spec.ClusterIP,
 			service.Spec.Ports,
+		)
+	}
+	tbl.Print()
+	return nil
+}
+
+func printSpecifiedDns(name string) error {
+	dns, err := getDnsFromApiServer(name)
+	if err != nil {
+		return err
+	}
+	if dns == nil {
+		return fmt.Errorf("no such service")
+	}
+
+	tbl := DNSTbl()
+	fullName := path.Join(dns.Metadata.Namespace, dns.Metadata.Name)
+	tbl.AddRow(
+		fullName,
+		dns.Metadata.UID,
+		dns.Spec.Host,
+		dns.Spec.Paths,
+	)
+	tbl.Print()
+	return nil
+}
+
+func printDnses() error {
+	dnses, err := getDnsesFromApiServer()
+	if err != nil {
+		return err
+	}
+	if dnses == nil {
+		return fmt.Errorf("no such pod")
+	}
+
+	tbl := DNSTbl()
+	for _, dns := range dnses {
+		fullName := path.Join(dns.Metadata.Namespace, dns.Metadata.Name)
+		tbl.AddRow(
+			fullName,
+			dns.Metadata.UID,
+			dns.Spec.Host,
+			dns.Spec.Paths,
 		)
 	}
 	tbl.Print()

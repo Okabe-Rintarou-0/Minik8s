@@ -5,12 +5,13 @@ import (
 	"github.com/docker/go-connections/nat"
 	"minik8s/apiObject"
 	"minik8s/apiObject/types"
+	"minik8s/apiserver/src/url"
 	"minik8s/kubelet/src/podutil"
 	"minik8s/kubelet/src/runtime/container"
 	"minik8s/kubelet/src/runtime/image"
 	"minik8s/util/logger"
 	"minik8s/util/netutil"
-	"os/exec"
+	"minik8s/util/weaveutil"
 	"strconv"
 	"time"
 )
@@ -280,11 +281,8 @@ func (rm *runtimeManager) startPauseContainer(pod *apiObject.Pod) error {
 	err = rm.cm.StartContainer(ID, &container.StartConfig{})
 
 	// Step 5: Attach to weave subnet
-	if out, err := exec.Command("weave", "attach", pod.Spec.ClusterIp+"/24", ID).Output(); err != nil {
-		logger.Log("weave attach pause err")(err.Error())
+	if err = weaveutil.WeaveAttach(ID, pod.Spec.ClusterIp+url.MaskStr); err != nil {
 		return err
-	} else {
-		logger.Log("weave attach pause")(string(out))
 	}
 	return err
 }
