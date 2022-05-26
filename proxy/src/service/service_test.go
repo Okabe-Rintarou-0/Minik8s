@@ -45,6 +45,22 @@ func TestServiceDelete(t *testing.T) {
 	}
 }
 
+func Test2ServiceCreate(t *testing.T) {
+	sm, err := New()
+	if err != nil {
+		t.Error(err)
+	}
+	var eps = make([]EndPoint, 2)
+	eps[0] = EndPoint{Name: "KUBE-SEP1", Ip: "10.44.0.2", Port: "80"}
+	eps[1] = EndPoint{Name: "KUBE-SEP2", Ip: "10.44.0.3", Port: "80"}
+	if err = sm.CreateService("KUBE-SVC", "10.96.0.1/32", "32222"); err != nil {
+		t.Error(err)
+	}
+	if err = sm.CreateEndpoints("KUBE-SVC", eps); err != nil {
+		t.Error(err)
+	}
+}
+
 func TestReplicaServiceCreate(t *testing.T) {
 	sm, err := New()
 	if err != nil {

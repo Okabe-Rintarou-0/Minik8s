@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"minik8s/apiObject"
+	dns2 "minik8s/apiserver/src/dns"
 	"minik8s/apiserver/src/etcd"
 	"minik8s/apiserver/src/helper"
 	"minik8s/apiserver/src/url"
 	"minik8s/entity"
 	"minik8s/listwatch"
+	"minik8s/nginx"
 	"minik8s/util/topicutil"
 	"net/http"
 	"path"
@@ -271,4 +273,41 @@ func HandleDeleteService(c *gin.Context) {
 	}
 
 	c.String(http.StatusOK, "ok")
+}
+
+func HandleDeleteDNS(c *gin.Context) {
+	namespace := c.Param("namespace")
+	name := c.Param("name")
+
+	if !helper.ExistsDNS(namespace, name) {
+		c.String(http.StatusOK, fmt.Sprintf("dns %s/%s does not exist", namespace, name))
+		return
+	}
+
+	dns := apiObject.Dns{}
+	if dnsJsonStr, err := etcd.Get(path.Join(url.DNSURL, namespace, name)); err != nil {
+		c.String(http.StatusOK, err.Error())
+		return
+	} else {
+		if err := json.Unmarshal([]byte(dnsJsonStr), &dns); err != nil {
+			c.String(http.StatusOK, err.Error())
+			return
+		}
+	}
+
+	nm := nginx.New(dns.Metadata.UID)
+	if err := nm.Shutdown(); err != nil {
+		c.String(http.StatusOK, err.Error())
+		return
+	}
+	if err := dns2.New(path.Join(url.DNSDirPath, url.DNSHostsFileName)).DeleteIfExistEntry(dns.Spec.Host); err != nil {
+		c.String(http.StatusOK, err.Error())
+		return
+	}
+	if err := etcd.Delete(path.Join(url.DNSURL, namespace, name)); err != nil {
+		c.String(http.StatusOK, err.Error())
+		return
+	}
+
+	c.String(http.StatusOK, "Delete successfully")
 }

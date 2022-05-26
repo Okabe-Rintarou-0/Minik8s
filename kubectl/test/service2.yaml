@@ -6,7 +6,7 @@ metadata:
 spec:
   ports:
   - name: nginx
-    port: 8080
+    port: 8000
     targetPort: 80
   selector:
     name: not-nginx

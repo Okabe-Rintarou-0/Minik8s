@@ -1,0 +1,1 @@
+echo "nameserver 10.44.0.9" > /etc/resolv.conf

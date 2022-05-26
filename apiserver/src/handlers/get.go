@@ -176,6 +176,37 @@ func getServicesFromEtcd() (services []apiObject.Service) {
 	return services
 }
 
+func getDNSFromEtcd(namespace, name string) (dns *apiObject.Dns) {
+	etcdURL := path.Join(url.DNSURL, namespace, name)
+	if raw, err := etcd.Get(etcdURL); err == nil {
+		if err = json.Unmarshal([]byte(raw), &dns); err == nil {
+			return dns
+		}
+		logger.Error(err.Error())
+	}
+	return nil
+}
+
+func getDNSesFromEtcd() (dnses []apiObject.Dns) {
+	etcdURL := url.DNSURL
+	dnses = make([]apiObject.Dns, 0)
+	vis := make(map[string]bool)
+	if raws, err := etcd.GetAll(etcdURL); err == nil {
+		for _, raw := range raws {
+			dns := apiObject.Dns{}
+			if err = json.Unmarshal([]byte(raw), &dns); err == nil {
+				if !vis[dns.Metadata.UID] {
+					dnses = append(dnses, dns)
+					vis[dns.Metadata.UID] = true
+				}
+			} else {
+				logger.Error(err.Error())
+			}
+		}
+	}
+	return dnses
+}
+
 func HandleGetNodeStatus(c *gin.Context) {
 	namespace := c.Param("namespace")
 	name := c.Param("name")
@@ -259,4 +290,14 @@ func HandleGetService(c *gin.Context) {
 
 func HandleGetServices(c *gin.Context) {
 	c.JSON(http.StatusOK, getServicesFromEtcd())
+}
+
+func HandleGetDNS(c *gin.Context) {
+	namespace := c.Param("namespace")
+	name := c.Param("name")
+	c.JSON(http.StatusOK, getDNSFromEtcd(namespace, name))
+}
+
+func HandleGetDNSes(c *gin.Context) {
+	c.JSON(http.StatusOK, getDNSesFromEtcd())
 }

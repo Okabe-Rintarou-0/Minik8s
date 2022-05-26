@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"minik8s/apiObject"
 	"minik8s/apiserver/src/etcd"
+	"minik8s/apiserver/src/ipgen"
 	"minik8s/apiserver/src/url"
 	"minik8s/entity"
 	"minik8s/listwatch"
@@ -250,4 +251,21 @@ func ExistsService(namespace, name string) bool {
 		return true
 	}
 	return false
+}
+
+func ExistsDNS(namespace, name string) bool {
+	var etcdURL string
+	etcdURL = path.Join(url.DNSURL, namespace, name)
+	if DNSRaw, err := etcd.Get(etcdURL); err == nil && DNSRaw != "" {
+		return true
+	}
+	return false
+}
+
+func NewPodIp() (ip string, err error) {
+	return ipgen.New(url.PodIpURL, url.Mask).GetNext()
+}
+
+func NewServiceIp() (ip string, err error) {
+	return ipgen.New(url.ServiceIpURL, url.Mask).GetNext()
 }
