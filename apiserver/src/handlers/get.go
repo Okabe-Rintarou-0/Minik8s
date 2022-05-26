@@ -189,8 +189,11 @@ func getFuncPodsFromEtcd(name string) (pods []entity.PodStatus) {
 	if raws, err := etcd.GetAll(etcdPodURL); err == nil {
 		for _, raw := range raws {
 			pod := entity.PodStatus{}
-			if err = json.Unmarshal([]byte(raw), &pod); err == nil && pod.Labels[runtime.KubernetesReplicaSetUIDLabel] == replicaSetUID {
-				pods = append(pods, pod)
+			if err = json.Unmarshal([]byte(raw), &pod); err == nil {
+				log("pod labels: %v", pod.Labels)
+				if pod.Labels[runtime.KubernetesReplicaSetUIDLabel] == replicaSetUID {
+					pods = append(pods, pod)
+				}
 			} else {
 				logger.Error(err.Error())
 			}
