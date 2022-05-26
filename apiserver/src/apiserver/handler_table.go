@@ -63,7 +63,12 @@ var getTable = map[string]Handler{
 
 	// kubectl get service service_name
 	url.ServiceURLWithSpecifiedName: handlers.HandleGetService,
-	url.ServiceURL:                  handlers.HandleGetServices,
+	// kubectl get services
+	url.ServiceURL: handlers.HandleGetServices,
+
+	// kubectl get dns dns_name
+	url.DNSURLWithSpecifiedName: handlers.HandleGetDNS,
+	url.DNSURL:                  handlers.HandleGetDNSes,
 
 	// get pod function pods
 	url.FuncPodsURLWithSpecifiedName: handlers.HandleGetFuncPods,
@@ -82,6 +87,7 @@ var deleteTable = map[string]Handler{
 	url.ReplicaSetURLWithSpecifiedName: handlers.HandleDeleteReplicaSet,
 	url.HPAURLWithSpecifiedName:        handlers.HandleDeleteHPA,
 	url.ServiceURLWithSpecifiedName:    handlers.HandleDeleteService,
+	url.DNSURLWithSpecifiedName:        handlers.HandleDeleteDNS,
 	url.GpuURLWithSpecifiedName:        handlers.HandleDeleteGpuJob,
 
 	// kubectl reset

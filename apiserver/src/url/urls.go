@@ -29,15 +29,18 @@ const (
 	AutoscaleURL                  = "/autoscaling/v1/"
 	AutoscaleURLWithSpecifiedName = "/autoscaling/v1/:namespace/:name"
 
-	PodIpGeneratorURL = "/generator/pod/ip"
-	SvcIpGeneratorURL = "/generator/service/ip"
-	ServiceIpBase     = "10.96.0.1/24"
-	PodIpBase         = "10.44.0.1/24"
+	PodIpURL      = "/generator/ip/pod"
+	ServiceIpURL  = "/generator/ip/service"
+	PodIpBase     = "10.44.0.1"
+	ServiceIpBase = "10.44.127.1"
+	MaskStr       = "/16"
+	Mask          = 16
 
 	ServiceURL                  = "/api/v1/service/"
 	ServiceURLWithSpecifiedName = "/api/v1/service/:namespace/:name"
 
-	DNSURL = "/api/v1/dns/"
+	DNSURL                  = "/api/v1/dns/"
+	DNSURLWithSpecifiedName = "/api/v1/dns/:namespace/:name"
 
 	EndpointURL             = "/endpoint/"
 	GpuURL                  = "/api/v1/gpu/"
@@ -51,4 +54,11 @@ const (
 	WorkflowURLWithSpecifiedName = "/api/v1/workflow/:name"
 
 	ResetURL = "/reset"
+
+	DNSIp            = "10.44.0.9"
+	DNSDirPath       = "/etc/kube/dns"
+	DNSFileName      = "Corefile"
+	DNSHostsFileName = "hosts"
+	NginxDirPath     = "/etc/nginx"
+	NginxFileName    = "nginx.conf"
 )

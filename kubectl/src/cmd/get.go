@@ -46,6 +46,10 @@ func get(cmd *cobra.Command, args []string) {
 		err = printSpecifiedService(name)
 	case "services":
 		err = printServices()
+	case "dns":
+		err = printSpecifiedDns(name)
+	case "dnses":
+		err = printDnses()
 	default:
 		err = fmt.Errorf("invalid api object type \"%s\", acceptable api object type is pod, service, etc", apiObjectType)
 	}

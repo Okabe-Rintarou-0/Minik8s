@@ -3,6 +3,7 @@ package apiserver
 import (
 	"github.com/gin-gonic/gin"
 	"log"
+	"minik8s/apiserver/src/dns"
 	"minik8s/apiserver/src/etcd"
 	"minik8s/apiserver/src/ipgen"
 	"minik8s/apiserver/src/url"
@@ -10,6 +11,7 @@ import (
 	"minik8s/util/logger"
 	"minik8s/util/topicutil"
 	"os/exec"
+	"path"
 )
 
 type ApiServer interface {
@@ -51,40 +53,26 @@ func (api *apiServer) watch() {
 	go listwatch.Watch(topicutil.HPAStatusTopic(), syncHPAStatus)
 }
 
-func ipInit(url, ipBase string) error {
-	if ig, err := ipgen.New(url, ipBase); err != nil {
-		return err
-	} else {
-		if err := ig.ClearIfInit(); err != nil {
-			return err
-		}
-	}
-	return nil
+func ipInit(url, ip string, mask int) error {
+	ig := ipgen.New(url, mask)
+	return ig.ClearIfInit(ip)
 }
 
-func weaveInit(url, ipBase string) error {
+func weaveInit() error {
 	if out, err := exec.Command("weave", "reset").Output(); err != nil {
 		return err
 	} else {
-		logger.Log("api-server")(string(out))
+		logger.Log("api-server-weave")(string(out))
 	}
 	if out, err := exec.Command("weave", "launch").Output(); err != nil {
 		return err
 	} else {
-		logger.Log("api-server")(string(out))
+		logger.Log("api-server-weave")(string(out))
 	}
-	if ig, err := ipgen.New(url, ipBase); err != nil {
+	if out, err := exec.Command("weave", "expose", url.PodIpBase+url.MaskStr).Output(); err != nil {
 		return err
 	} else {
-		if ip, err := ig.GetNextWithMask(); err != nil {
-			return err
-		} else {
-			if out, err := exec.Command("weave", "expose", ip).Output(); err != nil {
-				return err
-			} else {
-				logger.Log("api-server")(string(out))
-			}
-		}
+		logger.Log("api-server-weave")(string(out))
 	}
 	return nil
 }
@@ -93,16 +81,20 @@ func (api *apiServer) Run() {
 	etcd.Start()
 	_ = etcd.DeleteAllKeys()
 
-	if err := ipInit(url.SvcIpGeneratorURL, url.ServiceIpBase); err != nil {
-		logger.Log("api-server")(err.Error())
+	if err := ipInit(url.PodIpURL, url.PodIpBase, url.Mask); err != nil {
+		logger.Log("api-server-pod-ip")(err.Error())
 		return
 	}
-	if err := ipInit(url.PodIpGeneratorURL, url.PodIpBase); err != nil {
-		logger.Log("api-server")(err.Error())
+	if err := ipInit(url.ServiceIpURL, url.ServiceIpBase, url.Mask); err != nil {
+		logger.Log("api-server-service-ip")(err.Error())
 		return
 	}
-	if err := weaveInit(url.PodIpGeneratorURL, url.PodIpBase); err != nil {
-		logger.Log("api-server")(err.Error())
+	if err := weaveInit(); err != nil {
+		logger.Log("api-server-weave")(err.Error())
+		return
+	}
+	if err := dns.New(path.Join(url.DNSDirPath, url.DNSHostsFileName)).Run(); err != nil {
+		logger.Log("api-server-dns")(err.Error())
 		return
 	}
 	api.bindHandlers()

@@ -47,6 +47,12 @@ func deleteSpecifiedService(namespace, name string) error {
 	return nil
 }
 
+func deleteSpecifiedDNS(namespace, name string) error {
+	resp := httputil.DeleteWithoutBody(url.Prefix + path.Join(url.DNSURL, namespace, name))
+	fmt.Println(resp)
+	return nil
+}
+
 func deleteSpecifiedGpuJob(namespace, name string) error {
 	resp := httputil.DeleteWithoutBody(url.Prefix + path.Join(url.GpuURL, namespace, name))
 	fmt.Println(resp)
@@ -70,6 +76,8 @@ func del(cmd *cobra.Command, args []string) {
 		err = deleteSpecifiedHPA(namespace, name)
 	case "service":
 		err = deleteSpecifiedService(namespace, name)
+	case "dns":
+		err = deleteSpecifiedDNS(namespace, name)
 	case "gpu":
 		err = deleteSpecifiedGpuJob(namespace, name)
 	default:
