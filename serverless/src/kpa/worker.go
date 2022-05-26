@@ -67,7 +67,7 @@ func (w *worker) doJob() {
 			w.finishTask(data)
 			curNode = curNode.Next
 		case choiceType:
-			logWorker("current node is a choice node: %s")
+			logWorker("current node is a choice node:")
 			// choose branch and go to this branch
 			curNode = curNode.ChooseSatisfied(data)
 		}

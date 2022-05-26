@@ -66,6 +66,7 @@ func (c *controller) createReplicaSet(apiFunc *apiObject.Function) {
 		},
 	}
 
+	logManager("Add rs to api-server now")
 	URL := url.Prefix + url.ReplicaSetURL
 	apiutil.ApplyApiObjectToApiServer(URL, replicaSet)
 
