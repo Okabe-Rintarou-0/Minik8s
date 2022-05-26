@@ -10,10 +10,10 @@ const (
 )
 
 type Choice struct {
-	Variable         string   `json:"variable"`
-	NumericEquals    *float64 `json:"numericEquals,omitempty"`
-	NumericNotEquals *float64 `json:"numericNotEquals,omitempty"`
-	Next             *string  `json:"next"`
+	Variable         string  `json:"variable"`
+	NumericEquals    *int64  `json:"numericEquals,omitempty"`
+	NumericNotEquals *int64  `json:"numericNotEquals,omitempty"`
+	Next             *string `json:"next"`
 }
 
 type Choices struct {

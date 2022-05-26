@@ -8,6 +8,7 @@ import (
 	"minik8s/apiserver/src/helper"
 	"minik8s/apiserver/src/url"
 	"minik8s/entity"
+	"minik8s/kubelet/src/runtime/runtime"
 	"minik8s/util/logger"
 	"net/http"
 	"path"
@@ -176,6 +177,28 @@ func getServicesFromEtcd() (services []apiObject.Service) {
 	return services
 }
 
+func getFuncPodsFromEtcd(name string) (pods []entity.PodStatus) {
+	// step 1: get replicaSet
+	replicaSet := getReplicaSetApiObjectFromEtcd("function", name)
+	if replicaSet == nil {
+		return
+	}
+	replicaSetUID := replicaSet.UID()
+	log("Got replicaSet for func %s, UID = %s", name, replicaSetUID)
+	etcdPodURL := path.Join(url.PodURL, "status", "function")
+	if raws, err := etcd.GetAll(etcdPodURL); err == nil {
+		for _, raw := range raws {
+			pod := entity.PodStatus{}
+			if err = json.Unmarshal([]byte(raw), &pod); err == nil && pod.Labels[runtime.KubernetesReplicaSetUIDLabel] == replicaSetUID {
+				pods = append(pods, pod)
+			} else {
+				logger.Error(err.Error())
+			}
+		}
+	}
+	return pods
+}
+
 func HandleGetNodeStatus(c *gin.Context) {
 	namespace := c.Param("namespace")
 	name := c.Param("name")
@@ -259,4 +282,9 @@ func HandleGetService(c *gin.Context) {
 
 func HandleGetServices(c *gin.Context) {
 	c.JSON(http.StatusOK, getServicesFromEtcd())
+}
+
+func HandleGetFuncPods(c *gin.Context) {
+	name := c.Param("name")
+	c.JSON(http.StatusOK, getFuncPodsFromEtcd(name))
 }

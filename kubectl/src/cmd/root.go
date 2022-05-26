@@ -34,6 +34,8 @@ func init() {
 
 	wfCmd.Flags().StringVarP(&filePath, "filePath", "f", "", "filePath of workflow json file")
 
+	triggerCmd.Flags().StringVarP(&functionData, "data", "d", "", "function data")
+
 	rootCmd.AddCommand(applyCmd)
 	rootCmd.AddCommand(getCmd)
 	rootCmd.AddCommand(describeCmd)
@@ -44,6 +46,7 @@ func init() {
 	rootCmd.AddCommand(gpuCmd)
 	rootCmd.AddCommand(funcCmd)
 	rootCmd.AddCommand(wfCmd)
+	rootCmd.AddCommand(triggerCmd)
 }
 
 var rootCmd = &cobra.Command{

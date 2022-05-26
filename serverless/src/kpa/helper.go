@@ -24,6 +24,7 @@ func (c *controller) updateReplicaSetToApiServer(funcReplicaSet *functionReplica
 
 func (c *controller) scaleToHalf(funcReplicaSet *functionReplicaSet) {
 	funcReplicaSet.NumReplicas /= 2
+	logManager("Scaling, num replicas changed to %d", funcReplicaSet.NumReplicas)
 	c.updateReplicaSetToApiServer(funcReplicaSet)
 }
 
@@ -72,7 +73,7 @@ func (c *controller) createReplicaSet(apiFunc *apiObject.Function) {
 
 	c.functionReplicaSetMap[apiFunc.Name] = &functionReplicaSet{
 		Function:        apiFunc.Name,
-		NumRequest:      1,
+		NumRequest:      0,
 		NumReplicas:     1,
 		LastRequestTime: time.Now(),
 	}

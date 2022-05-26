@@ -64,6 +64,9 @@ var getTable = map[string]Handler{
 	// kubectl get service service_name
 	url.ServiceURLWithSpecifiedName: handlers.HandleGetService,
 	url.ServiceURL:                  handlers.HandleGetServices,
+
+	// get pod function pods
+	url.FuncPodsURLWithSpecifiedName: handlers.HandleGetFuncPods,
 }
 
 var putTable = map[string]Handler{

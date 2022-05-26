@@ -1,13 +1,21 @@
 package entity
 
-import "minik8s/apiObject"
+import (
+	"encoding/json"
+	"minik8s/apiObject"
+)
 
 type FunctionUpdate struct {
 	Action ApiObjectUpdateAction
 	Target apiObject.Function
 }
 
-type FunctionData map[string]interface{}
+type FunctionData string
+
+func NewFunctionData(data map[string]interface{}) FunctionData {
+	jsonRaw, _ := json.Marshal(data)
+	return FunctionData(jsonRaw)
+}
 
 type FunctionStatus string
 
