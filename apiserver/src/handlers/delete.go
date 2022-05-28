@@ -323,12 +323,6 @@ func HandleRemoveWorkflow(c *gin.Context) {
 		return
 	}
 
-	workflowJson, _ := json.Marshal(wf)
-	if err := etcd.Put(etcdWorkflowURL, string(workflowJson)); err != nil {
-		c.String(http.StatusOK, err.Error())
-		return
-	}
-
 	topic := topicutil.WorkflowUpdateTopic()
 	updateMsg, _ := json.Marshal(entity.WorkflowUpdate{
 		Action: entity.DeleteAction,

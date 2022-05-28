@@ -75,6 +75,7 @@ func (w *worker) doJob() {
 				result.Error = err.Error()
 				result.Status = entity.TriggerError
 				logWorker("error occurs: %s, return", err.Error())
+				w.ResultChan <- result
 				return
 			} else {
 				result.Error = ""

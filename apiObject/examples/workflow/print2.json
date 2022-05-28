@@ -3,7 +3,7 @@
   "kind": "Workflow",
   "metadata": {
     "namespace": "default",
-    "name": "print"
+    "name": "print2"
   },
   "startAt": "addFive",
   "params": {
