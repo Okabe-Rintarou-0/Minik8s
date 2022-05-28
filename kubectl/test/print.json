@@ -1,0 +1,39 @@
+{
+  "apiVersion": "/api/v1",
+  "kind": "Workflow",
+  "metadata": {
+    "namespace": "default",
+    "name": "print"
+  },
+  "startAt": "addFive",
+  "params": {
+    "x": 5
+  },
+  "nodes": {
+    "addFive": {
+      "type": "task",
+      "next": "judge"
+    },
+    "judge": {
+      "type": "choice",
+      "choices": [
+        {
+          "variable": "x",
+          "numericEquals": "10",
+          "next": "printEquals"
+        },
+        {
+          "variable": "x",
+          "numericNotEquals": "10",
+          "next": "printNotEquals"
+        }
+      ]
+    },
+    "printEquals": {
+      "type": "task"
+    },
+    "printNotEquals": {
+      "type": "task"
+    }
+  }
+}
