@@ -21,6 +21,7 @@ var wfCmd = &cobra.Command{
 
 func addWorkflowToApiServer(wf *apiObject.Workflow) error {
 	URL := url.Prefix + url.WorkflowURL
+	fmt.Printf("wf: %+v\n", wf)
 	if resp, err := httputil.PostJson(URL, wf); err == nil {
 		var content []byte
 		if content, err = ioutil.ReadAll(resp.Body); err == nil {

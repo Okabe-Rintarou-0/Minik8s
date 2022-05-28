@@ -3,7 +3,7 @@
   "kind": "Workflow",
   "metadata": {
     "namespace": "default",
-    "name": "example"
+    "name": "hello"
   },
   "startAt": "hello",
   "params": {

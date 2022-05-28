@@ -35,6 +35,8 @@ func (w *worker) finishTask(function string, data entity.FunctionData) (result e
 			restRetries -= 1
 			logWorker("Trigger function %s failed, wait for 5 secs", function)
 			time.Sleep(time.Second * 5)
+		} else {
+			break
 		}
 	}
 	return
