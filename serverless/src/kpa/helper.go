@@ -141,6 +141,7 @@ func (c *controller) removeWorkflowWorker(fullName string) error {
 	} else {
 		w.Cancel()
 		delete(c.workers, fullName)
+		logManager("remove worker %s successfully", fullName)
 	}
 	return nil
 }

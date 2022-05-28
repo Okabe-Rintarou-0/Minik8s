@@ -36,7 +36,7 @@ func (c *controller) handleWorkflowUpdate(msg *redis.Message) {
 		logger.Error(err.Error())
 		return
 	}
-	logManager("Receive %s workflow: %s", workflowUpdate.Action.String(), workflowUpdate.Target.Name)
+	logManager("Receive %s workflow: %s", workflowUpdate.Action.String(), workflowUpdate.Target.Name())
 
 	wf := workflowUpdate.Target
 

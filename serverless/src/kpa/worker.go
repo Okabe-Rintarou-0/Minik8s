@@ -33,7 +33,7 @@ func (w *worker) finishTask(function string, data entity.FunctionData) (result e
 		result, err = w.TriggerFn(function, data)
 		if err != nil {
 			restRetries -= 1
-			logWorker("Trigger function %s failed, wait for 5 secs", function)
+			logWorker("Trigger function %s failed, wait for 5 secs and retry(rest retry num: %d)", function, restRetries)
 			time.Sleep(time.Second * 5)
 		} else {
 			break
