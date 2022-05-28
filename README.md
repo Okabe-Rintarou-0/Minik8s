@@ -133,6 +133,55 @@ A workflow is equivalent to a DAG of functions. It can be defined in the form of
 
 Our implementation draws lessons from AWS. We also support `Choice` and `Task`.
 
+<details>
+<summary>Workflow example(Graph)</summary>
+<img src="readme-images/workflow.svg"/>
+</details>
+
+<details>
+<summary>Workflow example(Json)</summary>
+<pre><code>{
+  "apiVersion": "/api/v1",
+  "kind": "Workflow",
+  "metadata": {
+    "namespace": "default",
+    "name": "print"
+  },
+  "startAt": "addFive",
+  "params": {
+    "x": 5
+  },
+  "nodes": {
+    "addFive": {
+      "type": "Task",
+      "next": "judge"
+    },
+    "judge": {
+      "type": "Choice",
+      "choices": [
+        {
+          "variable": "x",
+          "numericEquals": 10,
+          "next": "printEquals"
+        },
+        {
+          "variable": "x",
+          "numericNotEquals": 10,
+          "next": "printNotEquals"
+        }
+      ]
+    },
+    "printEquals": {
+      "type": "Task"
+    },
+    "printNotEquals": {
+      "type": "Task"
+    }
+  }
+}
+</code></pre>
+</details>
+
 ##### Reference
 + [创建无服务器工作流](https://aws.amazon.com/cn/getting-started/hands-on/create-a-serverless-workflow-step-functions-lambda/)
 
