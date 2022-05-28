@@ -314,7 +314,7 @@ func HandleRemoveWorkflow(c *gin.Context) {
 	wf := apiObject.Workflow{}
 	if raw, err := etcd.Get(etcdWorkflowURL); err == nil {
 		if err = json.Unmarshal([]byte(raw), &wf); err == nil {
-			c.String(http.StatusOK, fmt.Sprintf("no such workflow %s", name))
+			c.String(http.StatusOK, fmt.Sprintf("no such workflow %s/%s", namespace, name))
 			return
 		}
 	}
