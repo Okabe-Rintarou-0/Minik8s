@@ -55,7 +55,11 @@ stay consistent with `etcd`.
 
 ![Autoscaler](./readme-images/autoscaler_structure.svg)
 
+#### Visualization
+
 The pod resources monitor is based on `cAdvisor`, `Prometheus` and `Grafana`.
+
+![Autoscaler](./readme-images/autoscaler_visualization.svg)
 
 We recommend you to use grafana dashboard with UID `11277` and `893`.
 
@@ -122,6 +126,15 @@ Because the function instances is maintained by a `replicaSet`, so the http serv
 Take `addFive` for example, you can type `kubectl trigger addFive -d '{"x": 100}'`, and you will get a response: `'{"x": 105}'`
 
 All pods have their own unique ip, so they can be called by `POST` http request to `${pod_ip}:8080`.
+
+#### Workflow
+
+A workflow is equivalent to a DAG of functions. It can be defined in the form of `json`, see [workflow](apiObject/examples/workflow) for examples.
+
+Our implementation draws lessons from AWS. We also support `Choice` and `Task`.
+
+##### Reference
++ [创建无服务器工作流](https://aws.amazon.com/cn/getting-started/hands-on/create-a-serverless-workflow-step-functions-lambda/)
 
 ## Tools
 
