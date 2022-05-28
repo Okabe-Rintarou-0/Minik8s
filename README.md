@@ -13,7 +13,7 @@ It is also based on `cobra`.
 
 ![cobra](./readme-images/cobra.png)
 
-We support basic command like `kubectl get pods`, `kubectl apply -f xxx.yaml`. For more info, see directory `/kubectl/src/cmd`.
+We support basic command like `kubectl get pods`, `kubectl apply -f xxx.yaml`. For more info, see [kubectl README](/kubectl/README.md).
 
 ### Kubelet
 
@@ -71,6 +71,44 @@ See:
 + https://docs.hpc.sjtu.edu.cn/index.html
 + https://docs.hpc.sjtu.edu.cn/job/slurm.html
 + https://studio.hpc.sjtu.edu.cn/
+
+### Serverless
+
+#### Structure
+The structure of our serverless system draws lessons from `Knative` but is quite simplified.
+Users can register functions to `api-server`. `KPA controller` will create corresponding function image and push it into docker registry.
+It will also create a replicaSet through `api-server` apis.
+
+The `ReplicaSet Controller` can then create pods on nodes. Notice  that there is a http server running on master node(port `8081`), and you can call a function by http trigger.
+
+![Knative](./readme-images/knative.svg)
+
+#### Function Registration
+User can register a function (we only support `python` now) to the `api-server`. Here is an example of function:
+
+```python
+def main(params):
+    x = params["x"]
+    x = x + 5
+    result = {
+        "x": x
+    }
+    return result
+```
+This function needs a parameter `x` and `x` is passed in the form of `json`, and will add 5 to `x` and return a dictionary/json
+(In our system, all parameters and results can be transferred in the form of `json`).
+
+Once a function is registered, a corresponding image will be pushed to the registry and a replicaSet will be created, which will create pods(function instances) on worker nodes.
+
+#### Http Trigger
+
+We support a convenient way to call a function by http trigger. You can type `kubectl trigger [funcname] -d [data]` to send http trigger to the specified function instances.
+
+Because the function instances is maintained by a `replicaSet`, so the http server in `Knative` will randomly choose one pod in the replicaSet and call it.
+
+Take `addFive` for example, you can type `kubectl trigger addFive -d '{"x": 100}'`, and you will get a response: `'{"x": 105}'`
+
+All pods have their own unique ip, so they can be called by `POST` http request to `${pod_ip}:8080`.
 
 ## Tools
 

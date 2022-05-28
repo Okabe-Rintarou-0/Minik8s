@@ -9,6 +9,7 @@ import (
 	"minik8s/serverless/src/registry"
 	"minik8s/util/apiutil"
 	"minik8s/util/httputil"
+	"minik8s/util/imageutil"
 	"path"
 	"strconv"
 	"time"
@@ -32,7 +33,7 @@ func (c *controller) scaleToHalf(funcReplicaSet *functionReplicaSet) {
 func (c *controller) createReplicaSet(apiFunc *apiObject.Function) {
 	c.scaleLock.Lock()
 	defer c.scaleLock.Unlock()
-	imageName := registry.RegistryHost + "/" + apiFunc.Name
+	imageName := registry.RegistryHost + "/" + imageutil.FormatImageName(apiFunc.Name)
 	replicaSet := apiObject.ReplicaSet{
 		Base: apiObject.Base{
 			ApiVersion: "api/v1",

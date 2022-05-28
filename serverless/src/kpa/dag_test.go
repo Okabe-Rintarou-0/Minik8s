@@ -11,7 +11,7 @@ import (
 )
 
 func TestDAG(t *testing.T) {
-	f, _ := os.Open("./hello.json")
+	f, _ := os.Open("./print.json")
 	content, _ := ioutil.ReadAll(f)
 	wf := apiObject.Workflow{}
 	_ = json.Unmarshal(content, &wf)
@@ -19,8 +19,6 @@ func TestDAG(t *testing.T) {
 	dag := Workflow2DAG(&wf)
 	if dag != nil {
 		TraverseDAG(dag)
-		fmt.Println(gjson.Get(dag.EntryParams, "a").Int())
-		fmt.Println(gjson.Get(dag.EntryParams, "b").Int())
-		fmt.Println(gjson.Get(dag.EntryParams, "name").String())
+		fmt.Println(gjson.Get(dag.EntryParams, "x").Int())
 	}
 }
