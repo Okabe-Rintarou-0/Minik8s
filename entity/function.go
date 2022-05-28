@@ -3,6 +3,7 @@ package entity
 import (
 	"encoding/json"
 	"minik8s/apiObject"
+	"time"
 )
 
 type FunctionUpdate struct {
@@ -20,13 +21,18 @@ func NewFunctionData(data map[string]interface{}) FunctionData {
 type FunctionTriggerStatus string
 
 const (
+	TriggerUnknown     FunctionTriggerStatus = "Unknown"
 	TriggerSucceed     FunctionTriggerStatus = "Succeed"
 	TriggerError       FunctionTriggerStatus = "Error"
 	TriggerInterrupted FunctionTriggerStatus = "Interrupted"
 )
 
-type FunctionMsg struct {
-	Data   FunctionData
-	Status FunctionTriggerStatus
-	Error  string
+type FunctionTriggerResult struct {
+	WorkflowNamespace string
+	WorkflowName      string
+	Data              FunctionData
+	Time              time.Time
+	Status            FunctionTriggerStatus
+	Error             string
+	FinishedAll       bool
 }

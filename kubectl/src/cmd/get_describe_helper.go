@@ -32,6 +32,15 @@ func replicaSetStatusTbl() table.Table {
 	return tbl
 }
 
+func workflowResultTbl() table.Table {
+	headerFmt := color.New(color.FgGreen, color.Underline).SprintfFunc()
+	columnFmt := color.New(color.FgYellow).SprintfFunc()
+
+	tbl := table.New("Name", "Status", "Data", "Finished", "Last Sync Time", "Error")
+	tbl.WithHeaderFormatter(headerFmt).WithFirstColumnFormatter(columnFmt)
+	return tbl
+}
+
 func hpaStatusTbl() table.Table {
 	headerFmt := color.New(color.FgGreen, color.Underline).SprintfFunc()
 	columnFmt := color.New(color.FgYellow).SprintfFunc()
@@ -398,6 +407,19 @@ func getDnsesFromApiServer() (dnses []apiObject.Dns, err error) {
 	return
 }
 
+func getWorkflowResultFromApiServer(fullName string) (result *entity.FunctionTriggerResult, err error) {
+	namespace, name := parseName(fullName)
+	URL := url.Prefix + path.Join(url.WorkflowURL, "result", namespace, name)
+	err = httputil.GetAndUnmarshal(URL, &result)
+	return
+}
+
+func getWorkflowResultsFromApiServer() (results []*entity.FunctionTriggerResult, err error) {
+	URL := url.Prefix + url.WorkflowURL
+	err = httputil.GetAndUnmarshal(URL, &results)
+	return
+}
+
 func printSpecifiedService(name string) error {
 	service, err := getServiceFromApiServer(name)
 	if err != nil {
@@ -480,6 +502,62 @@ func printDnses() error {
 			dns.Metadata.UID,
 			dns.Spec.Host,
 			dns.Spec.Paths,
+		)
+	}
+	tbl.Print()
+	return nil
+}
+
+func printSpecifiedWorkflow(fullName string) error {
+	result, err := getWorkflowResultFromApiServer(fullName)
+	if err != nil {
+		return err
+	}
+	if result == nil {
+		return fmt.Errorf("no such workflow %s", fullName)
+	}
+
+	tbl := workflowResultTbl()
+	var finished string
+	if result.FinishedAll {
+		finished = "yes"
+	} else {
+		finished = "no"
+	}
+	tbl.AddRow(
+		fullName,
+		result.Status,
+		result.Data,
+		finished,
+		result.Time.Format(time.RFC3339),
+		result.Error,
+	)
+	tbl.Print()
+	return nil
+}
+
+func printWorkflows() error {
+	results, err := getWorkflowResultsFromApiServer()
+	if err != nil {
+		return err
+	}
+
+	tbl := workflowResultTbl()
+	for _, result := range results {
+		fullName := path.Join(result.WorkflowNamespace, result.WorkflowName)
+		var finished string
+		if result.FinishedAll {
+			finished = "yes"
+		} else {
+			finished = "no"
+		}
+		tbl.AddRow(
+			fullName,
+			result.Status,
+			result.Data,
+			finished,
+			result.Time.Format(time.RFC3339),
+			result.Error,
 		)
 	}
 	tbl.Print()

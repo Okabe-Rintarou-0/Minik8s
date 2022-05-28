@@ -11,8 +11,8 @@ import (
 	"minik8s/apiserver/src/url"
 	"minik8s/entity"
 	"minik8s/listwatch"
-	"minik8s/util/httputil"
 	"minik8s/nginx"
+	"minik8s/util/httputil"
 	"minik8s/util/logger"
 	"minik8s/util/topicutil"
 	"minik8s/util/uidutil"
@@ -377,6 +377,19 @@ func HandleApplyWorkflow(c *gin.Context) {
 		c.String(http.StatusOK, err.Error())
 		return
 	}
+
+	result := entity.FunctionTriggerResult{
+		WorkflowNamespace: wf.Namespace(),
+		WorkflowName:      wf.Name(),
+		Data:              "",
+		Time:              time.Now(),
+		Status:            entity.TriggerUnknown,
+		Error:             "",
+		FinishedAll:       false,
+	}
+	resultJson, _ := json.Marshal(result)
+
+	_ = etcd.Put(path.Join(url.WorkflowURL, "result", wf.Namespace(), wf.Name()), string(resultJson))
 
 	workflowMsg, _ := json.Marshal(entity.WorkflowUpdate{
 		Action: entity.CreateAction,

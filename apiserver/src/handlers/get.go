@@ -213,6 +213,32 @@ func getDNSFromEtcd(namespace, name string) (dns *apiObject.Dns) {
 	return nil
 }
 
+func getWorkflowResultFromEtcd(namespace, name string) (result *entity.FunctionTriggerResult) {
+	etcdURL := path.Join(url.WorkflowURL, "result", namespace, name)
+	if raw, err := etcd.Get(etcdURL); err == nil {
+		if err = json.Unmarshal([]byte(raw), &result); err == nil {
+			return result
+		}
+		logger.Error(err.Error())
+	}
+	return nil
+}
+
+func getWorkflowResultsFromEtcd() (results []*entity.FunctionTriggerResult) {
+	etcdURL := path.Join(url.WorkflowURL, "result")
+	if raws, err := etcd.GetAll(etcdURL); err == nil {
+		result := entity.FunctionTriggerResult{}
+		for _, raw := range raws {
+			if err = json.Unmarshal([]byte(raw), &result); err == nil {
+				results = append(results, &result)
+			} else {
+				logger.Error(err.Error())
+			}
+		}
+	}
+	return
+}
+
 func getDNSesFromEtcd() (dnses []apiObject.Dns) {
 	etcdURL := url.DNSURL
 	dnses = make([]apiObject.Dns, 0)
@@ -321,6 +347,16 @@ func HandleGetServices(c *gin.Context) {
 func HandleGetFuncPods(c *gin.Context) {
 	name := c.Param("name")
 	c.JSON(http.StatusOK, getFuncPodsFromEtcd(name))
+}
+
+func HandleGetWorkflowResult(c *gin.Context) {
+	namespace := c.Param("namespace")
+	name := c.Param("name")
+	c.JSON(http.StatusOK, getWorkflowResultFromEtcd(namespace, name))
+}
+
+func HandleGetWorkflowResults(c *gin.Context) {
+	c.JSON(http.StatusOK, getWorkflowResultsFromEtcd())
 }
 
 func HandleGetDNS(c *gin.Context) {

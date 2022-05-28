@@ -32,6 +32,9 @@ var postTable = map[string]Handler{
 
 	// kubectl func add func_name func_path
 	url.FuncURL: handlers.HandleApplyFunc,
+
+	// post workflow result
+	url.WorkflowResultURLWithSpecifiedName: handlers.HandlePutWorkflowResult,
 }
 
 var getTable = map[string]Handler{
@@ -72,6 +75,12 @@ var getTable = map[string]Handler{
 
 	// get pod function pods
 	url.FuncPodsURLWithSpecifiedName: handlers.HandleGetFuncPods,
+
+	// get workflow result
+	url.WorkflowResultURLWithSpecifiedName: handlers.HandleGetWorkflowResult,
+
+	// get all workflow results
+	url.WorkflowURL: handlers.HandleGetWorkflowResults,
 }
 
 var putTable = map[string]Handler{
@@ -100,5 +109,5 @@ var deleteTable = map[string]Handler{
 	url.FuncURLWithSpecifiedName: handlers.HandleRemoveFunc,
 
 	// kubectl wf rm workflow name:
-	url.WorkflowURLWithSpecifiedName: handlers.HandleApplyWorkflow,
+	url.WorkflowURLWithSpecifiedName: handlers.HandleRemoveWorkflow,
 }

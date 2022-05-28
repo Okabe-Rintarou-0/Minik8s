@@ -1,0 +1,19 @@
+{
+  "apiVersion": "/api/v1",
+  "kind": "Workflow",
+  "metadata": {
+    "namespace": "default",
+    "name": "example"
+  },
+  "startAt": "hello",
+  "params": {
+    "a": 20,
+    "b": 30,
+    "name": "Knative"
+  },
+  "nodes": {
+    "hello": {
+      "type": "Task"
+    }
+  }
+}

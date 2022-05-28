@@ -5,6 +5,7 @@ import (
 	"github.com/go-redis/redis/v8"
 	"minik8s/entity"
 	"minik8s/util/logger"
+	"path"
 )
 
 func (c *controller) handleFunctionUpdate(msg *redis.Message) {
@@ -44,7 +45,7 @@ func (c *controller) handleWorkflowUpdate(msg *redis.Message) {
 	case entity.CreateAction:
 		err = c.createWorkflowWorker(&wf)
 	case entity.DeleteAction:
-		err = c.removeWorkflowWorker(&wf)
+		err = c.removeWorkflowWorker(path.Join(wf.Namespace(), wf.Name()))
 	}
 
 	if err != nil {
