@@ -10,7 +10,7 @@ app = Flask(__name__)
 @app.route("/", methods=['POST'])
 def work():
     try:
-        params = json.loads("")
+        params = json.loads(request.get_data())
     except json.JSONDecodeError:
         params = ""
     finally:
