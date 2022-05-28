@@ -13,7 +13,7 @@ It is also based on `cobra`.
 
 ![cobra](./readme-images/cobra.png)
 
-We support basic command like `kubectl get pods`, `kubectl apply -f xxx.yaml`. For more info, see directory `/kubectl/src/cmd`.
+We support basic command like `kubectl get pods`, `kubectl apply -f xxx.yaml`. For more info, see [kubectl README](/kubectl/README.md).
 
 ### Kubelet
 
@@ -71,6 +71,10 @@ See:
 + https://docs.hpc.sjtu.edu.cn/index.html
 + https://docs.hpc.sjtu.edu.cn/job/slurm.html
 + https://studio.hpc.sjtu.edu.cn/
+
+### Serverless
+
+![Knative](./readme-images/knative.svg)
 
 ## Tools
 

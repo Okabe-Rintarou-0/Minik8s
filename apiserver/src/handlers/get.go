@@ -229,6 +229,7 @@ func getWorkflowResultsFromEtcd() (results []*entity.FunctionTriggerResult) {
 	if raws, err := etcd.GetAll(etcdURL); err == nil {
 		result := entity.FunctionTriggerResult{}
 		for _, raw := range raws {
+			log("workflow raw = %s", raw)
 			if err = json.Unmarshal([]byte(raw), &result); err == nil {
 				results = append(results, &result)
 			} else {
