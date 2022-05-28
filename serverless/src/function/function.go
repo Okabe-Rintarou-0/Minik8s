@@ -11,6 +11,7 @@ import (
 	"minik8s/kubelet/src/runtime/container"
 	"minik8s/serverless/src/registry"
 	"minik8s/serverless/src/utils"
+	"minik8s/util/imageutil"
 	"os"
 	"strconv"
 
@@ -38,6 +39,8 @@ func CreateFunctionImage(name string, codePath string) error {
 		return err
 	}
 	fmt.Printf("python image pull succeed\n")
+
+	name = imageutil.FormatImageName(name)
 	err = createImage(name, codePath)
 	if err != nil {
 		return err

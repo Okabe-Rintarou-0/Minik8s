@@ -11,11 +11,11 @@
   },
   "nodes": {
     "addFive": {
-      "type": "task",
+      "type": "Task",
       "next": "judge"
     },
     "judge": {
-      "type": "choice",
+      "type": "Choice",
       "choices": [
         {
           "variable": "x",
@@ -30,10 +30,10 @@
       ]
     },
     "printEquals": {
-      "type": "task"
+      "type": "Task"
     },
     "printNotEquals": {
-      "type": "task"
+      "type": "Task"
     }
   }
 }

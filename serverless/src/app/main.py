@@ -11,7 +11,7 @@ app = Flask(__name__)
 def work():
     params = json.loads(request.get_data())
     res = func.main(params)
-    return res
+    return json.dumps(res)
 
 
 if __name__ == '__main__':

@@ -4,4 +4,4 @@ def main(params):
     result = {
         "x": x
     }
-    return json.dumps(result)
+    return result
