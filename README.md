@@ -42,6 +42,19 @@ So they can communicate with each other though `localhost` and share same volume
 
 ### Autoscaler
 
+#### Structure
+
+`Kubelet` in each node will collect runtime statuses through `docker stats`, including cpu and memory utilization. 
+All these statuses will be published to a certain topic, on which both `api-server` and `controller-manager` are watching. 
+
+Here is a shared cache in the `controller-manager`. It can receive the statuses published by `kubelet` and do `incremental synchronization`. 
+In the meanwhile, `api-server` will persist these statuses into `etcd`, a distributed K-V store system. 
+`etcd` is the one who truly indicates the status of the whole system. 
+So, the cache in the `controller-manager` has to periodically do full synchronization with `api-server`, in order to
+stay consistent with `etcd`.
+
+![Autoscaler](./readme-images/autoscaler_structure.svg)
+
 The pod resources monitor is based on `cAdvisor`, `Prometheus` and `Grafana`.
 
 We recommend you to use grafana dashboard with UID `11277` and `893`.
@@ -136,5 +149,3 @@ A: Killed by `Jenkins`. Try to add `BUILD_ID=dontKillMe` to the shell script.
 Q: Why `go: command not found`?
 
 A: Please add environment variables it needs manually to `Jenkins`.
-
-![](readme-images/Jenkins_Env.png)
