@@ -1,4 +1,2 @@
 def main(params):
-    return {
-        "result": "Equals"
-    }
+    return "Equals"

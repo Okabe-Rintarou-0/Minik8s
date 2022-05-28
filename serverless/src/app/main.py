@@ -9,9 +9,13 @@ app = Flask(__name__)
 
 @app.route("/", methods=['POST'])
 def work():
-    params = json.loads(request.get_data())
-    res = func.main(params)
-    return json.dumps(res)
+    try:
+        params = json.loads("")
+    except json.JSONDecodeError:
+        params = ""
+    finally:
+        res = func.main(params)
+        return json.dumps(res)
 
 
 if __name__ == '__main__':
