@@ -1,6 +1,7 @@
 package kpa
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/tidwall/gjson"
 	"minik8s/apiObject"
@@ -52,7 +53,7 @@ type node struct {
 
 type dag struct {
 	Root        *node
-	CurrentNode *node
+	EntryParams string
 }
 
 func toJudgeFunc(c *apiObject.Choice) judgeFunc {
@@ -92,13 +93,15 @@ func Workflow2DAG(wf *apiObject.Workflow) *dag {
 		return nil
 	}
 
+	params, _ := json.Marshal(wf.Params)
+
 	root := buildDAG(wf.StartAt, dagMap, nodeMap)
 	if root == nil {
 		return nil
 	}
 	return &dag{
 		Root:        root,
-		CurrentNode: root,
+		EntryParams: string(params),
 	}
 }
 

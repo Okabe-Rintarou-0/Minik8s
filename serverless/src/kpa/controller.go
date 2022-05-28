@@ -6,13 +6,16 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"io/ioutil"
+	"minik8s/apiserver/src/url"
 	"minik8s/entity"
 	"minik8s/listwatch"
 	"minik8s/serverless/src/trigger"
+	"minik8s/util/httputil"
 	"minik8s/util/logger"
 	"minik8s/util/topicutil"
 	"minik8s/util/wait"
 	"net/http"
+	"path"
 	"sync"
 	"time"
 )
@@ -37,13 +40,14 @@ type controller struct {
 	workerLock            sync.Mutex
 	scaleLock             sync.RWMutex
 	functionReplicaSetMap map[string]*functionReplicaSet
+	resultChan            chan *entity.FunctionTriggerResult
 }
 
 func (c *controller) HandleTriggerFunc(ctx *gin.Context) {
 	funcName := ctx.Param("function")
 	dataRaw, _ := ioutil.ReadAll(ctx.Request.Body)
 	result, err := c.TriggerFunc(funcName, entity.FunctionData(dataRaw))
-	msg := entity.FunctionMsg{}
+	msg := entity.FunctionTriggerResult{}
 	if err != nil {
 		msg.Error = err.Error()
 		msg.Status = entity.TriggerError
@@ -87,10 +91,40 @@ func (c *controller) TriggerFunc(funcName string, data entity.FunctionData) (res
 	return
 }
 
+func (c *controller) sendResultToApiServer(result *entity.FunctionTriggerResult) error {
+	logManager("Now send result %+v to api-server", result)
+	URL := url.Prefix + path.Join(url.WorkflowURL, "result", result.WorkflowNamespace, result.WorkflowName)
+	resp, err := httputil.PostJson(URL, result)
+	if err == nil {
+		if content, err := ioutil.ReadAll(resp.Body); err == nil {
+			defer resp.Body.Close()
+			logManager("Send result of wf %s to api-server and get resp: %s", result.WorkflowName, string(content))
+		}
+	}
+	return err
+}
+
+func (c *controller) handleTriggerResult() {
+	for {
+		result := <-c.resultChan
+		if result.FinishedAll {
+			logManager("workflow %s/%s finished all, need to be removed", result.WorkflowNamespace, result.WorkflowName)
+			if err := c.removeWorkflowWorker(path.Join(result.WorkflowNamespace, result.WorkflowName)); err != nil {
+				logger.Error(err.Error())
+				continue
+			}
+		}
+		if err := c.sendResultToApiServer(result); err != nil {
+			logger.Error(err.Error())
+		}
+	}
+}
+
 func (c *controller) Run() {
 	go listwatch.Watch(topicutil.FunctionUpdateTopic(), c.handleFunctionUpdate)
 	go listwatch.Watch(topicutil.WorkflowUpdateTopic(), c.handleWorkflowUpdate)
 	go wait.Period(scalePeriod, scalePeriod, c.scale)
+	go c.handleTriggerResult()
 }
 
 func (c *controller) scale() {
@@ -113,5 +147,6 @@ func NewController() Controller {
 	return &controller{
 		workers:               make(map[string]*worker),
 		functionReplicaSetMap: make(map[string]*functionReplicaSet),
+		resultChan:            make(chan *entity.FunctionTriggerResult),
 	}
 }

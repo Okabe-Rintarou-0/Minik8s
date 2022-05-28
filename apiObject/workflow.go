@@ -33,6 +33,7 @@ type Task struct {
 type Workflow struct {
 	Base    `json:",inline"`
 	StartAt string                  `json:"startAt"`
+	Params  map[string]interface{}  `json:"params"`
 	Nodes   map[string]WorkflowNode `json:"nodes"`
 }
 

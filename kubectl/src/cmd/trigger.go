@@ -25,7 +25,7 @@ func trigger(cmd *cobra.Command, args []string) {
 	var errMsg string
 	var result string
 	resp, err := httputil.PostString(URL, functionData)
-	msg := entity.FunctionMsg{}
+	msg := entity.FunctionTriggerResult{}
 	if err != nil {
 		errMsg = err.Error()
 		goto ret

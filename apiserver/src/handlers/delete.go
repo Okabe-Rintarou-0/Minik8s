@@ -304,23 +304,28 @@ func HandleRemoveFunc(c *gin.Context) {
 }
 
 func HandleRemoveWorkflow(c *gin.Context) {
+	namespace := c.Param("namespace")
 	name := c.Param("name")
-	etcdURL := path.Join(url.WorkflowURL, name)
+
+	etcdWorkflowResultURL := path.Join(url.WorkflowURL, "result", namespace, name)
+	_ = etcd.Delete(etcdWorkflowResultURL)
+
+	etcdWorkflowURL := path.Join(url.WorkflowURL, namespace, name)
 	wf := apiObject.Workflow{}
-	if raw, err := etcd.Get(etcdURL); err == nil {
+	if raw, err := etcd.Get(etcdWorkflowURL); err == nil {
 		if err = json.Unmarshal([]byte(raw), &wf); err == nil {
-			c.String(http.StatusOK, fmt.Sprintf("no such workflow %s", name))
+			c.String(http.StatusOK, fmt.Sprintf("no such workflow %s/%s", namespace, name))
 			return
 		}
 	}
 
-	if err := etcd.Delete(etcdURL); err != nil {
+	if err := etcd.Delete(etcdWorkflowURL); err != nil {
 		c.String(http.StatusOK, err.Error())
 		return
 	}
 
 	workflowJson, _ := json.Marshal(wf)
-	if err := etcd.Put(etcdURL, string(workflowJson)); err != nil {
+	if err := etcd.Put(etcdWorkflowURL, string(workflowJson)); err != nil {
 		c.String(http.StatusOK, err.Error())
 		return
 	}

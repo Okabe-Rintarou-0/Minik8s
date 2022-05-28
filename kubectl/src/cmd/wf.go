@@ -21,6 +21,7 @@ var wfCmd = &cobra.Command{
 
 func addWorkflowToApiServer(wf *apiObject.Workflow) error {
 	URL := url.Prefix + url.WorkflowURL
+	//fmt.Printf("wf: %+v\n", wf)
 	if resp, err := httputil.PostJson(URL, wf); err == nil {
 		var content []byte
 		if content, err = ioutil.ReadAll(resp.Body); err == nil {
@@ -35,8 +36,8 @@ func addWorkflowToApiServer(wf *apiObject.Workflow) error {
 	}
 }
 
-func deleteWorkflowToApiServer(name string) {
-	URL := url.Prefix + path.Join(url.WorkflowURL, name)
+func deleteWorkflowToApiServer(namespace, name string) {
+	URL := url.Prefix + path.Join(url.WorkflowURL, namespace, name)
 	resp := httputil.DeleteWithoutBody(URL)
 	fmt.Println(resp)
 }
@@ -65,8 +66,9 @@ func handleWorkflow(cmd *cobra.Command, args []string) {
 			fmt.Println("expect two args, got one")
 			return
 		}
-		name := args[1]
-		deleteWorkflowToApiServer(name)
+		fullName := args[1]
+		namespace, name := parseName(fullName)
+		deleteWorkflowToApiServer(namespace, name)
 	}
 
 	if err != nil {

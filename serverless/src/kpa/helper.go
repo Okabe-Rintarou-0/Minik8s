@@ -121,25 +121,27 @@ func (c *controller) deleteFunction(apiFunc *apiObject.Function) error {
 func (c *controller) createWorkflowWorker(workflow *apiObject.Workflow) error {
 	c.workerLock.Lock()
 	defer c.workerLock.Unlock()
-	if _, exists := c.workers[workflow.UID()]; exists {
+	fullName := path.Join(workflow.Namespace(), workflow.Name())
+	if _, exists := c.workers[fullName]; exists {
 		return fmt.Errorf("worker already exists")
 	} else {
 		ctx, cancel := context.WithCancel(bgCtx)
-		w := NewWorker(ctx, workflow, cancel)
-		c.workers[workflow.UID()] = w
+		w := NewWorker(ctx, workflow, cancel, c.TriggerFunc, c.resultChan)
+		c.workers[fullName] = w
 		go w.Run()
 	}
 	return nil
 }
 
-func (c *controller) removeWorkflowWorker(workflow *apiObject.Workflow) error {
+func (c *controller) removeWorkflowWorker(fullName string) error {
 	c.workerLock.Lock()
 	defer c.workerLock.Unlock()
-	if w, exists := c.workers[workflow.UID()]; !exists {
+	if w, exists := c.workers[fullName]; !exists {
 		return fmt.Errorf("worker does not exist")
 	} else {
 		w.Cancel()
-		delete(c.workers, workflow.UID())
+		delete(c.workers, fullName)
+		logManager("remove worker %s successfully", fullName)
 	}
 	return nil
 }
