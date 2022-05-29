@@ -27,6 +27,14 @@ Start an infra container first(default image is `registry.aliyuncs.com/google_co
 The infra container provides network namespace and volumes for all the other containers. 
 So they can communicate with each other though `localhost` and share same volumes.
 
+#### How to allocate unique IP for pods
+
+[Weave Net](https://www.weave.works/) can be used as a Docker plugin. A Docker network named `weave` is created by `weave launch`, which can be visible in the whole cluster. Under the Weave Net, containers can be allocated its `ClusterIP` in the cluster.
+
+After the `pause` container has been created, `kubelet` runs the command `weave attach <ip> <pause_container_id>` to attach `ClusterIP` to the pod.
+
+To make the Weave Net visible from host, run the command `weave expose <ip>` to join the Weave Net.
+
 #### Support & References
 
 + Docker http client: [Moby](https://pkg.go.dev/github.com/docker/docker/client)
@@ -38,7 +46,13 @@ So they can communicate with each other though `localhost` and share same volume
 
 `Api-server` is the center of `minik8s`. It should expose REST apis for other components of the control plane. For fast development, we adopted a mature framework: `gin`
 
+### Proxy
 
+`Proxy` is responsible for allocating virtual service IP, which is unique and visible in the whole cluster. `Proxy` will prepare an `nginx` container for each service. The `nginx` container will attain its service IP in Weave Net and `proxy` will configure the `nginx.conf`. Users and other pods in the Weave Net can visit services just through these service IP.
+
+### DNS
+
+[CoreDNS](https://coredns.io/manual/toc/)  is a DNS server, which can be configured through its `Corefile`. When `api-server` receives an `apply` request of `DNS`,  `api-server` will first start an `nginx` container to deal with the path-service mapping issue and then add the IP-name mapping to CoreDNS.
 
 ### Autoscaler
 
