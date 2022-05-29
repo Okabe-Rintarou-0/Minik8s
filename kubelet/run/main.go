@@ -9,7 +9,9 @@ import (
 	"minik8s/kubelet/src/kubelet"
 	"minik8s/util/httputil"
 	"minik8s/util/netutil"
+	"minik8s/util/wait"
 	"os"
+	"time"
 )
 
 func registerNode(ip string) {
@@ -45,7 +47,9 @@ func main() {
 	flag.StringVar(&ip, "ip", "127.0.0.1", "ip address for node register")
 	flag.Parse()
 
-	registerNode(ip)
+	go wait.Period(0, time.Minute, func() {
+		registerNode(ip)
+	})
 
 	kl := kubelet.New()
 	kl.Run()
