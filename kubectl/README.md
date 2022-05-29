@@ -210,3 +210,13 @@ in `etcd`, thus resetting the status of the whole system.
   <summary>Example</summary>
   <img src="readme-images/kubectl_wf_rm.png">
   </details>
+
+## kubectl label
+
++ `kubectl label nodes [node name] [label]`
+  
+  This command can label a node with given labels.
+  <details>
+  <summary>Example</summary>
+  <img src="readme-images/kubectl_label.png">
+  </details>
