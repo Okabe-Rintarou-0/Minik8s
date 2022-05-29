@@ -86,7 +86,7 @@
   <img src="readme-images/kubectl_get_wf.png">
   </details>
 
-+ `kubectl get hpas`
++ `kubectl get wfs`
 
   This command will show the status of all workflows(in all namespaces) in a table.
   <details>
