@@ -23,7 +23,10 @@ func (c *controller) handleFunctionUpdate(msg *redis.Message) {
 		err = c.createFunction(&apiFunc)
 	case entity.DeleteAction:
 		err = c.deleteFunction(&apiFunc)
+	case entity.UpdateAction:
+		err = c.updateFunction(&apiFunc)
 	}
+
 
 	if err != nil {
 		logger.Error(err.Error())

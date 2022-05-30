@@ -119,6 +119,25 @@ func (c *controller) deleteFunction(apiFunc *apiObject.Function) error {
 	return nil
 }
 
+func (c *controller) updateFunction(apiFunc *apiObject.Function) error {
+	c.scaleLock.RLock()
+	replicaSet := c.functionReplicaSetMap[apiFunc.Name]
+	c.scaleLock.RUnlock()
+	if replicaSet != nil {
+		c.removeReplicaSet(apiFunc)
+		if err := function.RemoveFunctionImage(apiFunc.Name); err != nil {
+			return err
+		}
+	}
+	if err := function.CreateFunctionImage(apiFunc.Name, apiFunc.Path); err != nil {
+		return err
+	} else {
+		logManager("Recreate replicaSet")
+		c.createReplicaSet(apiFunc)
+	}
+	return nil
+}
+
 func (c *controller) createWorkflowWorker(workflow *apiObject.Workflow) error {
 	c.workerLock.Lock()
 	defer c.workerLock.Unlock()
