@@ -214,9 +214,23 @@ in `etcd`, thus resetting the status of the whole system.
 ## kubectl label
 
 + `kubectl label nodes [node name] [label]`
-  
+
   This command can label a node with given labels.
   <details>
   <summary>Example</summary>
   <img src="readme-images/kubectl_label.png">
   </details>
+
+## kubectl cfg
+
++ `kubectl cfg sched=[schedule strategy]`
+
+  This command can dynamically change the schedule strategy.
+
+| strategy | Description                                               |
+|----------|-----------------------------------------------------------|
+| min-pods | Schedule pod to the node with minimum number of pods      | 
+| max-pods | Schedule pod to the node with maximum number of pods      | 
+| min-cpu  | Schedule pod to the node with minimum cpu utilization     | 
+| min-mem  | Schedule pod to the node with minimum memory utilization  | 
+| random   | Schedule pod to a random node                             |
