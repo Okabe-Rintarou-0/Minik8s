@@ -33,11 +33,12 @@ func (b *branch) Satisfied(data entity.FunctionData) bool {
 }
 
 type choice struct {
-	Branches []branch
+	Branches []*branch
 }
 
 func (c *choice) ChooseSatisfied(data entity.FunctionData) *node {
 	for i, br := range c.Branches {
+		logWorker("br is nil? %v", br == nil)
 		if br.Satisfied(data) {
 			return c.Branches[i].Next
 		}
@@ -182,7 +183,7 @@ func buildDAG(curNode string, dagMap map[string]*node, nodeMap map[string]apiObj
 	case apiObject.ChoiceNode:
 		choices := wfNode.Choices
 
-		var branches []branch
+		var branches []*branch
 		if choices != nil {
 			for _, c := range choices.Choices {
 				if c.Next != nil {
@@ -190,7 +191,7 @@ func buildDAG(curNode string, dagMap map[string]*node, nodeMap map[string]apiObj
 				} else {
 					next = nil
 				}
-				br := branch{
+				br := &branch{
 					Variable:  c.Variable,
 					JudgeFunc: toJudgeFunc(&c),
 					Next:      next,
