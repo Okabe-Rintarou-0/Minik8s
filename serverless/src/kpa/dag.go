@@ -57,7 +57,7 @@ type dag struct {
 	EntryParams string
 }
 
-func toJudgeFunc(c *apiObject.Choice) judgeFunc {
+func toJudgeFunc(c apiObject.Choice) judgeFunc {
 	variable := c.Variable
 
 	switch {
@@ -193,7 +193,7 @@ func buildDAG(curNode string, dagMap map[string]*node, nodeMap map[string]apiObj
 				}
 				br := &branch{
 					Variable:  c.Variable,
-					JudgeFunc: toJudgeFunc(&c),
+					JudgeFunc: toJudgeFunc(c),
 					Next:      next,
 				}
 				branches = append(branches, br)
