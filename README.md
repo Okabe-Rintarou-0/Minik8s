@@ -11,7 +11,7 @@ Group project of SE3356 Cloud Operating System Design and Practice, Spring 2022.
 `kubectl` is a command line tool that helps user controller `minik8s`. It's similar to `kubectl` in `Kubenetes`, but it's simplified and different in some commands. 
 It is also based on `cobra`.
 
-![cobra](./readme-images/cobra.png)
+<img src="./readme-images/cobra.png" alt="cobra 5 " style="zoom:50%;" />
 
 We support basic command like `kubectl get pods`, `kubectl apply -f xxx.yaml`. For more info, see [kubectl README](/kubectl/README.md).
 
@@ -58,11 +58,11 @@ To make the Weave Net visible from host, run the command `weave expose <ip>` to 
 
 #### Structure
 
-`Kubelet` in each node will collect runtime statuses through `docker stats`, including cpu and memory utilization. 
+`Kubelet` in each node will collect runtime status through `docker status`, including cpu and memory utilization. 
 All these statuses will be published to a certain topic, on which both `api-server` and `controller-manager` are watching. 
 
 Here is a shared cache in the `controller-manager`. It can receive the statuses published by `kubelet` and do `incremental synchronization`. 
-In the meanwhile, `api-server` will persist these statuses into `etcd`, a distributed K-V store system. 
+Meanwhile, `api-server` will persist these statuses into `etcd`, a distributed K-V store system. 
 `etcd` is the one who truly indicates the status of the whole system. 
 So, the cache in the `controller-manager` has to periodically do full synchronization with `api-server`, in order to
 stay consistent with `etcd`.
@@ -73,7 +73,7 @@ stay consistent with `etcd`.
 
 The pod resources monitor is based on `cAdvisor`, `Prometheus` and `Grafana`.
 
-![Autoscaler](./readme-images/autoscaler_visualization.svg)
+<img src="./readme-images/autoscaler_visualization.svg" alt="Autoscaler 5" style="zoom:50%;" />
 
 We recommend you to use grafana dashboard with UID `11277` and `893`.
 
@@ -126,8 +126,9 @@ def main(params):
     }
     return result
 ```
-This function needs a parameter `x` and `x` is passed in the form of `json`, and will add 5 to `x` and return a dictionary/json
-(In our system, all parameters and results can be transferred in the form of `json`).
+This function needs a parameter `x` and `x` is passed in the form of `json`, and will add 5 to `x` and return a dictionary/json.
+
+In our system, all parameters and results can be transferred in the form of `json` , and there is no need to pass the parameter type in `json`, since interpreter itself can infer variable type automatically.
 
 Once a function is registered, a corresponding image will be pushed to the registry and a replicaSet will be created, which will create pods(function instances) on worker nodes.
 
