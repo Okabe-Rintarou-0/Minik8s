@@ -87,6 +87,9 @@ var putTable = map[string]Handler{
 	// Set Node Status
 	url.NodeStatusURLWithSpecifiedName: handlers.HandleSetNodeStatus,
 	url.ReplicaSetURLWithSpecifiedName: handlers.HandleSetReplicaSet,
+
+	// kubectl func update func_name
+	url.FuncURLWithSpecifiedName: handlers.HandleUpdateFunc,
 }
 
 var deleteTable = map[string]Handler{

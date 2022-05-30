@@ -12,6 +12,7 @@ import (
 	"minik8s/entity"
 	"minik8s/listwatch"
 	"minik8s/nginx"
+	"minik8s/util/httputil"
 	"minik8s/util/topicutil"
 	"net/http"
 	"path"
@@ -293,6 +294,40 @@ func HandleRemoveFunc(c *gin.Context) {
 			})
 
 			log("Publish delete func %s msg", apiFunc.Name)
+			listwatch.Publish(topic, updateMsg)
+			c.String(http.StatusOK, "ok")
+			return
+		}
+	}
+
+	c.String(http.StatusOK, fmt.Sprintf("no such func %s", name))
+	return
+}
+
+func HandleUpdateFunc(c *gin.Context) {
+	name := c.Param("name")
+	etcdURL := path.Join(url.FuncURL, name)
+	apiFunc := apiObject.Function{}
+	if raw, err := etcd.Get(etcdURL); err == nil {
+		if err = json.Unmarshal([]byte(raw), &apiFunc); err == nil {
+			if err = etcd.Delete(etcdURL); err != nil {
+				c.String(http.StatusOK, err.Error())
+				return
+			}
+
+			newFunc := apiObject.Function{}
+			if err = httputil.ReadAndUnmarshal(c.Request.Body, &newFunc); err != nil {
+				c.String(http.StatusOK, err.Error())
+				return
+			}
+
+			topic := topicutil.FunctionUpdateTopic()
+			updateMsg, _ := json.Marshal(entity.FunctionUpdate{
+				Action: entity.UpdateAction,
+				Target: newFunc,
+			})
+
+			log("Publish update func %s msg", newFunc.Name)
 			listwatch.Publish(topic, updateMsg)
 			c.String(http.StatusOK, "ok")
 			return
