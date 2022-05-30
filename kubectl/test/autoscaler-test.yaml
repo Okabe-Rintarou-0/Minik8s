@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: autoscaler-test
+  namespace: default
+spec:
+  containers:
+    - name: testcase
+      image: 10.119.11.101:5000/autoscaler-test:1.0
+      ports:
+        - containerPort: 8080
