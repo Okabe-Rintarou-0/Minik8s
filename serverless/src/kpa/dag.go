@@ -62,6 +62,7 @@ func toJudgeFunc(c *apiObject.Choice) judgeFunc {
 	switch {
 	case c.NumericEquals != nil:
 		{
+			logWorker("NumericEquals")
 			return func(data entity.FunctionData) bool {
 				res := gjson.Get(string(data), variable)
 				return res.Int() == *c.NumericEquals
@@ -69,6 +70,7 @@ func toJudgeFunc(c *apiObject.Choice) judgeFunc {
 		}
 	case c.NumericNotEquals != nil:
 		{
+			logWorker("NumericNotEquals")
 			return func(data entity.FunctionData) bool {
 				res := gjson.Get(string(data), variable)
 				return res.Int() != *c.NumericNotEquals
@@ -88,35 +90,35 @@ func toJudgeFunc(c *apiObject.Choice) judgeFunc {
 				return res.Int() > *c.NumericGreaterThan
 			}
 		}
-	case c.BooleanEquals!=nil:
+	case c.BooleanEquals != nil:
 		{
 			return func(data entity.FunctionData) bool {
 				res := gjson.Get(string(data), variable)
 				return res.Bool() == *c.BooleanEquals
 			}
 		}
-	case c.StringEquals!=nil:
+	case c.StringEquals != nil:
 		{
 			return func(data entity.FunctionData) bool {
 				res := gjson.Get(string(data), variable)
 				return res.String() == *c.StringEquals
 			}
 		}
-	case c.StringNotEquals!=nil:
+	case c.StringNotEquals != nil:
 		{
 			return func(data entity.FunctionData) bool {
 				res := gjson.Get(string(data), variable)
 				return res.String() != *c.StringNotEquals
 			}
 		}
-	case c.StringLessThan!=nil:
+	case c.StringLessThan != nil:
 		{
 			return func(data entity.FunctionData) bool {
 				res := gjson.Get(string(data), variable)
 				return res.String() < *c.StringLessThan
 			}
 		}
-	case c.StringGreaterThan!=nil:
+	case c.StringGreaterThan != nil:
 		{
 			return func(data entity.FunctionData) bool {
 				res := gjson.Get(string(data), variable)
