@@ -52,8 +52,8 @@ func CreateFunctionImage(name string, codePath string) error {
 }
 
 func RemoveFunctionImage(name string) error {
-	//TODO implement it
-	return nil
+	imageName := registry.RegistryHost + "/" + name
+	return registry.RemoveImage(imageName)
 }
 
 func createContainer(name, containerName, imageName string) (string, string) {

@@ -109,3 +109,17 @@ func PullImage(image string) {
 	wr, err := io.Copy(os.Stdout, pullReader)
 	log.Print(wr)
 }
+
+// force (bool): Force removal of the image
+// noprune (bool): Do not delete untagged parents
+func RemoveImage(image string) error {
+	// _, err := client.ImageRemove(context.Background(), "image_id", types.ImageRemoveOptions{})
+	// if !errdefs.IsSystem(err) {
+	// 	t.Fatalf("expected a Server Error, got %[1]T: %[1]v", err)
+	// }
+	return nil
+}
+
+func findImage(image string) {
+
+}
