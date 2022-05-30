@@ -47,6 +47,7 @@ func init() {
 	rootCmd.AddCommand(funcCmd)
 	rootCmd.AddCommand(wfCmd)
 	rootCmd.AddCommand(triggerCmd)
+	rootCmd.AddCommand(cfgCmd)
 }
 
 var rootCmd = &cobra.Command{

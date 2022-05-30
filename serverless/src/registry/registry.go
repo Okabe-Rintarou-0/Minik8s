@@ -20,7 +20,7 @@ import (
 const (
 	RegistryImage    = "registry:2.8.0"
 	RegistryName     = "local-registry"
-	RegistryHost     = "0.0.0.0:5000"
+	RegistryHost     = "10.119.11.101:5000"
 	RegistryHostIP   = "0.0.0.0"
 	RegistryHostPort = "5000"
 )
