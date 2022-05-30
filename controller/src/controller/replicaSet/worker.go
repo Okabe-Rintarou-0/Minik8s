@@ -21,12 +21,17 @@ type Worker interface {
 	Run()
 	SyncChannel() chan<- struct{}
 	SetTarget(rs *apiObject.ReplicaSet)
+	Done()
 }
 
 type worker struct {
 	syncCh       chan struct{}
 	cacheManager cache.Manager
 	target       *apiObject.ReplicaSet
+}
+
+func (w *worker) Done() {
+	w.deleted()
 }
 
 func (w *worker) SetTarget(rs *apiObject.ReplicaSet) {

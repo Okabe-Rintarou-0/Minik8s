@@ -148,7 +148,9 @@ func (m *manager) handleReplicaSetDelete(toDelete []*entity.ReplicaSetStatus) {
 		replicaSet := &apiObject.ReplicaSet{}
 		URL := url.Prefix + path.Join(url.ReplicaSetURL, rs.Namespace, rs.Name)
 		if err := httputil.GetAndUnmarshal(URL, replicaSet); err == nil {
-			m.replicaSetFullSyncDeleteHook(replicaSet)
+			if rs.ID == replicaSet.UID() {
+				m.replicaSetFullSyncDeleteHook(replicaSet)
+			}
 		}
 		//log("Add Node Status[host = %s]", ns.Hostname)
 	}

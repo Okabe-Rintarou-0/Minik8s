@@ -61,9 +61,10 @@ func (c *controller) DeleteReplicaSet(rs *apiObject.ReplicaSet) {
 	UID := rs.UID()
 	logManager("Delete replicaSet: %s_%s", rs.FullName(), UID)
 	if worker, stillWorking := c.workers[UID]; stillWorking {
-		delete(c.workers, UID)
 		close(worker.SyncChannel())
 		c.deleteReplicaSetPods(rs)
+		worker.Done()
+		delete(c.workers, UID)
 	}
 }
 
