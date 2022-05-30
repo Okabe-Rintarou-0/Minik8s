@@ -3,12 +3,13 @@ package listwatch
 import (
 	"context"
 	"github.com/go-redis/redis/v8"
+	"minik8s/global"
 )
 
 var ctx = context.Background()
 
 var client = redis.NewClient(&redis.Options{
-	Addr:     "localhost:6379",
+	Addr:     global.Host + ":6379",
 	Password: "",
 	DB:       0,
 })

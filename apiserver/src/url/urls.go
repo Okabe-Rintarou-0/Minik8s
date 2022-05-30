@@ -1,8 +1,10 @@
 package url
 
+import "minik8s/global"
+
 const (
 	HttpScheme = "http://"
-	Hostname   = "localhost"
+	Hostname   = global.Host
 	Port       = ":8080"
 	Prefix     = HttpScheme + Hostname + Port
 
