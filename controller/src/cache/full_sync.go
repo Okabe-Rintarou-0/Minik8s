@@ -235,11 +235,14 @@ func (m *manager) fullSyncReplicaSetStatuses() {
 
 	// Step 2: compute replicaset to add or to delete
 	cachedReplicaSetStatuses := m.getReplicaSetStatusesInternal()
+	for _, serverStatus := range serverReplicaSetStatuses {
+		log("received from server: %+v", serverStatus)
+	}
 	toDelete, toAdd := m.syncReplicaSetChange(cachedReplicaSetStatuses, serverReplicaSetStatuses)
 
 	// Step 3: Handle toDelete & toAdd
-	//log("To Delete: %v", toDelete)
-	//log("To Add: %v", toAdd)
+	log("To Delete: %v", toDelete)
+	log("To Add: %v", toAdd)
 	m.handleReplicaSetAdd(toAdd)
 	m.handleReplicaSetDelete(toDelete)
 }
