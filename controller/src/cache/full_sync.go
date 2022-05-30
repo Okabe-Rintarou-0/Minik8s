@@ -104,6 +104,7 @@ func (m *manager) syncReplicaSetChange(cachedReplicaSetStatuses, serverReplicaSe
 	}
 
 	for _, cached := range replicaSetStatusMap {
+		log("To Delete: %v", cached)
 		toDelete = append(toDelete, cached)
 	}
 	return
@@ -237,6 +238,9 @@ func (m *manager) fullSyncReplicaSetStatuses() {
 	cachedReplicaSetStatuses := m.getReplicaSetStatusesInternal()
 	for _, serverStatus := range serverReplicaSetStatuses {
 		log("received from server: %+v", serverStatus)
+	}
+	for _, cachedStatus := range cachedReplicaSetStatuses {
+		log("cached: %+v", cachedStatus)
 	}
 	toDelete, toAdd := m.syncReplicaSetChange(cachedReplicaSetStatuses, serverReplicaSetStatuses)
 
