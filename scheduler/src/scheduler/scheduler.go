@@ -16,6 +16,8 @@ import (
 	"strings"
 )
 
+var log = logger.Log("scheduler")
+
 type Scheduler interface {
 	Start()
 	Schedule(podUpdate *entity.PodUpdate) error
@@ -49,6 +51,34 @@ func (s *scheduler) sendScheduleInfoToApiServer(node string, pod *apiObject.Pod)
 	if err != nil {
 		logger.Error(err.Error())
 	}
+}
+
+func (s *scheduler) handleStrategyChange(msg *redis.Message) {
+	strategy := msg.Payload
+
+	var tp selector.Type
+	switch strategy {
+	case "random":
+		tp = selector.Random
+	case "max-pods":
+		tp = selector.MaximumNumPods
+	case "min-pods":
+		tp = selector.MinimumNumPods
+	case "min-cpu":
+		tp = selector.MinimumCpuUtility
+	case "min-mem":
+		tp = selector.MinimumMemoryUtility
+	default:
+		log("invalid strategy")
+		return
+	}
+
+	s.changeStrategy(tp)
+	log("changed to strategy: %s", strategy)
+}
+
+func (s *scheduler) changeStrategy(tp selector.Type) {
+	s.selector = selector.DefaultFactory.NewSelector(tp)
 }
 
 func (s *scheduler) Schedule(podUpdate *entity.PodUpdate) error {
@@ -109,7 +139,6 @@ func (s *scheduler) parseAndSchedule(msg *redis.Message) {
 }
 
 func (s *scheduler) Start() {
-	topic := topicutil.SchedulerPodUpdateTopic()
-
-	listwatch.Watch(topic, s.parseAndSchedule)
+	go listwatch.Watch(topicutil.ScheduleStrategyTopic(), s.handleStrategyChange)
+	listwatch.Watch(topicutil.SchedulerPodUpdateTopic(), s.parseAndSchedule)
 }

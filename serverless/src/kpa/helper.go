@@ -57,7 +57,7 @@ func (c *controller) createReplicaSet(apiFunc *apiObject.Function) {
 							Resources: apiObject.ContainerResources{},
 							Ports: []apiObject.ContainerPort{
 								{
-									HostIP:        registry.RegistryHostIP,
+									//HostIP:        registry.RegistryHostIP,
 									ContainerPort: "8080",
 								},
 							},

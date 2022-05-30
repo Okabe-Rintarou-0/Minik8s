@@ -11,6 +11,7 @@ const serviceUpdateTopic = "ServiceUpdate"
 const endpointUpdateTopic = "EndpointUpdate"
 const gpuJobUpdateTopic = "GpuJobUpdate"
 const functionUpdateTopic = "FunctionUpdate"
+const scheduleStrategyTopic = "ScheduleStrategyTopic"
 const functionTriggerTopic = "FunctionTriggerTopic"
 const workflowUpdateTopic = "WorkflowUpdateTopic"
 const testTopic = "__test__"
@@ -69,6 +70,10 @@ func FunctionUpdateTopic() string {
 
 func FunctionTriggerTopic() string {
 	return functionTriggerTopic
+}
+
+func ScheduleStrategyTopic() string {
+	return scheduleStrategyTopic
 }
 
 func TestTopic() string {
