@@ -51,7 +51,12 @@ func (c *cpuScaleJudge) Benchmark() float64 {
 
 func (c *cpuScaleJudge) Judge(status *entity.ReplicaSetStatus) int {
 	cpuPercent := status.CpuPercent
-	ratio := c.benchmark / cpuPercent
+	var ratio float64
+	if cpuPercent == 0 {
+		ratio = math.MaxInt
+	} else {
+		ratio = c.benchmark / cpuPercent
+	}
 	numReplicas := mathutil.Clamp(int(math.Round(ratio*float64(status.NumReplicas))), c.minReplicas, c.maxReplicas)
 	fmt.Printf("[CPU judge] Benchmark = %v, cpuPercent = %v, So num replicas should be: %d\n", c.benchmark, cpuPercent, numReplicas)
 	return numReplicas
