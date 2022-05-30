@@ -1,13 +1,15 @@
-package main
+package test
 
 import (
 	// "io/ioutil"
 	// "os"
 	"fmt"
+	"testing"
+
 	"github.com/tidwall/gjson"
 )
 
-func main() {
+func TestJsonParse(t *testing.T) {
 	// f, _ := os.Open("workflow.json")
 	// content, _ := ioutil.ReadAll(f)
 	// str:=string(content)

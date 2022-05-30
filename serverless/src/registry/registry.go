@@ -1,4 +1,6 @@
 // Package src docker registry
+// Ref: https://github.com/distribution/distribution/blob/main/docs/spec/api.md#deleting-an-image
+// Ref: https://stackoverflow.com/questions/25436742/how-to-delete-images-from-a-private-docker-registry
 package registry
 
 import (
@@ -10,7 +12,12 @@ import (
 	"log"
 	"minik8s/kubelet/src/runtime/container"
 	"minik8s/serverless/src/utils"
+	"net/http"
 	"os"
+
+	"github.com/docker/distribution"
+	"github.com/docker/distribution/reference"
+	rclient "github.com/docker/distribution/registry/client"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
@@ -18,9 +25,10 @@ import (
 )
 
 const (
-	RegistryImage    = "registry:2.8.0"
-	RegistryName     = "local-registry"
+	RegistryImage = "registry:2.8.0"
+	RegistryName  = "local-registry"
 	RegistryHost     = "10.119.11.101:5000"
+	//RegistryHost     = "0.0.0.0:5000"
 	RegistryHostIP   = "0.0.0.0"
 	RegistryHostPort = "5000"
 )
@@ -117,9 +125,38 @@ func RemoveImage(image string) error {
 	// if !errdefs.IsSystem(err) {
 	// 	t.Fatalf("expected a Server Error, got %[1]T: %[1]v", err)
 	// }
-	return nil
+	imageTag := "latest"
+	repo, err := newRepository(image)
+	fmt.Print("check:",repo.Named())
+	fmt.Println("newRepository completed")
+	if err != nil {
+		return err
+	}
+
+	ctx := context.Background()
+	fmt.Println("chpt0")
+	tagService := repo.Tags(ctx)
+	fmt.Println("chpt1")
+	desc, err := tagService.Get(ctx, imageTag)
+	fmt.Println()
+	if err != nil {
+		return err
+	}
+	fmt.Println("chpt2")
+	manifestService, err := repo.Manifests(ctx, nil)
+	fmt.Println("chpt3")
+	if err != nil {
+		return err
+	}
+
+	return manifestService.Delete(ctx, desc.Digest)
 }
 
-func findImage(image string) {
+func newRepository(imageName string) (distribution.Repository, error) {
+	ref, err := reference.Parse(imageName)
+	if err != nil {
+		return nil, err
+	}
+	return rclient.NewRepository(ref.(reference.Named), "http://"+RegistryHost, http.DefaultTransport)
 
 }
