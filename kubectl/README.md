@@ -177,6 +177,10 @@ in `etcd`, thus resetting the status of the whole system.
   <img src="readme-images/kubectl_func_rm.png">
   </details>
 
++ `kubectl func update -f [function name] -p [function code path]`
+
+  This command will update a function to the `knative`.
+
 ## kubectl trigger
 
 + `kubectl trigger [function name] -d [function params json]`
