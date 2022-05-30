@@ -11,7 +11,7 @@ var bgCtx = context.Background()
 var cancel context.CancelFunc
 
 func consumeHigherCpu(ctx context.Context) {
-	for i := 0; i < 20; i++ {
+	for i := 0; i < 5; i++ {
 		go func() {
 			for {
 				select {
