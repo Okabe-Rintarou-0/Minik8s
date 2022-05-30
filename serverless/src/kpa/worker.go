@@ -2,9 +2,11 @@ package kpa
 
 import (
 	"context"
+	"fmt"
 	"minik8s/apiObject"
 	"minik8s/entity"
 	"minik8s/util/logger"
+	"minik8s/util/recoverutil"
 	"time"
 )
 
@@ -23,7 +25,14 @@ type worker struct {
 	ResultChan chan *entity.FunctionTriggerResult
 }
 
+func (w *worker) recover() {
+	if err := recover(); err != nil {
+		fmt.Println(recoverutil.Trace(fmt.Sprintf("%v\n", err)))
+	}
+}
+
 func (w *worker) Run() {
+	defer w.recover()
 	w.doJob()
 }
 
