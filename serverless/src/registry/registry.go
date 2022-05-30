@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"minik8s/global"
 	"minik8s/kubelet/src/runtime/container"
 	"minik8s/serverless/src/utils"
 	"os"
@@ -20,8 +21,8 @@ import (
 const (
 	RegistryImage    = "registry:2.8.0"
 	RegistryName     = "local-registry"
-	RegistryHost     = "0.0.0.0:5000"
-	RegistryHostIP   = "0.0.0.0"
+	RegistryHost     = global.Host + ":5000"
+	RegistryHostIP   = global.Host
 	RegistryHostPort = "5000"
 )
 
