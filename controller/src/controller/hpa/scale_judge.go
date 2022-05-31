@@ -53,9 +53,9 @@ func (c *cpuScaleJudge) Judge(status *entity.ReplicaSetStatus) int {
 	cpuPercent := status.CpuPercent
 	var numReplicas int
 	if cpuPercent == 0 {
-		numReplicas = c.maxReplicas
+		numReplicas = c.minReplicas
 	} else {
-		ratio := c.benchmark / cpuPercent
+		ratio := cpuPercent / c.benchmark
 		numReplicas = mathutil.Clamp(int(math.Round(ratio*float64(status.NumReplicas))), c.minReplicas, c.maxReplicas)
 	}
 
@@ -79,8 +79,14 @@ func (m *memScaleJudge) Benchmark() float64 {
 
 func (m *memScaleJudge) Judge(status *entity.ReplicaSetStatus) int {
 	memPercent := status.MemPercent
-	ratio := memPercent / m.benchmark
-	numReplicas := mathutil.Clamp(int(math.Round(ratio*float64(status.NumReplicas))), m.minReplicas, m.maxReplicas)
+	var numReplicas int
+	if memPercent == 0 {
+		numReplicas = m.minReplicas
+	} else {
+		ratio := memPercent / m.benchmark
+		numReplicas = mathutil.Clamp(int(math.Round(ratio*float64(status.NumReplicas))), m.minReplicas, m.maxReplicas)
+	}
+
 	fmt.Printf("[Mem judge] Num replicas should be: %d\n", numReplicas)
 	return numReplicas
 }
