@@ -25,7 +25,7 @@ The structure of `kubelet` in `minik8s` is similar to k8s, but it's greatly simp
 
 Start an infra container first(default image is `registry.aliyuncs.com/google_containers/pause:3.6`). 
 The infra container provides network namespace and volumes for all the other containers. 
-So they can communicate with each other though `localhost` and share same volumes.
+So they can communicate with each other through `localhost` and share same volumes.
 
 #### How to allocate unique IP for pods
 
@@ -109,7 +109,6 @@ See:
 The structure of our serverless system draws lessons from `Knative` but is quite simplified.
 Users can register functions to `api-server`. `KPA controller` will create corresponding function image and push it into docker registry.
 It will also create a replicaSet through `api-server` apis.
-** NOTE: If you want to delete function image from docker image, you should set the environment variable `REGISTRY_STORAGE_DELETE_ENABLED=true`, otherwise deleting process will fail. **
 
 The `ReplicaSet Controller` can then create pods on nodes. Notice  that there is a http server running on master node(port `8081`), and you can call a function by http trigger.
 
