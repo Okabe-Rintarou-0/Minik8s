@@ -46,5 +46,5 @@ func main() {
 	r := gin.Default()
 	r.GET("/higher", higher)
 	r.GET("/lower", lower)
-	log.Fatal(r.Run(":8080"))
+	log.Fatal(r.Run(":8090"))
 }
