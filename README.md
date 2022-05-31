@@ -109,6 +109,7 @@ See:
 The structure of our serverless system draws lessons from `Knative` but is quite simplified.
 Users can register functions to `api-server`. `KPA controller` will create corresponding function image and push it into docker registry.
 It will also create a replicaSet through `api-server` apis.
+** NOTE: If you want to delete function image from docker image, you should set the environment variable `REGISTRY_STORAGE_DELETE_ENABLED=true`, otherwise deleting process will fail. **
 
 The `ReplicaSet Controller` can then create pods on nodes. Notice  that there is a http server running on master node(port `8081`), and you can call a function by http trigger.
 
