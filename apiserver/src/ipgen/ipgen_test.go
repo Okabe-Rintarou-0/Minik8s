@@ -6,11 +6,8 @@ import (
 )
 
 func Test(t *testing.T) {
-	ig, err := New(url.PodIpGeneratorURL, "10.44.0.0/24")
-	if err != nil {
-		t.Error(err)
-	}
-	if err := ig.Clear(); err != nil {
+	ig := New(url.PodIpURL, 16)
+	if err := ig.Clear(url.PodIpBase); err != nil {
 		t.Error(err)
 	}
 	t.Log(ig.GetCurrent())

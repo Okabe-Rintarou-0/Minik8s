@@ -9,7 +9,6 @@ import (
 	"minik8s/listwatch"
 	"minik8s/util/logger"
 	"minik8s/util/topicutil"
-	"os/exec"
 )
 
 type ApiServer interface {
@@ -53,26 +52,7 @@ func (api *apiServer) watch() {
 
 func ipInit(url, ip string, mask int) error {
 	ig := ipgen.New(url, mask)
-	return ig.ClearIfInit(ip)
-}
-
-func weaveInit() error {
-	if out, err := exec.Command("weave", "reset").Output(); err != nil {
-		return err
-	} else {
-		logger.Log("api-server-weave")(string(out))
-	}
-	if out, err := exec.Command("weave", "launch").Output(); err != nil {
-		return err
-	} else {
-		logger.Log("api-server-weave")(string(out))
-	}
-	if out, err := exec.Command("weave", "expose", url.PodIpBase+url.MaskStr).Output(); err != nil {
-		return err
-	} else {
-		logger.Log("api-server-weave")(string(out))
-	}
-	return nil
+	return ig.ClearIfNotInit(ip)
 }
 
 func (api *apiServer) Run() {
