@@ -214,7 +214,7 @@ which will create pods(function instances) on worker nodes.
 We support a convenient way to call a function by http trigger. You can type `kubectl trigger [funcname] -d [data]` to
 send http trigger to the specified function instances.
 
-Because the function instances is maintained by a `replicaSet`, so the http server in `Knative` will randomly choose one
+Because the function instances are maintained by a `replicaSet`, so the http server in `Knative` will randomly choose one
 pod in the replicaSet and call it.
 
 Take `addFive` for example, you can type `kubectl trigger addFive -d '{"x": 100}'`, and you will get a
