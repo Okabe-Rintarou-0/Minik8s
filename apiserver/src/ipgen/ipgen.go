@@ -24,7 +24,7 @@ type Generator interface {
 	GetCurrentWithMask() (string, error)
 	GetNextWithMask() (string, error)
 	Clear(ip string) error
-	ClearIfInit(ip string) error
+	ClearIfNotInit(ip string) error
 }
 
 type ipGenerator struct {
@@ -83,10 +83,10 @@ func (ig *ipGenerator) GetNextWithMask() (string, error) {
 }
 
 func (ig *ipGenerator) Clear(ip string) error {
-	return etcd.Put(ig.url, strconv.Itoa(int(inetAtoN(ip))))
+	return etcd.Put(ig.url, strconv.Itoa(20+int(inetAtoN(ip))))
 }
 
-func (ig *ipGenerator) ClearIfInit(ip string) error {
+func (ig *ipGenerator) ClearIfNotInit(ip string) error {
 	if ret, err := etcd.Get(ig.url); err != nil {
 		return err
 	} else {
