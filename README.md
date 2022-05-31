@@ -6,6 +6,11 @@ Group project of SE3356 Cloud Operating System Design and Practice, Spring 2022.
 
 ## Structure
 
+### Project overview
+
+<img src="https://img.shields.io/badge/license-Apache-blue" alt="">
+<img src="https://img.shields.io/badge/go-1.16-blue" alt="">
+
 ### Kubectl
 
 `kubectl` is a command line tool that helps user controller `minik8s`. It's similar to `kubectl` in `Kubenetes`, but
