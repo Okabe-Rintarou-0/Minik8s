@@ -11,6 +11,25 @@ Group project of SE3356 Cloud Operating System Design and Practice, Spring 2022.
 <img src="https://img.shields.io/badge/license-Apache-blue" alt="">
 <img src="https://img.shields.io/badge/go-1.16-blue" alt="">
 
+<details>
+<summary>Dependencies</summary>
+<ul>
+<li>gin: <a href="https://github.com/gin-gonic/gin">https://github.com/gin-gonic/gin</a></li>
+<li>cobra: <a href="https://github.com/spf13/cobra">https://github.com/spf13/cobra</a></li>
+<li>cast: <a href="https://github.com/spf13/cast">https://github.com/spf13/cast</a></li>
+<li>gjson: <a href="https://github.com/tidwall/gjson">https://github.com/tidwall/gjson</a></li>
+<li>go.uuid: <a href="https://github.com/satori/go.uuid">https://github.com/satori/go.uuid</a></li>
+<li>etcd: <a href="https://github.com/etcd-io/etcd">https://github.com/etcd-io/etcd</a></li>
+<li>table: <a href="https://github.com/rodaine/table">https://github.com/rodaine/table</a></li>
+<li>goph: <a href="https://github.com/melbahja/goph">https://github.com/melbahja/goph</a></li>
+<li>redis: <a href="https://github.com/go-redis/redis">https://github.com/go-redis/redis</a></li>
+<li>goquery: <a href="https://github.com/PuerkitoBio/goquery">https://github.com/PuerkitoBio/goquery</a></li>
+<li>yaml: <a href="https://github.com/go-yaml/yaml">https://github.com/go-yaml/yaml</a></li>
+<li>testify: <a href="https://github.com/stretchr/testify">https://github.com/stretchr/testify</a></li>
+<li>go-iptables: <a href="https://github.com/coreos/go-iptables">https://github.com/coreos/go-iptables</a></li>
+</ul>
+</details>
+
 ### Kubectl
 
 `kubectl` is a command line tool that helps user controller `minik8s`. It's similar to `kubectl` in `Kubenetes`, but
