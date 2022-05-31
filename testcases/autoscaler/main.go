@@ -38,6 +38,7 @@ func higher(c *gin.Context) {
 func lower(c *gin.Context) {
 	if cancel != nil {
 		cancel()
+		cancel = nil
 	}
 	c.String(http.StatusOK, "lower cpu utilization!")
 }
