@@ -77,7 +77,7 @@ func weaveInit() error {
 
 func (api *apiServer) Run() {
 	etcd.Start()
-	_ = etcd.DeleteAllKeys()
+	//_ = etcd.DeleteAllKeys()
 
 	if err := ipInit(url.PodIpURL, url.PodIpBase, url.Mask); err != nil {
 		logger.Log("api-server-pod-ip")(err.Error())
