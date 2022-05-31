@@ -46,6 +46,31 @@ To make the Weave Net visible from host, run the command `weave expose <ip>` to 
 + A good article on pod
   creation: [2.2 从 Pause 容器理解 Pod 的本质](https://k8s.iswbm.com/c02/p02_learn-kubernetes-pod-via-pause-container.html)
 
+### Scheduler
+
+The function of `scheduler` is very clear and simple, scheduling the newly created pods.
+
+The process of scheduling can be broken down into several steps:
+
++ Get the list of available nodes from `api-server` through REST apis.
++ If there is a `nodeSelector` in the specification of the pod, then filter the list according to given labels.
++ Select one node according to a certain strategy from the filtered nodes.
+
+![scheduler](readme-images/scheduler.svg)
+
+Here are some strategies we support now:
+
+| strategy                   | Description                                     |
+|----------------------------|-------------------------------------------------|
+| random                     | Select a node randomly                          |
+| minimum pods               | Select the node with minimum number of pods     |
+| maximum pods               | Select the node with maximum number of pods     |
+| minimum cpu utilization    | Select the node with minimum cpu utilization    |
+| minimum memory utilization | Select the node with minimum memory utilization |
+
+The strategy is by default `random`. You can also dynamically change the strategy by using `kubectl cfg` command. For
+more info about this command, see the README.md of `kubectl`.
+
 ### Api-server
 
 <img alt="gin" align="right" height="150" src="./readme-images/gin.png"/>
