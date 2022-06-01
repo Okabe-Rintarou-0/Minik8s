@@ -16,8 +16,8 @@ static void HandleError(cudaError_t err,const char *file, int line) {
 
 // Matrix add: C = A + B
 __global__ void matrix_add(int **A, int **B, int **C) {
-    int i = blockIdx.x * blockDim.x + threadIdx.x;
-    int j = blockIdx.y * blockDim.y + threadIdx.y;  
+    int i = blockIdx.y * blockDim.y + threadIdx.y;
+    int j = blockIdx.x * blockDim.x + threadIdx.x;
     C[i][j] = A[i][j] + B[i][j];
 }
 
@@ -25,7 +25,7 @@ int main() {
     int count;
     cudaGetDeviceCount(&count);
     printf("gpu num %d\n", count);
-    
+
     int **A = (int **) malloc(sizeof(int *) * M);
     int **B = (int **) malloc(sizeof(int *) * M);
     int **C = (int **) malloc(sizeof(int *) * M);
@@ -95,7 +95,7 @@ int main() {
     // copy result to host
     HANDLE_ERROR(cudaMemcpy((void *) data_C, (void *) dev_data_C, sizeof(int) * M * N, cudaMemcpyDeviceToHost));
 
-    // print result: 
+    // print result:
     printf("The matrix add result is:\n");
     for (int i = 0; i < M; i++) {
         for (int j = 0; j < N ; j++) {

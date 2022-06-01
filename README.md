@@ -164,9 +164,20 @@ Users can then browse and download the results of jobs using `nginx-fileserver`.
 
 #### Cuda
 
-Each block in `cuda grid` is corresponding to an area in a matrix. 
+Each block in `cuda grid` is corresponding to an area in a matrix. We can map a cell in the block to an element in a
+matrix.
+
+```c
+int i = blockIdx.y * blockDim.y + threadIdx.y;
+int j = blockIdx.x * blockDim.x + threadIdx.x;
+```
 
 ![cuda grid](readme-images/cuda.png)
+
+`blockIdx` stands for the coordinate of a block. For example, the block in the upper left corner has `blockIdx(0,0)`
+
+`blockDim` stands for the dimension of a block. A block is two-dimensional, so `blockDim.x` stands for the width
+while `blockDim.y` stands for the height.
 
 #### π2.0 GPU Support
 
@@ -220,8 +231,8 @@ which will create pods(function instances) on worker nodes.
 We support a convenient way to call a function by http trigger. You can type `kubectl trigger [funcname] -d [data]` to
 send http trigger to the specified function instances.
 
-Because the function instances are maintained by a `replicaSet`, so the http server in `Knative` will randomly choose one
-pod in the replicaSet and call it.
+Because the function instances are maintained by a `replicaSet`, so the http server in `Knative` will randomly choose
+one pod in the replicaSet and call it.
 
 Take `addFive` for example, you can type `kubectl trigger addFive -d '{"x": 100}'`, and you will get a
 response: `'{"x": 105}'`
