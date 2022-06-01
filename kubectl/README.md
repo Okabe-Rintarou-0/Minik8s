@@ -50,6 +50,7 @@
   </details>
 
 + `kubectl get rs [replicaSet name]`
+
   This command will show the status of the given replicaSet in a table.
   <details>
   <summary>Example</summary>
@@ -65,6 +66,7 @@
   </details>
 
 + `kubectl get hpa [hpa name]`
+
   This command will show the status of the given horizontal pod autoscaler in a table.
   <details>
   <summary>Example</summary>
@@ -80,6 +82,7 @@
   </details>
 
 + `kubectl get wf [workflow name]`
+
   This command will show the status of the given workflow in a table.
   <details>
   <summary>Example</summary>
@@ -93,6 +96,14 @@
   <summary>Example</summary>
   <img src="readme-images/kubectl_get_wfs.png">
   </details>
+
++ `kubectl get func [function name]`
+  
++ This command will show the status of the given function in a table.
+
++ `kubectl get funcs`
+
+  This command will show the status of all functions in a table.
 
 ## kubectl delete
 

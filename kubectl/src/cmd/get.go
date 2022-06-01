@@ -54,6 +54,10 @@ func get(cmd *cobra.Command, args []string) {
 		err = printSpecifiedWorkflow(name)
 	case "wfs":
 		err = printWorkflows()
+	case "func":
+		err = printSpecifiedFunction(name)
+	case "funcs":
+		err = printFunctions()
 	default:
 		err = fmt.Errorf("invalid api object type \"%s\", acceptable api object type is pod, service, etc", apiObjectType)
 	}

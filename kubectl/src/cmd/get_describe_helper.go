@@ -41,6 +41,15 @@ func workflowResultTbl() table.Table {
 	return tbl
 }
 
+func functionTbl() table.Table {
+	headerFmt := color.New(color.FgGreen, color.Underline).SprintfFunc()
+	columnFmt := color.New(color.FgYellow).SprintfFunc()
+
+	tbl := table.New("Name", "Instances", "CodePath")
+	tbl.WithHeaderFormatter(headerFmt).WithFirstColumnFormatter(columnFmt)
+	return tbl
+}
+
 func hpaStatusTbl() table.Table {
 	headerFmt := color.New(color.FgGreen, color.Underline).SprintfFunc()
 	columnFmt := color.New(color.FgYellow).SprintfFunc()
@@ -420,6 +429,18 @@ func getWorkflowResultsFromApiServer() (results []*entity.FunctionTriggerResult,
 	return
 }
 
+func getFunctionStatusFromApiServer(name string) (function *entity.FunctionStatus, err error) {
+	URL := url.Prefix + path.Join(url.FuncURL, name)
+	err = httputil.GetAndUnmarshal(URL, &function)
+	return
+}
+
+func getFunctionStatusesFromApiServer() (functions []*entity.FunctionStatus, err error) {
+	URL := url.Prefix + url.FuncURL
+	err = httputil.GetAndUnmarshal(URL, &functions)
+	return
+}
+
 func printSpecifiedService(name string) error {
 	service, err := getServiceFromApiServer(name)
 	if err != nil {
@@ -558,6 +579,43 @@ func printWorkflows() error {
 			finished,
 			result.Time.Format(time.RFC3339),
 			result.Error,
+		)
+	}
+	tbl.Print()
+	return nil
+}
+
+func printSpecifiedFunction(name string) error {
+	function, err := getFunctionStatusFromApiServer(name)
+	if err != nil {
+		return err
+	}
+	if function == nil {
+		return fmt.Errorf("no such function %s", name)
+	}
+
+	tbl := functionTbl()
+	tbl.AddRow(
+		function.Name,
+		function.Instances,
+		function.CodePath,
+	)
+	tbl.Print()
+	return nil
+}
+
+func printFunctions() error {
+	functions, err := getFunctionStatusesFromApiServer()
+	if err != nil {
+		return err
+	}
+
+	tbl := functionTbl()
+	for _, function := range functions {
+		tbl.AddRow(
+			function.Name,
+			function.Instances,
+			function.CodePath,
 		)
 	}
 	tbl.Print()

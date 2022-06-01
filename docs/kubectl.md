@@ -50,6 +50,7 @@
   </details>
 
 + `kubectl get rs [replicaSet name]`
+
   This command will show the status of the given replicaSet in a table.
   <details>
   <summary>Example</summary>
@@ -65,6 +66,7 @@
   </details>
 
 + `kubectl get hpa [hpa name]`
+
   This command will show the status of the given horizontal pod autoscaler in a table.
   <details>
   <summary>Example</summary>
@@ -80,6 +82,7 @@
   </details>
 
 + `kubectl get wf [workflow name]`
+
   This command will show the status of the given workflow in a table.
   <details>
   <summary>Example</summary>
@@ -93,6 +96,14 @@
   <summary>Example</summary>
   <img src="readme-images/kubectl_get_wfs.png">
   </details>
+
++ `kubectl get func [function name]`
+
++ This command will show the status of the given function in a table.
+
++ `kubectl get funcs`
+
+  This command will show the status of all functions in a table.
 
 ## kubectl delete
 
@@ -177,6 +188,10 @@ in `etcd`, thus resetting the status of the whole system.
   <img src="readme-images/kubectl_func_rm.png">
   </details>
 
++ `kubectl func update -f [function name] -p [function code path]`
+
+  This command will update a function to the `knative`.
+
 ## kubectl trigger
 
 + `kubectl trigger [function name] -d [function params json]`
@@ -214,9 +229,23 @@ in `etcd`, thus resetting the status of the whole system.
 ## kubectl label
 
 + `kubectl label nodes [node name] [label]`
-  
+
   This command can label a node with given labels.
   <details>
   <summary>Example</summary>
   <img src="readme-images/kubectl_label.png">
   </details>
+
+## kubectl cfg
+
++ `kubectl cfg sched=[schedule strategy]`
+
+  This command can dynamically change the schedule strategy.
+
+| strategy | Description                                               |
+|----------|-----------------------------------------------------------|
+| min-pods | Schedule pod to the node with minimum number of pods      | 
+| max-pods | Schedule pod to the node with maximum number of pods      | 
+| min-cpu  | Schedule pod to the node with minimum cpu utilization     | 
+| min-mem  | Schedule pod to the node with minimum memory utilization  | 
+| random   | Schedule pod to a random node                             |

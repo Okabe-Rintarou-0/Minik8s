@@ -73,6 +73,12 @@ var getTable = map[string]Handler{
 	url.DNSURLWithSpecifiedName: handlers.HandleGetDNS,
 	url.DNSURL:                  handlers.HandleGetDNSes,
 
+	// kubectl get func func_name
+	url.FuncURLWithSpecifiedName: handlers.HandleGetFunction,
+
+	// kubectl get funcs
+	url.FuncURL: handlers.HandleGetFunctions,
+
 	// get pod function pods
 	url.FuncPodsURLWithSpecifiedName: handlers.HandleGetFuncPods,
 

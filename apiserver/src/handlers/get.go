@@ -260,6 +260,42 @@ func getDNSesFromEtcd() (dnses []apiObject.Dns) {
 	return dnses
 }
 
+func getFunctionInstances(function string) int {
+	return len(getFuncPodsFromEtcd(function))
+}
+
+func getFunctionFromEtcd(name string) *entity.FunctionStatus {
+	etcdURL := path.Join(url.FuncURL, name)
+	if raw, err := etcd.Get(etcdURL); err == nil {
+		function := apiObject.Function{}
+		if err = json.Unmarshal([]byte(raw), &function); err == nil {
+			return &entity.FunctionStatus{
+				Name:      name,
+				Instances: getFunctionInstances(name),
+				CodePath:  function.Path,
+			}
+		}
+		logger.Error(err.Error())
+	}
+	return nil
+}
+
+func getFunctionsFromEtcd() (functionStatuses []*entity.FunctionStatus) {
+	etcdURL := url.FuncURL
+	raws, err := etcd.GetAll(etcdURL)
+	for _, raw := range raws {
+		function := apiObject.Function{}
+		if err = json.Unmarshal([]byte(raw), &function); err == nil {
+			functionStatuses = append(functionStatuses, &entity.FunctionStatus{
+				Name:      function.Name,
+				Instances: getFunctionInstances(function.Name),
+				CodePath:  function.Path,
+			})
+		}
+	}
+	return
+}
+
 func HandleGetNodeStatus(c *gin.Context) {
 	namespace := c.Param("namespace")
 	name := c.Param("name")
@@ -368,4 +404,13 @@ func HandleGetDNS(c *gin.Context) {
 
 func HandleGetDNSes(c *gin.Context) {
 	c.JSON(http.StatusOK, getDNSesFromEtcd())
+}
+
+func HandleGetFunction(c *gin.Context) {
+	name := c.Param("name")
+	c.JSON(http.StatusOK, getFunctionFromEtcd(name))
+}
+
+func HandleGetFunctions(c *gin.Context) {
+	c.JSON(http.StatusOK, getFunctionsFromEtcd())
 }

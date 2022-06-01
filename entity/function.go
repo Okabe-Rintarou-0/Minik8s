@@ -36,3 +36,9 @@ type FunctionTriggerResult struct {
 	Error             string
 	FinishedAll       bool
 }
+
+type FunctionStatus struct {
+	Name      string
+	Instances int
+	CodePath  string
+}
