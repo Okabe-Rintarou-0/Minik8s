@@ -11,7 +11,7 @@ import (
 	"path"
 )
 
-//var logApiServer = logger.Log("api-server watching")
+var logApiServer = logger.Log("api-server watching")
 
 func syncNodeStatus(msg *redis.Message) {
 	nodeStatus := &entity.NodeStatus{}
@@ -108,6 +108,26 @@ func syncHPAStatus(msg *redis.Message) {
 	if hpaStatusJson, err = json.Marshal(hpaStatus); err == nil {
 		etcdURL := path.Join(url.HPAURL, "status", hpaStatus.Namespace, hpaStatus.Name)
 		err = etcd.Put(etcdURL, string(hpaStatusJson))
+		if err != nil {
+			logger.Error(err.Error())
+		}
+	}
+}
+
+func syncGpuJobStatus(msg *redis.Message) {
+	gpuJobStatus := &entity.GpuJobStatus{}
+	err := json.Unmarshal([]byte(msg.Payload), gpuJobStatus)
+	if err != nil {
+		logger.Error(err.Error())
+		return
+	}
+
+	logApiServer("Received gpuJobStatus of gpu %s/%s", gpuJobStatus.Namespace, gpuJobStatus.Name)
+
+	var gpuJobStatusJson []byte
+	if gpuJobStatusJson, err = json.Marshal(gpuJobStatus); err == nil {
+		etcdURL := path.Join(url.GpuURL, "status", gpuJobStatus.Namespace, gpuJobStatus.Name)
+		err = etcd.Put(etcdURL, string(gpuJobStatusJson))
 		if err != nil {
 			logger.Error(err.Error())
 		}

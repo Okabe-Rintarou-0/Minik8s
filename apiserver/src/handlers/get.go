@@ -296,6 +296,29 @@ func getFunctionsFromEtcd() (functionStatuses []*entity.FunctionStatus) {
 	return
 }
 
+func getGpuJobFromEtcd(namespace, name string) (gpu *entity.GpuJobStatus) {
+	etcdURL := path.Join(url.GpuURL, "status", namespace, name)
+	if raw, err := etcd.Get(etcdURL); err == nil {
+		if err = json.Unmarshal([]byte(raw), &gpu); err == nil {
+			return gpu
+		}
+		logger.Error(err.Error())
+	}
+	return nil
+}
+
+func getGpuJobsFromEtcd() (gpus []*entity.GpuJobStatus) {
+	etcdURL := path.Join(url.GpuURL, "status")
+	raws, err := etcd.GetAll(etcdURL)
+	for _, raw := range raws {
+		gpu := entity.GpuJobStatus{}
+		if err = json.Unmarshal([]byte(raw), &gpu); err == nil {
+			gpus = append(gpus, &gpu)
+		}
+	}
+	return
+}
+
 func HandleGetNodeStatus(c *gin.Context) {
 	namespace := c.Param("namespace")
 	name := c.Param("name")
@@ -413,4 +436,14 @@ func HandleGetFunction(c *gin.Context) {
 
 func HandleGetFunctions(c *gin.Context) {
 	c.JSON(http.StatusOK, getFunctionsFromEtcd())
+}
+
+func HandleGetGpuJob(c *gin.Context) {
+	namespace := c.Param("namespace")
+	name := c.Param("name")
+	c.JSON(http.StatusOK, getGpuJobFromEtcd(namespace, name))
+}
+
+func HandleGetGpuJobs(c *gin.Context) {
+	c.JSON(http.StatusOK, getGpuJobsFromEtcd())
 }

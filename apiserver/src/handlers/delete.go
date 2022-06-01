@@ -82,6 +82,9 @@ func deleteSpecifiedGpuJob(namespace, name string) (gpu *apiObject.GpuJob, err e
 	log("gpu to delete is %s/%s", namespace, name)
 
 	var raw string
+
+	_ = etcd.Delete(path.Join(url.GpuURL, "status", namespace, name))
+
 	etcdURL := path.Join(url.GpuURL, namespace, name)
 	if raw, err = etcd.Get(etcdURL); err != nil {
 		return nil, err

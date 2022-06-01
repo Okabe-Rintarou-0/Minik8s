@@ -47,7 +47,7 @@ type Client interface {
 	GetAllQueueInfo() []*QueueInfo               //Sinfo
 	GetJobById(jobID string) *JobInfo            //Squeue
 	SubmitJob(scriptPath string) (string, error) //Sbatch
-	JobCompleted(jobID string) bool
+	JobCompleted(jobID string) (string, bool)
 	//Scancel() ([]byte, error)         //取消指定作业
 
 	Compile(cmd string) (string, error)
@@ -70,9 +70,12 @@ type client struct {
 	sshCli   *goph.Client
 }
 
-func (cli *client) JobCompleted(jobID string) bool {
+func (cli *client) JobCompleted(jobID string) (string, bool) {
 	job := cli.GetJobById(jobID)
-	return job != nil && job.State == "COMPLETED"
+	if job == nil {
+		return "Unknown", false
+	}
+	return job.State, job.State == "COMPLETED"
 }
 
 func (cli *client) Reconnect() {

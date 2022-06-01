@@ -79,6 +79,12 @@ var getTable = map[string]Handler{
 	// kubectl get funcs
 	url.FuncURL: handlers.HandleGetFunctions,
 
+	// kubectl get gpu gpu_job_name
+	url.GpuStatusURLWithSpecifiedName: handlers.HandleGetGpuJob,
+
+	// kubectl get gpus
+	url.GpuURL: handlers.HandleGetGpuJobs,
+
 	// get pod function pods
 	url.FuncPodsURLWithSpecifiedName: handlers.HandleGetFuncPods,
 

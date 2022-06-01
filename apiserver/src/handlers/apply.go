@@ -344,6 +344,14 @@ func HandleApplyGpuJob(c *gin.Context) {
 		return
 	}
 
+	statusJson, _ := json.Marshal(entity.GpuJobStatus{
+		Namespace:    gpu.Namespace(),
+		Name:         gpu.Name(),
+		State:        "Unknown",
+		LastSyncTime: time.Now(),
+	})
+	_ = etcd.Put(path.Join(url.GpuURL, "status", gpu.Namespace(), gpu.Name()), string(statusJson))
+
 	GpuUpdateMsg, _ := json.Marshal(entity.GpuUpdate{
 		Action: entity.CreateAction,
 		Target: gpu,

@@ -26,20 +26,20 @@ type apiServer struct {
 }
 
 func (api *apiServer) bindHandlers() {
-	for url, handler := range postTable {
-		api.httpServer.POST(url, handler)
+	for URL, handler := range postTable {
+		api.httpServer.POST(URL, handler)
 	}
 
-	for url, handler := range getTable {
-		api.httpServer.GET(url, handler)
+	for URL, handler := range getTable {
+		api.httpServer.GET(URL, handler)
 	}
 
-	for url, handler := range deleteTable {
-		api.httpServer.DELETE(url, handler)
+	for URL, handler := range deleteTable {
+		api.httpServer.DELETE(URL, handler)
 	}
 
-	for url, handler := range putTable {
-		api.httpServer.PUT(url, handler)
+	for URL, handler := range putTable {
+		api.httpServer.PUT(URL, handler)
 	}
 }
 
@@ -48,6 +48,7 @@ func (api *apiServer) watch() {
 	go listwatch.Watch(topicutil.PodStatusTopic(), syncPodStatus)
 	go listwatch.Watch(topicutil.ReplicaSetStatusTopic(), syncReplicaSetStatus)
 	go listwatch.Watch(topicutil.HPAStatusTopic(), syncHPAStatus)
+	go listwatch.Watch(topicutil.GpuJobUpdateTopic(), syncGpuJobStatus)
 }
 
 func ipInit(url, ip string, mask int) error {

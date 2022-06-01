@@ -11,9 +11,10 @@ const serviceUpdateTopic = "ServiceUpdate"
 const endpointUpdateTopic = "EndpointUpdate"
 const gpuJobUpdateTopic = "GpuJobUpdate"
 const functionUpdateTopic = "FunctionUpdate"
-const scheduleStrategyTopic = "ScheduleStrategyTopic"
-const functionTriggerTopic = "FunctionTriggerTopic"
-const workflowUpdateTopic = "WorkflowUpdateTopic"
+const scheduleStrategyTopic = "ScheduleStrategy"
+const functionTriggerTopic = "FunctionTrigger"
+const workflowUpdateTopic = "WorkflowUpdate"
+const gpuJobStatusTopic = "GpuJobStatus"
 const testTopic = "__test__"
 
 func PodUpdateTopic(hostname string) string {
@@ -74,6 +75,10 @@ func FunctionTriggerTopic() string {
 
 func ScheduleStrategyTopic() string {
 	return scheduleStrategyTopic
+}
+
+func GpuJobStatusTopic() string {
+	return gpuJobStatusTopic
 }
 
 func TestTopic() string {

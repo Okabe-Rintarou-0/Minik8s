@@ -50,6 +50,15 @@ func functionTbl() table.Table {
 	return tbl
 }
 
+func gpuJobTbl() table.Table {
+	headerFmt := color.New(color.FgGreen, color.Underline).SprintfFunc()
+	columnFmt := color.New(color.FgYellow).SprintfFunc()
+
+	tbl := table.New("Name", "State", "Last Sync Time")
+	tbl.WithHeaderFormatter(headerFmt).WithFirstColumnFormatter(columnFmt)
+	return tbl
+}
+
 func hpaStatusTbl() table.Table {
 	headerFmt := color.New(color.FgGreen, color.Underline).SprintfFunc()
 	columnFmt := color.New(color.FgYellow).SprintfFunc()
@@ -441,6 +450,19 @@ func getFunctionStatusesFromApiServer() (functions []*entity.FunctionStatus, err
 	return
 }
 
+func getGpuJobStatusFromApiServer(fullName string) (gpu *entity.GpuJobStatus, err error) {
+	namespace, name := parseName(fullName)
+	URL := url.Prefix + path.Join(url.GpuURL, namespace, name)
+	err = httputil.GetAndUnmarshal(URL, &gpu)
+	return
+}
+
+func getGpuJobStatusesFromApiServer() (gpus []*entity.GpuJobStatus, err error) {
+	URL := url.Prefix + url.GpuURL
+	err = httputil.GetAndUnmarshal(URL, &gpus)
+	return
+}
+
 func printSpecifiedService(name string) error {
 	service, err := getServiceFromApiServer(name)
 	if err != nil {
@@ -616,6 +638,43 @@ func printFunctions() error {
 			function.Name,
 			function.Instances,
 			function.CodePath,
+		)
+	}
+	tbl.Print()
+	return nil
+}
+
+func printSpecifiedGpuJob(name string) error {
+	gpu, err := getGpuJobStatusFromApiServer(name)
+	if err != nil {
+		return err
+	}
+	if gpu == nil {
+		return fmt.Errorf("no such gpu %s", name)
+	}
+
+	tbl := gpuJobTbl()
+	tbl.AddRow(
+		path.Join(gpu.Namespace, gpu.Name),
+		gpu.State,
+		gpu.LastSyncTime.Format(time.RFC3339),
+	)
+	tbl.Print()
+	return nil
+}
+
+func printGpuJobs() error {
+	gpus, err := getGpuJobStatusesFromApiServer()
+	if err != nil {
+		return err
+	}
+
+	tbl := gpuJobTbl()
+	for _, gpu := range gpus {
+		tbl.AddRow(
+			path.Join(gpu.Namespace, gpu.Name),
+			gpu.State,
+			gpu.LastSyncTime.Format(time.RFC3339),
 		)
 	}
 	tbl.Print()
