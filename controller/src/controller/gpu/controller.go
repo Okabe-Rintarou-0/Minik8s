@@ -28,7 +28,6 @@ type Controller interface {
 type controller struct{}
 
 func (c *controller) dispatchGpuJob(gpuJob *apiObject.GpuJob) {
-	log("received %+v gpu: ", gpuJob)
 	jobFullName := gpuJob.Namespace() + "/" + gpuJob.Name()
 	gpuServerCommands := []string{
 		"./gpu-server",
@@ -109,6 +108,7 @@ func (c *controller) dispatchGpuJob(gpuJob *apiObject.GpuJob) {
 }
 
 func (c *controller) deleteGpuJobPod(gpuJob *apiObject.GpuJob) {
+	log("delete gpu job pod %s/%s", gpuJob.Namespace(), gpuJob.Name())
 	namespace, name := gpuJob.Namespace(), gpuJob.Name()
 	URL := url.Prefix + path.Join(url.PodURL, namespace, name)
 	httputil.DeleteWithoutBody(URL)
@@ -119,6 +119,7 @@ func (c *controller) handleGpuJobUpdate(msg *redis.Message) {
 	if err := json.Unmarshal([]byte(msg.Payload), gpuJobUpdate); err != nil {
 		return
 	}
+	log("received gpu update: %+v", gpuJobUpdate)
 	gpuJob := gpuJobUpdate.Target
 	switch gpuJobUpdate.Action {
 	case entity.CreateAction:

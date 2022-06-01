@@ -452,7 +452,7 @@ func getFunctionStatusesFromApiServer() (functions []*entity.FunctionStatus, err
 
 func getGpuJobStatusFromApiServer(fullName string) (gpu *entity.GpuJobStatus, err error) {
 	namespace, name := parseName(fullName)
-	URL := url.Prefix + path.Join(url.GpuURL, namespace, name)
+	URL := url.Prefix + path.Join(url.GpuURL, "status", namespace, name)
 	err = httputil.GetAndUnmarshal(URL, &gpu)
 	return
 }

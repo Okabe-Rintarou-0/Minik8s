@@ -73,18 +73,22 @@ func (s *server) uploadJobStatus(jobStatus *entity.GpuJobStatus) {
 	client.Publish(ctx, topicutil.GpuJobStatusTopic(), msg)
 }
 
-func (s *server) poll() bool {
-	defer s.recover()
-	fmt.Println("Poll")
-	state, completed := s.cli.JobCompleted(s.jobID)
-	jobName := s.args.JobName
+func parseJobName(jobName string) (namespace, name string) {
 	parts := strings.Split(jobName, "/")
-	var namespace, name string
 	if len(parts) == 2 {
 		namespace, name = parts[0], parts[1]
 	} else {
 		namespace, name = "default", jobName
 	}
+	return
+}
+
+func (s *server) poll() bool {
+	defer s.recover()
+	fmt.Println("Poll")
+	state, completed := s.cli.JobCompleted(s.jobID)
+	jobName := s.args.JobName
+	namespace, name := parseJobName(jobName)
 	status := &entity.GpuJobStatus{
 		Namespace:    namespace,
 		Name:         name,
@@ -127,7 +131,7 @@ func (s *server) uploadSmallFiles(filenames []string) error {
 }
 
 func (s *server) scriptPath() string {
-	return path.Join(s.args.WorkDir, s.args.JobName+"-"+s.uid+".slurm")
+	return path.Join(s.args.WorkDir, s.uid+".slurm")
 }
 
 func (s *server) createJobScript() error {
