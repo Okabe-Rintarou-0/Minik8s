@@ -1,0 +1,40 @@
+{
+  "apiVersion": "/api/v1",
+  "kind": "Workflow",
+  "metadata": {
+    "namespace": "default",
+    "name": "print"
+  },
+  "startAt": "addString",
+  "params": {
+    "x": "Hello, ",
+    "y": "Steven Strange."
+  },
+  "nodes": {
+    "addString": {
+      "type": "Task",
+      "next": "judge"
+    },
+    "judge": {
+      "type": "Choice",
+      "choices": [
+        {
+          "variable": "ans",
+          "stringEquals": "Hello, Steven Strange.",
+          "next": "printEquals"
+        },
+        {
+          "variable": "ans",
+          "stringNotEquals": "Hello, Steven Strange.",
+          "next": "printNotEquals"
+        }
+      ]
+    },
+    "printEquals": {
+      "type": "Task"
+    },
+    "printNotEquals": {
+      "type": "Task"
+    }
+  }
+}
