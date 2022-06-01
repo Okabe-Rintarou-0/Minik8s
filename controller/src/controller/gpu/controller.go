@@ -46,7 +46,7 @@ func (c *controller) dispatchGpuJob(gpuJob *apiObject.GpuJob) {
 		fmt.Sprintf("--compile=%s", gpuJob.CompileScripts()),
 	}
 
-	podNamePrefix := jobFullName
+	podNamePrefix := gpuJob.Namespace() + "-" + gpuJob.Name()
 	pod := apiObject.Pod{
 		Base: apiObject.Base{
 			ApiVersion: "v1",
