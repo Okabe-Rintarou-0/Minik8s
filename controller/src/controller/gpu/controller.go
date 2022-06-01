@@ -13,6 +13,7 @@ import (
 	"minik8s/util/logger"
 	"minik8s/util/topicutil"
 	"minik8s/util/uidutil"
+	"path"
 )
 
 var log = logger.Log("Gpu")
@@ -27,12 +28,7 @@ type Controller interface {
 
 type controller struct{}
 
-func (c *controller) dispatchGpuJob(msg *redis.Message) {
-	gpuJobUpdate := &entity.GpuUpdate{}
-	if err := json.Unmarshal([]byte(msg.Payload), gpuJobUpdate); err != nil {
-		return
-	}
-	gpuJob := gpuJobUpdate.Target
+func (c *controller) dispatchGpuJob(gpuJob *apiObject.GpuJob) {
 	log("received %+v gpu: ", gpuJob)
 	jobFullName := "Gpu" + "-" + gpuJob.Namespace() + "-" + gpuJob.Name() + "-" + uidutil.New()
 	gpuServerCommands := []string{
@@ -113,8 +109,28 @@ func (c *controller) dispatchGpuJob(msg *redis.Message) {
 	}
 }
 
+func (c *controller) deleteGpuJobPod(gpuJob *apiObject.GpuJob) {
+	namespace, name := gpuJob.Namespace(), gpuJob.Name()
+	URL := url.Prefix + path.Join(url.PodURL, namespace, name)
+	httputil.DeleteWithoutBody(URL)
+}
+
+func (c *controller) handleGpuJobUpdate(msg *redis.Message) {
+	gpuJobUpdate := &entity.GpuUpdate{}
+	if err := json.Unmarshal([]byte(msg.Payload), gpuJobUpdate); err != nil {
+		return
+	}
+	gpuJob := gpuJobUpdate.Target
+	switch gpuJobUpdate.Action {
+	case entity.CreateAction:
+		c.dispatchGpuJob(&gpuJob)
+	case entity.DeleteAction:
+		c.deleteGpuJobPod(&gpuJob)
+	}
+}
+
 func (c *controller) Run() {
-	listwatch.Watch(topicutil.GpuJobUpdateTopic(), c.dispatchGpuJob)
+	listwatch.Watch(topicutil.GpuJobUpdateTopic(), c.handleGpuJobUpdate)
 }
 
 func NewController() Controller {
