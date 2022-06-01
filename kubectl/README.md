@@ -21,7 +21,7 @@
 
   <details>
   <summary>Example</summary>
-  <img src="readme-images/kubectl_get_pod.png">
+  <img src="readme-images/kubectl_get_pod.png" alt="">
   </details>
 
 + `kubectl get pods`
@@ -30,7 +30,7 @@
 
   <details>
   <summary>Example</summary>
-  <img src="readme-images/kubectl_get_pods.png">
+  <img src="readme-images/kubectl_get_pods.png" alt="">
   </details>
 
 + `kubectl get node [node name]`
@@ -38,7 +38,7 @@
   This command will show the status of the given node in a table.
   <details>
   <summary>Example</summary>
-  <img src="readme-images/kubectl_get_node.png">
+  <img src="readme-images/kubectl_get_node.png" alt="">
   </details>
 
 + `kubectl get nodes`
@@ -46,7 +46,7 @@
   This command will show the status of all nodes(in all namespaces) in a table.
   <details>
   <summary>Example</summary>
-  <img src="readme-images/kubectl_get_nodes.png">
+  <img src="readme-images/kubectl_get_nodes.png" alt="">
   </details>
 
 + `kubectl get rs [replicaSet name]`
@@ -54,7 +54,7 @@
   This command will show the status of the given replicaSet in a table.
   <details>
   <summary>Example</summary>
-  <img src="readme-images/kubectl_get_rs.png">
+  <img src="readme-images/kubectl_get_rs.png" alt="">
   </details>
 
 + `kubectl get rss`
@@ -62,7 +62,7 @@
   This command will show the status of all replicaSets(in all namespaces) in a table.
   <details>
   <summary>Example</summary>
-  <img src="readme-images/kubectl_get_rss.png">
+  <img src="readme-images/kubectl_get_rss.png" alt="">
   </details>
 
 + `kubectl get hpa [hpa name]`
@@ -70,7 +70,7 @@
   This command will show the status of the given horizontal pod autoscaler in a table.
   <details>
   <summary>Example</summary>
-  <img src="readme-images/kubectl_get_hpa.png">
+  <img src="readme-images/kubectl_get_hpa.png" alt="">
   </details>
 
 + `kubectl get hpas`
@@ -78,7 +78,7 @@
   This command will show the status of all horizontal pod autoscalers(in all namespaces) in a table.
   <details>
   <summary>Example</summary>
-  <img src="readme-images/kubectl_get_hpas.png">
+  <img src="readme-images/kubectl_get_hpas.png" alt="">
   </details>
 
 + `kubectl get wf [workflow name]`
@@ -86,7 +86,7 @@
   This command will show the status of the given workflow in a table.
   <details>
   <summary>Example</summary>
-  <img src="readme-images/kubectl_get_wf.png">
+  <img src="readme-images/kubectl_get_wf.png" alt="">
   </details>
 
 + `kubectl get wfs`
@@ -94,23 +94,46 @@
   This command will show the status of all workflows(in all namespaces) in a table.
   <details>
   <summary>Example</summary>
-  <img src="readme-images/kubectl_get_wfs.png">
+  <img src="readme-images/kubectl_get_wfs.png" alt="">
   </details>
 
 + `kubectl get func [function name]`
   
-+ This command will show the status of the given function in a table.
-
+  This command will show the status of the given function in a table.
+  <details>
+  <summary>Example</summary>
+  <img src="readme-images/kubectl_get_func.png" alt="">
+  </details>
+  
 + `kubectl get funcs`
 
   This command will show the status of all functions in a table.
+  <details>
+  <summary>Example</summary>
+  <img src="readme-images/kubectl_get_funcs.png" alt="">
+  </details>
+  
++ `kubectl get gpu [gpu job name]`
 
+  This command will show the status of the given gpu job in a table.
+  <details>
+  <summary>Example</summary>
+  <img src="readme-images/kubectl_get_gpu.png" alt="">
+  </details>
+
++ `kubectl get gpus`
+
+  This command will show the status of all gpu jobs in a table.
+  <details>
+  <summary>Example</summary>
+  <img src="readme-images/kubectl_get_gpus.png" alt="">
+  </details>
 ## kubectl delete
 
 + `kubectl delete [api object type] [name]`
   <details>
   <summary>Example</summary>
-  <img src="readme-images/kubectl_delete.png">
+  <img src="readme-images/kubectl_delete.png" alt="">
   </details>
 
 ## kubectl autoscale
@@ -134,7 +157,7 @@ You can also create a hpa in a declarative way: `kubectl apply -f hpa.yaml`.
 We recommend you to use `kubectl autoscale` command, for it is more obvious.
   <details>
   <summary>Example</summary>
-  <img src="readme-images/kubectl_autoscale.png">
+  <img src="readme-images/kubectl_autoscale.png" alt="">
   </details>
 
 ## kubectl reset
@@ -156,13 +179,13 @@ in `etcd`, thus resetting the status of the whole system.
   If you don't use any flags, this command will list the files, just like `ls` command.
   <details>
   <summary>List files example</summary>
-  <img src="readme-images/kubectl_gpu_ls.png">
+  <img src="readme-images/kubectl_gpu_ls.png" alt="">
   </details>
 
   <details>
   <summary>Download files example</summary>
   <p>You can see that the file <code>matrix-op.out</code> has been successfully downloaded to the current directory.</p>
-  <img src="readme-images/kubectl_gpu_download.png">
+  <img src="readme-images/kubectl_gpu_download.png" alt="">
   </details>
 
 ## kubectl func
@@ -177,7 +200,7 @@ in `etcd`, thus resetting the status of the whole system.
 
   <details>
   <summary>Example</summary>
-  <img src="readme-images/kubectl_func_add.png">
+  <img src="readme-images/kubectl_func_add.png" alt="">
   </details>
 
 + `kubectl func rm -f [function name]`
@@ -185,7 +208,7 @@ in `etcd`, thus resetting the status of the whole system.
   This command will remove the function and its instances(pods and replicaSet).
   <details>
   <summary>Example</summary>
-  <img src="readme-images/kubectl_func_rm.png">
+  <img src="readme-images/kubectl_func_rm.png" alt="">
   </details>
 
 + `kubectl func update -f [function name] -p [function code path]`
@@ -202,7 +225,7 @@ in `etcd`, thus resetting the status of the whole system.
 
   <details>
   <summary>Example</summary>
-  <img src="readme-images/kubectl_trigger.png">
+  <img src="readme-images/kubectl_trigger.png" alt="">
   </details>
 
 ## kubectl wf
@@ -215,7 +238,7 @@ in `etcd`, thus resetting the status of the whole system.
 
   <details>
   <summary>Example</summary>
-  <img src="readme-images/kubectl_trigger.png">
+  <img src="readme-images/kubectl_trigger.png" alt="">
   </details>
 
 + `kubectl wf rm [workflow name]`
@@ -223,7 +246,7 @@ in `etcd`, thus resetting the status of the whole system.
   This command will remove the specified workflow.
   <details>
   <summary>Example</summary>
-  <img src="readme-images/kubectl_wf_rm.png">
+  <img src="readme-images/kubectl_wf_rm.png" alt="">
   </details>
 
 ## kubectl label
@@ -233,7 +256,7 @@ in `etcd`, thus resetting the status of the whole system.
   This command can label a node with given labels.
   <details>
   <summary>Example</summary>
-  <img src="readme-images/kubectl_label.png">
+  <img src="readme-images/kubectl_label.png" alt="">
   </details>
 
 ## kubectl cfg

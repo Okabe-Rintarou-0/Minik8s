@@ -119,7 +119,7 @@ func (c *controller) handleGpuJobUpdate(msg *redis.Message) {
 	if err := json.Unmarshal([]byte(msg.Payload), gpuJobUpdate); err != nil {
 		return
 	}
-	log("received gpu update: %+v", gpuJobUpdate)
+	log("received gpu %s update: %+v", gpuJobUpdate.Action.String(), gpuJobUpdate)
 	gpuJob := gpuJobUpdate.Target
 	switch gpuJobUpdate.Action {
 	case entity.CreateAction:
