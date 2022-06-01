@@ -190,17 +190,17 @@ __global__ void f() {}
 ```
 
 Then you can call it by:
-```
+```c
 f <<<blockDim, threadDim>>>();
 ```
 The types of both `blockDim` and `threadDim` are `Dim3`. You can define a variable of type `Dim3` by:
-```
+```c
 Dim3 var(x, y)
 ```
 You only need specify the first two dimension, for the third dimension is always 1.
 
 For matrix addition:
-```
+```c
 __global__ void matrix_add(int **A, int **B, int **C) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     int j = blockIdx.y * blockDim.y + threadIdx.y;
