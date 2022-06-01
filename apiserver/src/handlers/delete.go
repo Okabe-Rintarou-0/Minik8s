@@ -180,10 +180,18 @@ func HandleDeleteGpuJob(c *gin.Context) {
 	namespace := c.Param("namespace")
 	name := c.Param("name")
 
-	if _, err := deleteSpecifiedGpuJob(namespace, name); err != nil {
+	gpu, err := deleteSpecifiedGpuJob(namespace, name)
+	if err != nil {
 		c.String(http.StatusOK, err.Error())
 		return
 	}
+
+	msg, _ := json.Marshal(entity.GpuUpdate{
+		Action: entity.DeleteAction,
+		Target: *gpu,
+	})
+	listwatch.Publish(topicutil.GpuJobUpdateTopic(), msg)
+
 	c.String(http.StatusOK, "ok")
 }
 

@@ -48,7 +48,7 @@ func (api *apiServer) watch() {
 	go listwatch.Watch(topicutil.PodStatusTopic(), syncPodStatus)
 	go listwatch.Watch(topicutil.ReplicaSetStatusTopic(), syncReplicaSetStatus)
 	go listwatch.Watch(topicutil.HPAStatusTopic(), syncHPAStatus)
-	go listwatch.Watch(topicutil.GpuJobUpdateTopic(), syncGpuJobStatus)
+	go listwatch.Watch(topicutil.GpuJobStatusTopic(), syncGpuJobStatus)
 }
 
 func ipInit(url, ip string, mask int) error {
