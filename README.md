@@ -168,8 +168,8 @@ Each block in `cuda grid` is corresponding to an area in a matrix. We can map a 
 matrix.
 
 ```c
-int i = blockIdx.y * blockDim.y + threadIdx.y;
-int j = blockIdx.x * blockDim.x + threadIdx.x;
+int i = blockIdx.x * blockDim.x + threadIdx.x;
+int j = blockIdx.y * blockDim.y + threadIdx.y;
 ```
 
 ![cuda grid](readme-images/cuda.png)
@@ -199,7 +199,23 @@ Dim3 var(x, y)
 ```
 You only need specify the first two dimension, for the third dimension is always 1.
 
+For matrix addition:
+```
+__global__ void matrix_add(int **A, int **B, int **C) {
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    int j = blockIdx.y * blockDim.y + threadIdx.y;
+    C[i][j] = A[i][j] + B[i][j];
+}
+```
 
+For matrix multiplication:
+```c
+__global__ void matrix_multiply(int **A, int **B, int **C) {
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    int j = blockIdx.y * blockDim.y + threadIdx.y;
+    C[i][j] += A[i][j] * B[j][i];
+}
+```
 #### π2.0 GPU Support
 
 See:
