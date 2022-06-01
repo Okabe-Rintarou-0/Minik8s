@@ -12,7 +12,6 @@ import (
 	"minik8s/util/httputil"
 	"minik8s/util/logger"
 	"minik8s/util/topicutil"
-	"minik8s/util/uidutil"
 	"path"
 )
 
@@ -30,7 +29,7 @@ type controller struct{}
 
 func (c *controller) dispatchGpuJob(gpuJob *apiObject.GpuJob) {
 	log("received %+v gpu: ", gpuJob)
-	jobFullName := "Gpu" + "-" + gpuJob.Namespace() + "-" + gpuJob.Name() + "-" + uidutil.New()
+	jobFullName := gpuJob.Namespace() + "/" + gpuJob.Name()
 	gpuServerCommands := []string{
 		"./gpu-server",
 		fmt.Sprintf("--job-name=%s", jobFullName),

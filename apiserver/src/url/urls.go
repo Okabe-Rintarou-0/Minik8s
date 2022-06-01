@@ -44,9 +44,10 @@ const (
 	DNSURL                  = "/api/v1/dns/"
 	DNSURLWithSpecifiedName = "/api/v1/dns/:namespace/:name"
 
-	EndpointURL             = "/endpoint/"
-	GpuURL                  = "/api/v1/gpu/"
-	GpuURLWithSpecifiedName = "/api/v1/gpu/:namespace/:name"
+	EndpointURL                   = "/endpoint/"
+	GpuURL                        = "/api/v1/gpu/"
+	GpuURLWithSpecifiedName       = "/api/v1/gpu/:namespace/:name"
+	GpuStatusURLWithSpecifiedName = "/api/v1/gpu/status/:namespace/:name"
 
 	FuncURL                      = "/api/v1/func/"
 	FuncURLWithSpecifiedName     = "/api/v1/func/:name"

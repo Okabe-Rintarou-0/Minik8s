@@ -1,13 +1,18 @@
 package gpu
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
+	"github.com/go-redis/redis/v8"
 	"io/fs"
 	"io/ioutil"
 	"minik8s/apiObject/types"
+	"minik8s/entity"
 	"minik8s/gpu/src/ssh"
 	"minik8s/util/logger"
 	"minik8s/util/recoverutil"
+	"minik8s/util/topicutil"
 	"minik8s/util/uidutil"
 	"minik8s/util/wait"
 	"os"
@@ -32,8 +37,17 @@ type JobArgs struct {
 	Password        string
 }
 
-const pollPeriod = time.Minute * 5
+const pollPeriod = time.Minute * 1
 const DefaultJobURL = "./usr/local/jobs"
+
+var (
+	client = redis.NewClient(&redis.Options{
+		Addr:     "10.119.11.101:6379",
+		Password: "",
+		DB:       0,
+	})
+	ctx = context.Background()
+)
 
 type Server interface {
 	Run()
@@ -54,10 +68,32 @@ func (s *server) recover() {
 	}
 }
 
+func (s *server) uploadJobStatus(jobStatus *entity.GpuJobStatus) {
+	msg, _ := json.Marshal(jobStatus)
+	client.Publish(ctx, topicutil.GpuJobStatusTopic(), msg)
+}
+
 func (s *server) poll() bool {
 	defer s.recover()
-	fmt.Println("Roll")
-	return !s.cli.JobCompleted(s.jobID)
+	fmt.Println("Poll")
+	state, completed := s.cli.JobCompleted(s.jobID)
+	jobName := s.args.JobName
+	parts := strings.Split(jobName, "/")
+	var namespace, name string
+	if len(parts) == 2 {
+		namespace, name = parts[0], parts[1]
+	} else {
+		namespace, name = "default", jobName
+	}
+	status := &entity.GpuJobStatus{
+		Namespace:    namespace,
+		Name:         name,
+		State:        state,
+		LastSyncTime: time.Now(),
+	}
+	s.uploadJobStatus(status)
+	fmt.Printf("Upload status: %+v\n", status)
+	return !completed
 }
 
 func (s *server) getCudaFiles() []string {
@@ -173,7 +209,7 @@ func (s *server) downloadResult() {
 }
 
 func (s *server) Run() {
-	defer s.cli.RmDir(s.args.WorkDir)
+	_, _ = s.cli.RmDir(s.args.WorkDir)
 	if err := s.prepare(); err != nil {
 		logger.Error("prepare: " + err.Error())
 		return
