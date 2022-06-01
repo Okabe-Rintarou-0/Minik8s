@@ -179,6 +179,27 @@ int j = blockIdx.x * blockDim.x + threadIdx.x;
 `blockDim` stands for the dimension of a block. A block is two-dimensional, so `blockDim.x` stands for the width
 while `blockDim.y` stands for the height.
 
+`threadIdx` stands for the coordinate of a thread inside a block. Similar to `blockIdx`.
+
+Because `gpu` is a `device` and it does not share memory with `cpu`. Special functions should be used to do memory
+operations in `gpu`. 
+
+Keyword `__global__` can be used to define a function that will be called in `gpu`. If you have defined a function f:
+```c
+__global__ void f() {}
+```
+
+Then you can call it by:
+```
+f <<<blockDim, threadDim>>>();
+```
+The types of both `blockDim` and `threadDim` are `Dim3`. You can define a variable of type `Dim3` by:
+```
+Dim3 var(x, y)
+```
+You only need specify the first two dimension, for the third dimension is always 1.
+
+
 #### π2.0 GPU Support
 
 See:

@@ -16,8 +16,8 @@ static void HandleError(cudaError_t err,const char *file, int line) {
 
 // Matrix multiply: C = A * B
 __global__ void matrix_multiply(int **A, int **B, int **C) {
-    int i = blockIdx.y * blockDim.y + threadIdx.y;
-    int j = blockIdx.x * blockDim.x + threadIdx.x;
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    int j = blockIdx.y * blockDim.y + threadIdx.y;
     C[i][j] += A[i][j] * B[j][i];
 }
 
