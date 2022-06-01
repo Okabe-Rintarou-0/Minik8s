@@ -2,7 +2,7 @@
 
 [Weave Net](https://www.weave.works/) can be used as a Docker plugin. A Docker network named `weave` is created by `weave launch`, which can be visible in the whole cluster. Under the Weave Net, containers can be allocated its `ClusterIP` in the cluster.
 
-### How Minik8s allocate ClusterIP to Pods
+### How Minik8s allocates ClusterIP to Pods
 
 - Run `weave launch <master_node_ip>` to start Weave Net and join master's Weave Net.
 - Run `weave attach <subnet_ip> <container_id>` to allocate an IP in the subnet to specific container. Thanks to the `pause` container, we just need to allocate an IP to the `pause` container and then the whole `Pod` can be visited in the corresponding subnet in the cluster. For example, `weave attach 10.44.0.20/16 pod1_pause`. Then `pod1` can be visited through `10.44.0.20` in `10.44.0.0/16` in the cluster.
@@ -30,12 +30,12 @@
 
 [CoreDNS](https://coredns.io/manual/toc/)  is a DNS server, which can be configured through its `Corefile`.
 
-### How Minik8s maps paths to Services and allocate domain name
+### How Minik8s maps paths to Services and allocates domain name
 
 - During initialization of Minik8s, Minik8s will redirect the nameserver of host machines and containers to CoreDNS through configuring `/etc/resolv.conf` and `/etc/docker/daemon.json`.
 - Minik8s use `nginx` containers to map paths to Services. For a `DNS` object, minik8s will start an `nginx` container, allocate an IP, and then configure the `nginx.conf` file to map each path to the corresponding `Service` ports. Then Minik8s will add a name-IP(the `nginx` container IP) mapping to CoreDNS.
 
-### How Pods or users visit DNS objects in the cluster
+### How Pods or users visit Service through its domain name in the cluster
 
 - `Pod`s and users in the cluster will ask nameserver for name-IP mapping, and then visit the corresponding `nginx` container. `nginx` container will redirect the path request to `ServiceIp:ServicePort` to visit `Service`.
 
