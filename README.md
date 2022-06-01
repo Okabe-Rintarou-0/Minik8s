@@ -162,6 +162,12 @@ Users can then browse and download the results of jobs using `nginx-fileserver`.
 
 ![](./readme-images/gpu-pod-struct.svg)
 
+#### Cuda
+
+Each block in `cuda grid` is corresponding to an area in a matrix. 
+
+![cuda grid](readme-images/cuda.png)
+
 #### π2.0 GPU Support
 
 See:
