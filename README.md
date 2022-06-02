@@ -65,8 +65,8 @@ storing them in a cache. It will periodically do full synchronization with `api-
 with the whole system.
 
 `Pleg manager` is responsible for monitoring the statuses of pods and creating corresponding `ple`(namely **Pod Life
-Event**). The statuses come from cache maintained by `status manager`, and `ple` will be pushed into a channel called
-`plegCh`. Then `ple` will be received by `pod worker manager` and it will create corresponding pod work and dispatch it 
+Event**). The statuses come from the cache maintained by `status manager`. And a `ple` will be pushed into a channel called
+`plegCh`. Then the `ple` will be received by `pod worker manager` and it will create corresponding pod work and dispatch it 
 to a worker.
 #### Core: How to create a pod
 
