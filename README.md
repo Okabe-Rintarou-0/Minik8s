@@ -102,18 +102,18 @@ Here is a part of code about creating a common container. Please pay attention t
 
 ```go
 return &container.ContainerCreateConfig{
-Image:       c.Image,
-Entrypoint:  c.Command,
-Cmd:         c.Args,
-Env:         rm.toFormattedEnv(c.Env),
-Volumes:     nil,
-Labels:      labels,
-Tty:         c.TTY,
-NetworkMode: container.NetworkMode(pauseContainerRef),
-IpcMode:     container.IpcMode(pauseContainerRef),
-PidMode:     container.PidMode(pauseContainerRef),
-Binds:       rm.toVolumeBinds(pod, c),
-VolumesFrom: []string{pauseContainerFullName},
+  Image:       c.Image,
+  Entrypoint:  c.Command,
+  Cmd:         c.Args,
+  Env:         rm.toFormattedEnv(c.Env),
+  Volumes:     nil,
+  Labels:      labels,
+  Tty:         c.TTY,
+  NetworkMode: container.NetworkMode(pauseContainerRef),
+  IpcMode:     container.IpcMode(pauseContainerRef),
+  PidMode:     container.PidMode(pauseContainerRef),
+  Binds:       rm.toVolumeBinds(pod, c),
+  VolumesFrom: []string{pauseContainerFullName},
 }
 ```
 
