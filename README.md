@@ -50,7 +50,72 @@ The structure of `kubelet` in `minik8s` is similar to k8s, but it's greatly simp
 
 Start an infra container first(default image is `registry.aliyuncs.com/google_containers/pause:3.6`). The infra
 container provides network namespace and volumes for all the other containers. So they can communicate with each other
-through `localhost` and share same volumes.
+through `localhost` and share same volumes. The infra container is responsible for creating the `port bindings`
+and `volume mounting`.
+
+Here is an example of pod:
+<details>
+<summary>pod.yaml</summary>
+<pre><code>apiVersion: v1
+kind: Pod
+metadata:
+  name: pod
+  namespace: default
+  labels:
+    app: myApp
+spec:
+  restartPolicy: Always
+  containers:
+    - name: viewer
+      image: dplsming/nginx-fileserver:1.0
+      ports:
+        - containerPort: 80
+      volumeMounts:
+        - name: volume
+          mountPath: /usr/share/nginx/html/files
+    - name: downloader
+      image: dplsming/aria2ng-downloader:1.0
+      ports:
+        - containerPort: 6800
+        - containerPort: 6880
+      volumeMounts:
+        - name: volume
+          mountPath: /data
+  volumes:
+    - name: volume
+      hostPath:
+        path: /pod</code>
+</pre>
+</details>
+
+The pod contains two container, one for downloading, another for browsing downloaded files. Notice that they need to
+expose ports `80`, `6800` and `6880`(In our design, if you only specify the `containerPort`, the container will choose
+random available port for binding). The infra container will be responsible for the port bindings(the two containers
+should do nothing about port bindings, because it's all done by the infra container).
+
+Both containers need a volume called `volume`, so the infra container will create mount volume for them.
+
+All these two containers need to do is to join the namespaces created by the infra container.
+
+Here is a part of code about creating a common container. Please pay attention to the `NetworkMode`, `IpcMode`
+, `PidMode` and `VolumesFrom` field.
+
+```go
+return &container.ContainerCreateConfig{
+  Image:       c.Image,
+  Entrypoint:  c.Command,
+  Cmd:         c.Args,
+  Env:         rm.toFormattedEnv(c.Env),
+  Volumes:     nil,
+  Labels:      labels,
+  Tty:         c.TTY,
+  NetworkMode: container.NetworkMode(pauseContainerRef),
+  IpcMode:     container.IpcMode(pauseContainerRef),
+  PidMode:     container.PidMode(pauseContainerRef),
+  Binds:       rm.toVolumeBinds(pod, c),
+  VolumesFrom: []string{pauseContainerFullName},
+}
+```
 
 #### How to allocate unique IP for pods
 
@@ -129,11 +194,36 @@ periodically do full synchronization with `api-server`, in order to stay consist
 
 ![Autoscaler](./readme-images/autoscaler_structure.svg)
 
+`replicaSet controller` can fetch the statuses of running pods, and dynamically keep the number of pods consistent with
+given `replicas`. Once the number of pods is inconsistent with `replicas`, the controller will create/delete pods
+through apis provided by `api-server`.
+
+Notice that all these jobs is done by a worker. Once a `replicaSet` was created, the controller will create a
+corresponding worker to monitor the number of pods, through a synchronization loop.
+
+For `hpa`, there is also a controller. Once a `hpa` is created, it will also create a corresponding worker. Likewise,
+the worker will monitor given metrics(we support `cpu utilization` and `gpu utilization` now).
+
+Take `cpu utilization` for example, `hpa worker` will monitor the status of a given `replicaSet`, which contains the cpu
+and memory utilization. The worker will compare the `cpu utilization` to the benchmark specified by user.
+If `cpu utilization` of the replicaSet is higher than the benchmark, it will dynamically increase the `replicas` of the
+replicaSet. Therefore, the corresponding replicaSet worker can create more pods to balance the workload.
+
+We reuse the implementation of `replicaSet`, making its `replicas` **mutable**. We can dynamically change it through
+apis provided by `api-server`. You can see that we also reuse this feature in `workflow`.
+
 #### Visualization
 
 The pod resources monitor is based on `cAdvisor`, `Prometheus` and `Grafana`.
 
 <img src="./readme-images/autoscaler_visualization.svg" alt="Autoscaler 5" style="zoom:50%;" />
+
+All the worker nodes will start a `cAdvisor` container, which will continuously collect the status of docker containers.
+`cAdvisor` is based on `docker stats`, and can expose metrics which can be used by `Prometheus`.
+
+`Prometheus` can collect all metrics produced by `cAdvisor` and exposed them to `Grafana`.
+
+`Grafana` can visualize the metrics in customized dashboard.
 
 We recommend you to use grafana dashboard with UID `11277` and `893`.
 
@@ -182,24 +272,30 @@ while `blockDim.y` stands for the height.
 `threadIdx` stands for the coordinate of a thread inside a block. Similar to `blockIdx`.
 
 Because `gpu` is a `device` and it does not share memory with `cpu`. Special functions should be used to do memory
-operations in `gpu`. 
+operations in `gpu`.
 
 Keyword `__global__` can be used to define a function that will be called in `gpu`. If you have defined a function f:
+
 ```c
 __global__ void f() {}
 ```
 
 Then you can call it by:
+
 ```c
 f <<<blockDim, threadDim>>>();
 ```
+
 The types of both `blockDim` and `threadDim` are `Dim3`. You can define a variable of type `Dim3` by:
+
 ```c
 Dim3 var(x, y)
 ```
+
 You only need specify the first two dimension, for the third dimension is always 1.
 
 For matrix addition:
+
 ```c
 __global__ void matrix_add(int **A, int **B, int **C) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
@@ -209,6 +305,7 @@ __global__ void matrix_add(int **A, int **B, int **C) {
 ```
 
 For matrix multiplication:
+
 ```c
 __global__ void matrix_multiply(int **A, int **B, int **C) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
@@ -220,6 +317,7 @@ __global__ void matrix_multiply(int **A, int **B, int **C) {
     C[i][j] = value;
 }
 ```
+
 #### π2.0 GPU Support
 
 See:
