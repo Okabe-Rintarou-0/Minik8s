@@ -46,6 +46,28 @@ The structure of `kubelet` in `minik8s` is similar to k8s, but it's greatly simp
 
 ![Our kubelet](./readme-images/kubelet.svg)
 
+#### Control flow
+
+A pod will be created in many cases, manually using `kubectl` command, `replicaSet` maintaining `replicas`,
+creating `function` instance, etc. All of them will call apis provided by `api-server`. `Api-server` will handle created
+pods by publishing a `update message`(of type `entity.PodUpdate`) to a topic.
+
+On the other side, `kubelet` will be watching on the topic and receive the message from `api-server`.
+The message will then be passed to `pod worker manager`. It will create corresponding `pod work` and dispatch it to
+a worker. 
+
+The worker can interact with docker through methods provided by `runtime manager`. `Runtime manager` is responsible for 
+interacting with docker through docker client. It exposes apis for creating/deleting a pod, 
+creating/deleting a container, pulling images, etc.
+
+`Status manager` is responsible for fetching the status of pods through apis provided by `runtime manager`, and 
+storing them in a cache. It will periodically do full synchronization with `api-server` to keep the cache consistent
+with the whole system.
+
+`Pleg manager` is responsible for monitoring the statuses of pods and creating corresponding `ple`(namely **Pod Life
+Event**). The statuses come from cache maintained by `status manager`, and `ple` will be pushed into a channel called
+`plegCh`. Then `ple` will be received by `pod worker manager` and it will create corresponding pod work and dispatch it 
+to a worker.
 #### Core: How to create a pod
 
 Start an infra container first(default image is `registry.aliyuncs.com/google_containers/pause:3.6`). The infra
@@ -167,6 +189,9 @@ more info about this command, see the README.md of `kubectl`.
 `Api-server` is the center of `minik8s`. It should expose REST apis for other components of the control plane. For fast
 development, we adopted a mature framework: `gin`
 
+`Api-server` behaves like an agency, or facade. It provides enough apis for operating the system and is responsible for 
+interacting with `etcd`. 
+
 ### Proxy
 
 `Proxy` is responsible for allocating virtual service IP, which is unique and visible in the whole cluster. `Proxy` will
@@ -194,7 +219,7 @@ periodically do full synchronization with `api-server`, in order to stay consist
 
 ![Autoscaler](./readme-images/autoscaler_structure.svg)
 
-`replicaSet controller` can fetch the statuses of running pods, and dynamically keep the number of pods consistent with
+`replicaSet controller` can fetch the status of running pods, and dynamically keep the number of pods consistent with
 given `replicas`. Once the number of pods is inconsistent with `replicas`, the controller will create/delete pods
 through apis provided by `api-server`.
 
