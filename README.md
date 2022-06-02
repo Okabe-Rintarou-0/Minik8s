@@ -210,7 +210,7 @@ If `cpu utilization` of the replicaSet is higher than the benchmark, it will dyn
 replicaSet. Therefore, the corresponding replicaSet worker can create more pods to balance the workload.
 
 We reuse the implementation of `replicaSet`, making its `replicas` **mutable**. We can dynamically change it through
-apis provided by `api-server`. You can see that we also reuse this feature in [workflow](#workflow)
+apis provided by `api-server`. You can see that we also reuse this feature in [function](#function-registration).
 
 #### Visualization
 
