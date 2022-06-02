@@ -88,12 +88,12 @@ spec:
 </pre>
 </details>
 
-The pod contains two container, one for downloading, another for browsing downloaded files. Notice that they need to
-expose ports `80`, `6800` and `6880`(In our design, if you only specify the `containerPort`, the container will choose
-random available port for binding). The infra container will be responsible for the port bindings(the two containers
-should do nothing about port bindings, because it's all done by the infra container).
+The pod contains two containers. One for downloading, and another for browsing downloaded files. Notice that they need
+to expose ports `80`, `6800` and `6880`(In our design, if you only specify the `containerPort` field, the container will
+choose random available port for binding). The infra container will be responsible for the port bindings(the two
+containers should do nothing about port bindings, because it's all done by the infra container).
 
-Both containers need a volume called `volume`, so the infra container will create mount volume for them.
+Both containers need a volume called `volume`, so the infra container will mount volume for them.
 
 All these two containers need to do is to join the namespaces created by the infra container.
 
@@ -102,18 +102,18 @@ Here is a part of code about creating a common container. Please pay attention t
 
 ```go
 return &container.ContainerCreateConfig{
-  Image:       c.Image,
-  Entrypoint:  c.Command,
-  Cmd:         c.Args,
-  Env:         rm.toFormattedEnv(c.Env),
-  Volumes:     nil,
-  Labels:      labels,
-  Tty:         c.TTY,
-  NetworkMode: container.NetworkMode(pauseContainerRef),
-  IpcMode:     container.IpcMode(pauseContainerRef),
-  PidMode:     container.PidMode(pauseContainerRef),
-  Binds:       rm.toVolumeBinds(pod, c),
-  VolumesFrom: []string{pauseContainerFullName},
+Image:       c.Image,
+Entrypoint:  c.Command,
+Cmd:         c.Args,
+Env:         rm.toFormattedEnv(c.Env),
+Volumes:     nil,
+Labels:      labels,
+Tty:         c.TTY,
+NetworkMode: container.NetworkMode(pauseContainerRef),
+IpcMode:     container.IpcMode(pauseContainerRef),
+PidMode:     container.PidMode(pauseContainerRef),
+Binds:       rm.toVolumeBinds(pod, c),
+VolumesFrom: []string{pauseContainerFullName},
 }
 ```
 
