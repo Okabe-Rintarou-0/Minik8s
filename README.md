@@ -60,7 +60,7 @@ The worker can interact with docker through methods provided by `runtime manager
 interacting with docker through docker client. It exposes apis for creating/deleting a pod, 
 creating/deleting a container, pulling images, etc.
 
-`Status manager` is responsible for fetching the status of pods through apis provided by `runtime manager`, and 
+`Status manager` is responsible for fetching the statuses of pods through apis provided by `runtime manager`, and 
 storing them in a cache. It will periodically do full synchronization with `api-server` to keep the cache consistent
 with the whole system.
 
