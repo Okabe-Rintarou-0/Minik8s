@@ -36,7 +36,7 @@ int main() {
 
     int *data_A = (int *) malloc(sizeof(int) * M * N);
     int *data_B = (int *) malloc(sizeof(int) * M * N);
-    int *data_C = (int *) malloc(sizeof(int) * M * N);
+    int *data_C = (int *) malloc(sizeof(int) * M * M);
     for (int i = 0; i < M * N; i++) {
         data_A[i] = i;
         data_B[i] = i;
@@ -95,7 +95,7 @@ int main() {
     HANDLE_ERROR(cudaMemcpy((void *) dev_C, (void *) C, sizeof(int *) * M, cudaMemcpyHostToDevice));
 
     dim3 threadPerBlock(5, 5);
-    dim3 numBlocks(M / threadPerBlock.x, N / threadPerBlock.y);
+    dim3 numBlocks(M / threadPerBlock.x, M / threadPerBlock.y);
 
     matrix_multiply <<<numBlocks, threadPerBlock>>> (dev_A, dev_B, dev_C);
 
@@ -105,7 +105,7 @@ int main() {
     // print result: 
     printf("The matrix multiply result is:\n");
     for (int i = 0; i < M; i++) {
-        for (int j = 0; j < N ; j++) {
+        for (int j = 0; j < M ; j++) {
             printf("%d ", data_C[i * M + j]);
         }
         printf("\n");
