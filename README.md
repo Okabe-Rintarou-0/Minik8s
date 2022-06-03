@@ -204,6 +204,12 @@ will configure the `nginx.conf`. Users and other pods in the Weave Net can visit
 When `api-server` receives an `apply` request of `DNS`,  `api-server` will first start an `nginx` container to deal with
 the path-service mapping issue and then add the IP-name mapping to CoreDNS.
 
+### Node controller
+
+`Node controller` is responsible for monitoring node statuses. Once a node is unconnected, it will be considered as 
+`unhealthy`. If it keeps unhealthy for a certain time, it will be considered `unknown`. All the pods on such node will 
+be removed.
+
 ### Autoscaler
 
 #### Structure
