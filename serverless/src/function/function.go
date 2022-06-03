@@ -147,6 +147,7 @@ func createImage(name, funcCodePath string) error {
 			Context:    tarReader,
 			Dockerfile: dockerfile,
 			Tags:       []string{registry.RegistryHost + "/" + name},
+			NoCache:    true,
 			Remove:     true})
 	if err != nil {
 		return err
