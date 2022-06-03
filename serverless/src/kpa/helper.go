@@ -52,9 +52,10 @@ func (c *controller) createReplicaSet(apiFunc *apiObject.Function) {
 					//},
 					Containers: []apiObject.Container{
 						{
-							Name:      apiFunc.Name,
-							Image:     imageName,
-							Resources: apiObject.ContainerResources{},
+							ImagePullPolicy: apiObject.PullPolicyAlways,
+							Name:            apiFunc.Name,
+							Image:           imageName,
+							Resources:       apiObject.ContainerResources{},
 							Ports: []apiObject.ContainerPort{
 								{
 									//HostIP:        registry.RegistryHostIP,
