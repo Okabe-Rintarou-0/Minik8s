@@ -45,7 +45,7 @@ func CreateFunctionImage(name string, codePath string) error {
 	if err != nil {
 		return err
 	}
-	imageName := registry.RegistryHost + "/" + name + ":latest";
+	imageName := registry.RegistryHost + "/" + name + ":latest"
 	fmt.Printf("image create succeed %s\n", imageName)
 	return registry.PushImage(imageName)
 	//_, _ = createContainer(name, containerName, imageName)
@@ -146,7 +146,7 @@ func createImage(name, funcCodePath string) error {
 		types.ImageBuildOptions{
 			Context:    tarReader,
 			Dockerfile: dockerfile,
-			Tags:       []string{registry.RegistryHost + "/" + name},
+			Tags:       []string{registry.RegistryHost + "/" + name + ":latest"},
 			NoCache:    true,
 			Remove:     true})
 	if err != nil {
