@@ -198,9 +198,7 @@ interacting with `etcd`.
 Its core logic is quite simple, just interacts with all the other components, and is responsible for the transmission
 of data and messages. For example, if a component need to fetch something from `etcd`, it can call the REST apis provided
 by `api-server`, and `api-server` will be responsible for fetching data from `etcd`, and transmitting it to the component
-in the http responsible body. 
-
-`Api-server` behaves like a `gateway`, which does not have complex logic and pays more attention to transmission.
+in the http responsible body.
 
 ### Proxy
 
