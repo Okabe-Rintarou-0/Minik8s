@@ -139,6 +139,9 @@ return &container.ContainerCreateConfig{
 }
 ```
 
+Meanwhile, any container in the pod has a special label that contains the `UID` of the pod it belongs to, which will make
+it convenient to find the containers of a given pod.
+
 #### How to allocate unique IP for pods
 
 [Weave Net](https://www.weave.works/) can be used as a Docker plugin. A Docker network named `weave` is created
@@ -189,8 +192,15 @@ more info about this command, see the README.md of `kubectl`.
 `Api-server` is the center of `minik8s`. It should expose REST apis for other components of the control plane. For fast
 development, we adopted a mature framework: `gin`
 
-`Api-server` behaves like an agency, or facade. It provides enough apis for operating the system and is responsible for 
+`Api-server` behaves like an agency, or proxy. It provides enough apis for operating the system and is responsible for 
 interacting with `etcd`. 
+
+Its core logic is quite simple, just interacts with all the other components, and is responsible for the transmission
+of data and messages. For example, if a component need to fetch something from `etcd`, it can call the REST apis provided
+by `api-server`, and `api-server` will be responsible for fetching data from `etcd`, and transmitting it to the component
+in the http responsible body. 
+
+`Api-server` behaves like a `gateway`, which does not have complex logic and pays more attention to transmission.
 
 ### Proxy
 
@@ -227,7 +237,8 @@ periodically do full synchronization with `api-server`, in order to stay consist
 
 `replicaSet controller` can fetch the status of running pods, and dynamically keep the number of pods consistent with
 given `replicas`. Once the number of pods is inconsistent with `replicas`, the controller will create/delete pods
-through apis provided by `api-server`.
+through apis provided by `api-server`. The pods created by replicaSet have a special label that stores the `UID` of the
+replicaSet they belong to, which will make it convenient to find the pods of a given replicaSet.
 
 Notice that all these jobs is done by a worker. Once a `replicaSet` was created, the controller will create a
 corresponding worker to monitor the number of pods, through a synchronization loop.
@@ -242,6 +253,17 @@ replicaSet. Therefore, the corresponding replicaSet worker can create more pods 
 
 We reuse the implementation of `replicaSet`, making its `replicas` **mutable**. We can dynamically change it through
 apis provided by `api-server`. You can see that we also reuse this feature in [function](#function-registration).
+
+Notice that user can flexibly specify the interval of scaling by using `kubectl autoscale` command(`-i` flag). For
+example, if the specified interval is `15s`. Then the `hpa controller` will check every 15 seconds whether scaling is 
+needed. For example, if the target replicaSet should be scaled to 5, while the current replicas is 3, then the `hpa controller`
+will dynamically change the replicas of the replicaSet to 4. In this way, it can guarantee that there will be at most
+1 new pod to create every 15s.
+#### How do we collect metrics
+Take `cpu utilization` for example. The `kubelet` in a node will collect status of containers through `docker stats` 
+command. The status contains `cpu utilization`, `memory utilization` and many other useful metrics. Once we get the 
+metrics of containers, then we can get the metrics of the pod they belong to. Likewise, we can also get the metrics of 
+a replicaSet in this way.
 
 #### Visualization
 
@@ -468,6 +490,22 @@ Our implementation draws lessons from AWS. We also support `Choice` and `Task`.
 ##### Reference
 
 + [创建无服务器工作流](https://aws.amazon.com/cn/getting-started/hands-on/create-a-serverless-workflow-step-functions-lambda/)
+
+### Consistency
+
+All the states are persisted in `etcd`. If a component is crashed, when it restarts, it will recover its state to stay 
+consistent with `etcd`. 
+
+For example, if a pod is scheduled to a node, and the node crashed. When it has restarted, it will do full 
+synchronization with the states stored in `etcd`. So it will know that a pod has been scheduled to it before. It can
+then recreate the pod according to the state of the pod.
+
+In addition, we use cache in many components. The cache will do incremental synchronization by watching on certain 
+messages, and periodically do full synchronization with `etcd`. 
+
+It is `etcd` that stores the state of the whole system. As long as all components synchronize with it, the consistency
+of the whole system can be guaranteed.
+
 
 ## Tools
 
