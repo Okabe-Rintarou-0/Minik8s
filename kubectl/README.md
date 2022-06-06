@@ -128,6 +128,22 @@
   <summary>Example</summary>
   <img src="readme-images/kubectl_get_gpus.png" alt="">
   </details>
+- `kubectl get service [service name]`
+
+  This command will show the status of the given service in a table.
+
+- `kubectl get services`
+
+  This command will show the status of all services in a table.
+
+- `kubectl get dns [dns name]`
+
+  This command will show the status of the given dns in a table.
+
+- `kubectl get dnses`
+
+  This command will show the status of all dnses in a table.
+
 ## kubectl delete
 
 + `kubectl delete [api object type] [name]`
@@ -267,8 +283,8 @@ in `etcd`, thus resetting the status of the whole system.
 
 | strategy | Description                                               |
 |----------|-----------------------------------------------------------|
-| min-pods | Schedule pod to the node with minimum number of pods      | 
-| max-pods | Schedule pod to the node with maximum number of pods      | 
-| min-cpu  | Schedule pod to the node with minimum cpu utilization     | 
-| min-mem  | Schedule pod to the node with minimum memory utilization  | 
+| min-pods | Schedule pod to the node with minimum number of pods      |
+| max-pods | Schedule pod to the node with maximum number of pods      |
+| min-cpu  | Schedule pod to the node with minimum cpu utilization     |
+| min-mem  | Schedule pod to the node with minimum memory utilization  |
 | random   | Schedule pod to a random node                             |
