@@ -30,6 +30,57 @@ Group project of SE3356 Cloud Operating System Design and Practice, Spring 2022.
 </ul>
 </details>
 
+### Architecture
+The main language of our project is `golang`. The reason we chose `golang` is that the whole 
+ecosystem of `docker` and `k8s` is based on it. Also, `golang` is now a very mature language, and has 
+a good ecosystem, which means that we can use the libraries developed by others easily. What's more, it is also 
+efficient in development, thanks to its language features.
+
+For the implementation of some function, using `golang` is too heavy, so we choose to use `shell`. For example, we 
+use many shell scripts in the development of `service`. And for some tiny jobs like starting a specified container, 
+shell is more suitable.
+
+In the whole system, `listwatch` is a very important function, it's based on message publishing and message watching.
+So, we need a message middleware, and we finally chose `Redis` because it's simple enough(message middleware is not the 
+key point of the system) and we are all familiar with it.
+
+The overall architecture is similar to `k8s`. We implement `api-server`, `scheduler`, `controller-manager` in control 
+plane, `kubelet` and `kube-proxy` that are running in a node, and a command line tool `kubectl`, which provides commands
+for controlling the system and knowing about the status of it.
+
+All the components will be compiled as independent parts. The components of control plane will be running in the
+master node, while the other components like `kubelet` will be running on a certain node.
+
+We have applied for 3 cloud hosts for our project, one as both master and worker node, and the other two as worker nodes.
+
+### Node
+
+`Node` here refers to `worker node`. `Pods` will be scheduled to any suitable node.
+
+#### Node registration
+We provide two ways to register a node to the control plane. One is using `kubectl apply -f` command that will
+parse a given yaml file specifying the attributes of a node, another is registering automatically by `kubelet`.
+
+#### Node monitor
+
+`Node controller` is responsible for monitoring node statuses. The status of a node contains a field standing for the last
+time the node was synchronized with the system. And the controller will calculate the difference of current time and 
+the last synchronization time. According to the difference, the node will be marked as `Ready`, `Unhealthy`, and `Unknown`.
+
+If a node keeps `unhealthy` for a certain time, it will be considered `unknown`. All the pods on such node will
+be removed, and all the metadata of it will be removed from `etcd`. Therefore, the scheduler will no longer schedule pods
+to such node, because it won't be able to get the information of this node.
+
+#### Heartbeat
+
+To stay connected with the control plane, the `kubelet` in a node will periodically publish the status of the node, as
+a kind of heartbeat. The `controller-manager` will watch the messages and store statuses of node in its own cache. The
+`node controller` can then fetch the statuses and do its job. 
+
+Once there is a network partition and the heartbeats can not be sent to the control plane timely, the node will be 
+considered unconnected and the pods scheduled to this node will be removed in order to recycle resources and immediately
+schedule the pods to the other available nodes to keep the service working.
+
 ### Kubectl
 
 `kubectl` is a command line tool that helps user controller `minik8s`. It's similar to `kubectl` in `Kubenetes`, but
@@ -235,12 +286,6 @@ the path-service mapping issue and then add the IP-name mapping to CoreDNS.
 - `Pod`s and users in the cluster will ask nameserver for name-IP mapping, and then visit the corresponding `nginx` container. `nginx` container will redirect the path request to `ServiceIp:ServicePort` to visit `Service`.
 
 ![dns](./readme-images/dns.png)
-
-### Node controller
-
-`Node controller` is responsible for monitoring node statuses. Once a node is unconnected, it will be considered as 
-`unhealthy`. If it keeps unhealthy for a certain time, it will be considered `unknown`. All the pods on such node will 
-be removed.
 
 ### Autoscaler
 
