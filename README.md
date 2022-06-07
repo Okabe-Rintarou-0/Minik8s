@@ -529,6 +529,7 @@ see [workflow](apiObject/examples/workflow) for examples.
 Our implementation draws lessons from AWS. We also support `Choice` and `Task`.
 
 Workflow example(Graph):
+
 ![workflow](readme-images/workflow.svg)
 Workflow example(Json):
 ```json
