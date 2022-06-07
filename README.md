@@ -310,7 +310,7 @@ the path-service mapping issue and then add the IP-name mapping to CoreDNS.
 
 ![dns](./readme-images/dns.png)
 
-### Autoscaler
+### ReplicaSet & Autoscaler
 
 #### Structure
 
@@ -329,6 +329,9 @@ periodically do full synchronization with `api-server`, in order to stay consist
 given `replicas`. Once the number of pods is inconsistent with `replicas`, the controller will create/delete pods
 through apis provided by `api-server`. The pods created by replicaSet have a special label that stores the `UID` of the
 replicaSet they belong to, which will make it convenient to find the pods of a given replicaSet.
+
+In our display video, you can see that once we delete a pod maintained by the replicaSet, it will create a new one to keep
+the number of pods consistent with the specification.
 
 Notice that all these jobs is done by a worker. Once a `replicaSet` was created, the controller will create a
 corresponding worker to monitor the number of pods, through a synchronization loop.
@@ -349,6 +352,7 @@ example, if the specified interval is `15s`. Then the `hpa controller` will chec
 needed. For example, if the target replicaSet should be scaled to 5, while the current replicas is 3, then the `hpa controller`
 will dynamically change the replicas of the replicaSet to 4. In this way, it can guarantee that there will be at most
 1 new pod to create every 15s.
+
 #### How do we collect metrics
 Take `cpu utilization` for example. The `kubelet` in a node will collect status of containers through `docker stats` 
 command. The status contains `cpu utilization`, `memory utilization` and many other useful metrics. Once we get the 
@@ -376,6 +380,63 @@ Here is a good reference: [Build up Prometheus + Grafana + cAdvisor](https://blo
 
 Because all these components are running in containers, so you can't access other running component by simply
 using `localhost`(Even if they are running in `host` network mode). Please use the ip instead.
+
+#### How to create a replicaSet
+You can create a `replicaSet` in the same way as creating a `pod`. The specification is the same as `k8s`, consisting 
+of metadata, the number of replicas and the template of pod. You can see the status of the newly created
+replicaSet and the pods created by it, through `kubectl get` command.
+
+#### How to create a hpa
+We provide two ways to create a `hpa`, one is the same as creating a replicaSet, another is using command 
+`kubectl autoscale`. You can specify the minimum and maximum replicas, the target replicaSet, the metrics(`cpu utilization`
+or `memory utilization`) and the scaling interval in the yaml file or command line.
+
+Here is an example(suppose we have created a replicaSet called `rs`, and if the target replicaSet does not exist, it will raise
+an error):
++ command line: `kubectl autoscale hpa --target=rs --min=1 --max=4 -c 25 -i 10`
++ yaml file:
+
+  ```yaml
+  apiVersion: autoscaling/v1
+  kind: HorizontalPodAutoscaler
+  metadata:
+    name: hpa
+    namespace: default
+  spec:
+    minReplicas: 1
+    maxReplicas: 4
+    scaleTargetRef:
+      apiVersion: v1
+      kind: ReplicaSet # we only support replicaSet now
+      metadata:
+        name: rs
+        namespace: default
+    scaleInterval: 10
+    metrics:
+      CPUUtilizationPercentage: 25
+  ```
+You can see the status of a hpa through `kubectl get` command.
+
+#### Display
+For display, we prepare a docker image, here is its dockerfile:
+```dockerfile
+FROM alpine
+
+COPY autoscaler-testcase ./autoscaler-testcase
+
+RUN chmod +x ./autoscaler-testcase
+
+ENTRYPOINT ["./autoscaler-testcase"]
+```
+`autoscaler-testcase` is an executable file. It is written in `golang`. It runs a http server and provides apis for 
+immediately increasing/decreasing cpu utilization. So, we can increase/decrease a container's cpu utilization flexibly 
+in this way, to display the feasibility of the implementation of `hpa controller`.
+
+In our display video, you can see that once the cpu utilization of a container/pod/replicaSet increases(dramatically), 
+the replicas will be dynamically increased by `hpa controller` to balance such workload. So the job can then be passed
+from `hpa controller` to `replicaSet controller`. It is `replicaSet controller` that controls the number of pods.
+
+You can see that whether increasing or decreasing the cpu utilization, the `hpa controller` all behaves as expected.
 
 ### GPU
 
