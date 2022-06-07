@@ -11,8 +11,7 @@ Group project of SE3356 Cloud Operating System Design and Practice, Spring 2022.
 <img src="https://img.shields.io/badge/license-Apache-blue" alt="">
 <img src="https://img.shields.io/badge/go-1.16-blue" alt="">
 
-<details>
-<summary>Dependencies</summary>
+#### Dependencies
 <ul>
 <li>gin: <a href="https://github.com/gin-gonic/gin">https://github.com/gin-gonic/gin</a></li>
 <li>cobra: <a href="https://github.com/spf13/cobra">https://github.com/spf13/cobra</a></li>
@@ -28,7 +27,6 @@ Group project of SE3356 Cloud Operating System Design and Practice, Spring 2022.
 <li>testify: <a href="https://github.com/stretchr/testify">https://github.com/stretchr/testify</a></li>
 <li>go-iptables: <a href="https://github.com/coreos/go-iptables">https://github.com/coreos/go-iptables</a></li>
 </ul>
-</details>
 
 ### Architecture
 The main language of our project is `golang`. The reason we chose `golang` is that the whole 
@@ -60,6 +58,15 @@ We have applied for 3 cloud hosts for our project, one as both master and worker
 #### Node registration
 We provide two ways to register a node to the control plane. One is using `kubectl apply -f` command that will
 parse a given yaml file specifying the attributes of a node, another is registering automatically by `kubelet`.
+
+For the first method, here is an example:
+```yaml
+kind: Node
+metadata:
+  name: node
+  namespace: default
+ip: 0.0.0.0
+```
 
 #### Node monitor
 
@@ -127,9 +134,8 @@ through `localhost` and share same volumes. The infra container is responsible f
 and `volume mounting`.
 
 Here is an example of pod:
-<details>
-<summary>pod.yaml</summary>
-<pre><code>apiVersion: v1
+```yaml
+apiVersion: v1
 kind: Pod
 metadata:
   name: pod
@@ -157,9 +163,8 @@ spec:
   volumes:
     - name: volume
       hostPath:
-        path: /pod</code>
-</pre>
-</details>
+        path: /pod
+```
 
 The pod contains two containers. One for downloading, and another for browsing downloaded files. Notice that they need
 to expose ports `80`, `6800` and `6880`(In our design, if you only specify the `containerPort` field, the container will
@@ -203,6 +208,25 @@ After the `pause` container has been created, `kubelet` runs the command `weave 
 attach `ClusterIP` to the pod.
 
 To make the Weave Net visible from host, run the command `weave expose <ip>` to join the Weave Net.
+
+#### How to create a pod through control plane
+We provide `kubectl apply -f` command that can create a pod in a declarative way. You can specify the attributes of 
+a pod, like its port bindings and volumes in the yaml file. The specification of a pod is actually the same as the one 
+of `k8s`.
+
+We support any number of containers in a pod, and you can see the results after the pod was created in our display video.
+
+#### An example of shared network namespace and volumes
+
+Still take the pod in [Core: How to create a pod](#core-how-to-create-a-pod) as example, if we create a file by using 
+command `echo 123 > test.txt` in the directory `/data` in `downloader`, then this file can be seen in the directory 
+`/usr/share/nginx/html/files` in `viewer`. In addition, in `downloader`, we can download the file throw command 
+`wget localhost:80/files/test.txt`. It's all because the two containers share the same volumes and network namespace.
+They can communicate with each other throw `localhost`. You can see these effects more clearly in the display video.
+
+#### How is a pod scheduled
+For scheduling strategy, see [scheduler](#scheduler). And you can see the node a pod is scheduled to through 
+`kubectl get pod` command.
 
 #### Support & References
 
@@ -505,14 +529,11 @@ see [workflow](apiObject/examples/workflow) for examples.
 
 Our implementation draws lessons from AWS. We also support `Choice` and `Task`.
 
-<details>
-<summary>Workflow example(Graph)</summary>
-<img src="readme-images/workflow.svg"/>
-</details>
-
-<details>
-<summary>Workflow example(Json)</summary>
-<pre><code>{
+Workflow example(Graph):
+![workflow](readme-images/workflow.svg)
+Workflow example(Json):
+```json
+{
   "apiVersion": "/api/v1",
   "kind": "Workflow",
   "metadata": {
@@ -551,8 +572,7 @@ Our implementation draws lessons from AWS. We also support `Choice` and `Task`.
     }
   }
 }
-</code></pre>
-</details>
+```
 
 ##### Reference
 
