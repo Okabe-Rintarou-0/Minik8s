@@ -36,7 +36,7 @@ During the development cycle, a variety of supporting branches are used. The fol
 
 We use `Jenkins` as our CI/CD pipeline. `Jenkins` is an open-source server written in Java, for executing a chain of actions, to achieve continuous integration and continuous delivery in an automated fashion. 
 
-<img src="/Users/xtommy/Desktop/minik8s/readme-images/Jenkins.png" alt="Jenkins" style="zoom:50%;" />
+<img src="../readme-images/Jenkins.png" alt="Jenkins" style="zoom:50%;" />
 
 <img src="https://wpblog.semaphoreci.com/wp-content/uploads/2022/05/cicd-pipeline-introduction-1024x422-1.jpg" alt="img" style="zoom:45%;" />
 
@@ -44,7 +44,7 @@ In our project, the building process of Jenkins is triggered by master branch. E
 
 After all predefined tests are passed, Jenkins will deploy the new version on all nodes, which is extremely convenient.
 
-<img src="/Users/xtommy/Desktop/minik8s/readme-images/jenkins-example.png" alt="jenkins-example" style="zoom:50%;" />
+<img src="../readme-images/jenkins-example.png" alt="jenkins-example" style="zoom:50%;" />
 
 The script for Jenkins' building is in `minik8s/jenkins` directory. For further information, please log http://10.119.9.33:8080. The username and password are both `cloudos2022`. Note that you must access the website via the campus network.
 
@@ -72,7 +72,7 @@ We use **Scrum** as our software development process.  Scrum is based on Agile S
 
 Daily scrums, or daily meetings, are short meetings held at the same time each morning. In our project, we held these meetings about every four days, and we mainly discuss the implementation detail of the project and unify APIs of different parts to prevent inconsistency.
 
-<img src="../readme-images/scrum.jpeg" style="zoom:35%;" />
+<img src="../readme-images/scrum.jpeg" style="zoom:35%;"  alt=""/>
 
 ### Contribution
 
@@ -166,7 +166,7 @@ Once there is a network partition and the heartbeats can not be sent to the cont
 
 <img src="../readme-images/cobra.png" alt="cobra 5 " style="zoom:25%;" />
 
-We support basic commands like `kubectl get pods`, `kubectl apply -f xxx.yaml`. For more info, see [kubectl README](minik8s/kubectl/README.md). (Appendix 1)
+We support basic commands like `kubectl get pods`, `kubectl apply -f xxx.yaml`. For more info, see [kubectl README](../kubectl/README.md). (Appendix 1)
 
 ### Kubelet
 
@@ -294,7 +294,7 @@ The process of scheduling can be broken down into several steps:
 Here are some strategies we support now:
 
 | strategy                   | Description                                         |
-| -------------------------- | --------------------------------------------------- |
+|----------------------------|-----------------------------------------------------|
 | random                     | Select a node randomly                              |
 | minimum pods               | Select the node with the minimum number of pods     |
 | maximum pods               | Select the node with the maximum number of pods     |
@@ -576,7 +576,7 @@ All pods have their own unique ip, so they can be called by `POST` http request 
 
 #### Workflow
 
-A workflow is equivalent to a DAG of functions. It can be defined in the form of `json`, see [workflow](apiObject/examples/workflow) for examples.
+A workflow is equivalent to a DAG of functions. It can be defined in the form of `json`, see [workflow](../apiObject/examples/workflow) for examples.
 
 Our implementation draws lessons from AWS. We also support `Choice` and `Task`. 
 
