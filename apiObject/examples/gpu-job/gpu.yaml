@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: GpuJob
+metadata:
+  name: matrix-ops
+  namespace: default
+spec:
+  numProcess: 1
+  numTasksPerNode: 1
+  cpusPerTask: 6
+  numGpus: 1
+  compileScripts: [
+      "module load cuda/9.2.88-gcc-4.8.5",
+      "nvcc matrix/matrix_add.cu -o matrix/matrix_add",
+      "nvcc matrix/matrix_multiply.cu -o matrix/matrix_multiply"
+  ]
+  runScripts: [
+      "module load cuda/9.2.88-gcc-4.8.5",
+      "./matrix/matrix_add",
+      "./matrix/matrix_multiply"
+  ]
+  volume: /root/gpu
+  outputFile: matrix_op.out
+  errorFile: matrix_op.err
+  username: stu633
+  password: 8uhlGet%
+  workDir: matrix
+
+
+#SBATCH --job-name=cublas
+#SBATCH --partition=dgx2
+#SBATCH --output=%j.out
+#SBATCH --error=%j.err
+#SBATCH -N 1
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=6
+#SBATCH --gres=gpu:1

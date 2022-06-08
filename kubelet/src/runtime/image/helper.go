@@ -32,7 +32,7 @@ func parseAndPrintPullEvents(events io.ReadCloser, imageName string) {
 	}
 
 	// Latest event for new image
-	// EVENT: {Status:Status: Downloaded newer image for busybox:latest Error: Progress:[==================================================>]  699.2kB/699.2kB ProgressDetail:{Current:699243 Total:699243}}
+	// EVENT: {Status:Status: Downloaded newer image for busybox:latest Error: Progress:[=================================================>]  699.2kB/699.2kB ProgressDetail:{Current:699243 Total:699243}}
 	// Latest event for up-to-date image
 	// EVENT: {Status:Status: Image is up-to-date for busybox:latest Error: Progress: ProgressDetail:{Current:0 Total:0}}
 	if event != nil {

@@ -1,6 +1,0 @@
-apiVersion: v1
-kind: Node
-metadata:
-  name: node2
-  namespace: default
-ip: 0.0.0.0
