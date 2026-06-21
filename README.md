@@ -1,4 +1,9 @@
-# Minik8s
+<div align="center">
+  <img src="readme-images/logo.png" width="300px"/>
+  <h1>Minik8s</h1>
+  <p><b>A simple distributed container ochestration system.</b></p>
+</div>
+
 
 ## Description
 
